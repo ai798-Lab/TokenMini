@@ -36,12 +36,14 @@ else
 fi
 
 REMOTE_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
-if [ -n "${REMOTE_MAIN}" ] && [ "${REMOTE_MAIN}" != "${HEAD_SHA}" ]; then
-    echo "错误:远端 main 已存在不同提交，停止覆盖" >&2
-    exit 1
-fi
 if [ -z "${REMOTE_MAIN}" ]; then
     git push --set-upstream origin HEAD:main
+elif [ "${REMOTE_MAIN}" != "${HEAD_SHA}" ]; then
+    if ! git merge-base --is-ancestor "${REMOTE_MAIN}" "${HEAD_SHA}"; then
+        echo "错误:当前提交不是远端 main 的快进后继，停止覆盖" >&2
+        exit 1
+    fi
+    git push origin HEAD:main
 fi
 
 REMOTE_TAG_COMMIT="$(git ls-remote origin "refs/tags/${TAG}^{}" | awk '{print $1}')"
