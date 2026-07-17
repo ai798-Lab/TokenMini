@@ -1,0 +1,222 @@
+import Foundation
+import Combine
+import Darwin
+
+/// AI 用量中心:定时扫描本地会话 JSONL,聚合后发布给 UI。
+/// 契约:扫描与计价由独立文件实现 ——
+///   UsageScanner:  `final class`,`func scanAll() -> [UsageEvent]`
+///                  负责发现 ~/.claude/projects/**/*.jsonl(及 Codex 会话),
+///                  解析、按 messageId+requestId 去重、按文件 mtime/offset 增量缓存。
+///   PricingTable:  `enum`,`static func pricing(for model: String) -> ModelPricing?`
+///                  内置价格表 + 归一化后的精确匹配。
+@MainActor
+final class UsageStore: ObservableObject {
+    // 弹窗/菜单栏"今日一瞥"字段,恒为今日/本月/7天,与 filter 解耦
+    @Published var today = UsagePeriodSummary()
+    @Published var thisMonth = UsagePeriodSummary()
+    @Published var last7Days: [DailyUsage] = []
+    @Published var burnRatePerHourUSD: Double = 0     // 最近 1 小时实际花费
+    @Published var monthProjectionUSD: Double = 0     // 按本月日均外推整月
+    @Published var lastScan: Date?
+    @Published var scanning = false
+
+    // 监控台窗口:多维筛选 + 即时重聚合
+    @Published var filter = UsageFilter() {
+        didSet { if oldValue != filter { reaggregate() } }
+    }
+    @Published private(set) var dashboard = DashboardData()
+
+    /// 供预览/离屏渲染注入现成数据(不触发扫描)
+    func injectForPreview(_ d: DashboardData) { dashboard = d }
+
+    /// 最近有活动的工具("当前在用",3 小时内才算),用于额度主角/C 位选择;
+    /// 没有近期活动返回 nil,由调用方退回"用得最多"的工具。
+    var activeTool: ToolKind? {
+        guard let last = priced.max(by: { $0.timestamp < $1.timestamp }),
+              last.timestamp > Date().addingTimeInterval(-3 * 3600) else { return nil }
+        return last.tool
+    }
+
+    static let refreshInterval: TimeInterval = 60
+
+    private let scanner = UsageScanner()      // Claude Code
+    private let codexScanner = CodexScanner()  // Codex CLI
+    private var timer: Timer?
+    private let scanQueue = DispatchQueue(label: "macpulse.aiusage", qos: .utility)
+    private var priced: [PricedEvent] = []    // 计价后常驻,重聚合只做加法不重扫
+    private var reaggGen = 0                   // 去抖代次:只发布最新一次结果
+
+    func start() {
+        guard timer == nil else { return }
+        refresh()
+        // .common 模式,理由同 SystemMonitor:default 模式在 event-tracking 期间会暂停
+        let t = Timer(timeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.refresh() }
+        }
+        t.tolerance = 10
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
+    func stop() {
+        timer?.invalidate(); timer = nil
+    }
+
+    func refresh() {
+        guard !scanning else { return }
+        scanning = true
+        let scanner = self.scanner
+        let codexScanner = self.codexScanner
+        let filter = self.filter
+        let filterGeneration = reaggGen
+        scanQueue.async { [weak self] in
+            // 整轮 Foundation 文件遍历/JSON 解码放进一个外层池。只有池先排空，
+            // malloc 才能识别并归还扫描时产生的小对象页；仅给逐块解析套池仍会
+            // 让 resourceValues/URL/Decoder 的临时对象拖到 GCD block 结束。
+            let scanResult = autoreleasepool { () -> (
+                priced: [PricedEvent], summary: AggregateResult,
+                dashboard: DashboardData, alertDashboard: DashboardData
+            ) in
+                // 合并多数据源:Claude Code + Codex CLI(各自内部已防重,来源不重叠可直接拼)
+                var events = scanner.scanAll()
+                events.append(contentsOf: codexScanner.scanAll())
+                let now = Date()
+                let priced = events.map { PricedEvent.from($0) }        // 一次计价定型
+                let result = Self.aggregate(events: events, now: now)   // 今日一瞥固定桶
+                let dash = UsageAggregator.run(priced, filter: filter, now: now, calendar: .current)
+                let alertDash = UsageAggregator.run(
+                    priced, filter: UsageFilter(time: .today), now: now, calendar: .current)
+                return (priced, result, dash, alertDash)
+            }
+            malloc_zone_pressure_relief(nil, 0)
+            Task { @MainActor in
+                guard let self else { return }
+                self.priced = scanResult.priced
+                self.today = scanResult.summary.today
+                self.thisMonth = scanResult.summary.thisMonth
+                self.last7Days = scanResult.summary.last7Days
+                self.burnRatePerHourUSD = scanResult.summary.burnRate
+                self.monthProjectionUSD = scanResult.summary.projection
+                if self.reaggGen == filterGeneration {
+                    self.dashboard = scanResult.dashboard
+                } else {
+                    // 扫描期间筛选被修改:旧筛选结果不能覆盖新筛选;用刚扫到的数据重算。
+                    self.reaggregate()
+                }
+                self.lastScan = Date()
+                self.scanning = false
+                let topProject = scanResult.alertDashboard.insight.topProject.map {
+                    DisplaySettings.shared.projectName($0)
+                }
+                NotificationManager.shared.evaluateCostAlerts(
+                    hourlyUSD: scanResult.alertDashboard.burn.perHourUSD,
+                    todayUSD: scanResult.alertDashboard.overview.totalCostUSD,
+                    topProject: topProject)
+            }
+        }
+    }
+
+    /// 筛选变更:只重聚合内存事件表,不重扫。60ms 去抖 + 代次丢弃过期结果。
+    private func reaggregate() {
+        reaggGen &+= 1
+        let gen = reaggGen
+        let priced = self.priced
+        let filter = self.filter
+        scanQueue.asyncAfter(deadline: .now() + 0.06) { [weak self] in
+            let dash = UsageAggregator.run(priced, filter: filter, now: Date(), calendar: .current)
+            Task { @MainActor in
+                guard let self, self.reaggGen == gen else { return }  // 被更晚筛选取代则丢弃
+                self.dashboard = dash
+            }
+        }
+    }
+
+    // MARK: - 聚合(纯函数,便于测试)
+
+    struct AggregateResult {
+        var today = UsagePeriodSummary()
+        var thisMonth = UsagePeriodSummary()
+        var last7Days: [DailyUsage] = []
+        var burnRate: Double = 0
+        var projection: Double = 0
+    }
+
+    nonisolated static func aggregate(events: [UsageEvent], now: Date) -> AggregateResult {
+        var cal = Calendar.current
+        cal.timeZone = .current
+        let todayStart = cal.startOfDay(for: now)
+        guard let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: now)) else {
+            return AggregateResult()
+        }
+        let hourAgo = now.addingTimeInterval(-3600)
+        // 7 天窗口下界必须和图表桶同源用日历运算,固定 6×86400 秒在 DST 时区会差 1 小时
+        let windowStart = cal.date(byAdding: .day, value: -6, to: todayStart)
+            ?? todayStart.addingTimeInterval(-6 * 86400)
+
+        var result = AggregateResult()
+        var daily: [String: (cost: Double, tokens: Int)] = [:]
+        let dayFmt = DateFormatter()
+        dayFmt.dateFormat = "yyyy-MM-dd"
+        dayFmt.timeZone = .current
+
+        for e in events {
+            var cost = e.costUSD ?? PricingTable.pricing(for: e.model)?.cost(
+                input: e.inputTokens, output: e.outputTokens,
+                cacheWrite: e.cacheCreationTokens, cacheWrite1h: e.cacheCreation1hTokens,
+                cacheRead: e.cacheReadTokens) ?? 0
+            // fast 模式按倍率加价;JSONL 自带 costUSD 时已含加价,不重复乘
+            if e.costUSD == nil, e.speed == "fast" {
+                cost *= PricingTable.fastMultiplier(for: e.model)
+            }
+
+            if e.timestamp >= todayStart {
+                add(&result.today, e, cost)
+            }
+            if e.timestamp >= monthStart {
+                add(&result.thisMonth, e, cost)
+            }
+            if e.timestamp >= hourAgo {
+                result.burnRate += cost
+            }
+            if e.timestamp >= windowStart {
+                let key = dayFmt.string(from: e.timestamp)
+                daily[key, default: (0, 0)].cost += cost
+                daily[key, default: (0, 0)].tokens += e.inputTokens + e.outputTokens
+                    + e.cacheCreationTokens + e.cacheReadTokens
+            }
+        }
+
+        // 最近 7 天补零,保证图表连续
+        result.last7Days = (0..<7).reversed().compactMap { offset in
+            guard let d = cal.date(byAdding: .day, value: -offset, to: todayStart) else { return nil }
+            let key = dayFmt.string(from: d)
+            let v = daily[key] ?? (0, 0)
+            return DailyUsage(day: key, costUSD: v.cost, totalTokens: v.tokens)
+        }
+
+        // 整月外推:本月日均 × 当月天数
+        let dayOfMonth = cal.component(.day, from: now)
+        let daysInMonth = cal.range(of: .day, in: .month, for: now)?.count ?? 30
+        if dayOfMonth > 0 {
+            result.projection = result.thisMonth.totalCostUSD / Double(dayOfMonth) * Double(daysInMonth)
+        }
+        return result
+    }
+
+    private nonisolated static func add(_ s: inout UsagePeriodSummary, _ e: UsageEvent, _ cost: Double) {
+        s.totalCostUSD += cost
+        s.inputTokens += e.inputTokens
+        s.outputTokens += e.outputTokens
+        s.cacheCreationTokens += e.cacheCreationTokens
+        s.cacheReadTokens += e.cacheReadTokens
+        s.eventCount += 1
+        var m = s.byModel[e.model] ?? ModelUsage()
+        m.costUSD += cost
+        m.inputTokens += e.inputTokens
+        m.outputTokens += e.outputTokens
+        m.cacheCreationTokens += e.cacheCreationTokens
+        m.cacheReadTokens += e.cacheReadTokens
+        m.eventCount += 1
+        s.byModel[e.model] = m
+    }
+}

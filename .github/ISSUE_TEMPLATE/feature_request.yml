@@ -1,0 +1,24 @@
+name: Feature request
+description: 提出功能或体验建议
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 想解决的问题
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 功能区域
+      options: [系统监控, AI 用量, 额度提醒, 清理, Skills, 自动更新, 其他]
+    validations:
+      required: true

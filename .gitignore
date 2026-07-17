@@ -1,0 +1,11 @@
+.build/
+.clt-fix/
+dist/
+.DS_Store
+*.xcodeproj
+.swiftpm/
+.release-worktree/
+
+# 本机协作纪要，不进入公开源码快照
+会话纪要.md
+交接文档-*.md

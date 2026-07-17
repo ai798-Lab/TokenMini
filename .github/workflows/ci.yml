@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: macos-26
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests
+        run: ./scripts/test.sh
+      - name: Build app bundle
+        run: ./scripts/build.sh 0.9.0 2
+      - name: Verify bundle
+        run: |
+          test "$(lipo -archs dist/MacPulse.app/Contents/MacOS/MacPulse)" = "arm64"
+          codesign --verify --strict --deep --verbose=2 dist/MacPulse.app
+          /usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' dist/MacPulse.app/Contents/Info.plist | grep '^14.0$'

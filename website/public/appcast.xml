@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>MacPulse Updates</title>
+    <link>https://macpulse-monitor.peaceaii.chatgpt.site/appcast.xml</link>
+    <description>MacPulse 公开版本更新</description>
+    <language>zh-CN</language>
+  </channel>
+</rss>

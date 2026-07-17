@@ -1,0 +1,326 @@
+<title>MacPulse 差异化调研库</title>
+<style>
+  :root{
+    --bg:#f3f1ec; --panel:#fffdf9; --panel2:#faf7f0; --ink:#211d18; --ink2:#4c4640; --muted:#8a8175;
+    --line:#e6e0d5; --line2:#efeae0; --accent:#c8641a; --accent-soft:#fbeede; --accent-ink:#9c4a10;
+    --good:#2f8a52; --good-soft:#e6f2ea; --warn:#b6790a; --warn-soft:#fbf1dc; --crit:#c0392b; --crit-soft:#fae9e6;
+    --shadow:0 1px 2px rgba(60,40,20,.05),0 10px 30px rgba(80,50,20,.07); --shadow-sm:0 1px 2px rgba(60,40,20,.05),0 4px 12px rgba(80,50,20,.05);
+    --radius:16px; --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"PingFang SC",sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace; --serif:"SF Pro Display",Georgia,"Songti SC",serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#16130f; --panel:#1e1a15; --panel2:#241f19; --ink:#efe9df; --ink2:#c3bbac; --muted:#8f8577;
+    --line:#2e2820; --line2:#241f18; --accent:#e0894a; --accent-soft:#2a1b0f; --accent-ink:#f0a86e;
+    --good:#4bbd77; --good-soft:#16281c; --warn:#e0a53a; --warn-soft:#2c2412; --crit:#e0685a; --crit-soft:#2c1713;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.45); --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.3);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#16130f; --panel:#1e1a15; --panel2:#241f19; --ink:#efe9df; --ink2:#c3bbac; --muted:#8f8577;
+    --line:#2e2820; --line2:#241f18; --accent:#e0894a; --accent-soft:#2a1b0f; --accent-ink:#f0a86e;
+    --good:#4bbd77; --good-soft:#16281c; --warn:#e0a53a; --warn-soft:#2c2412; --crit:#e0685a; --crit-soft:#2c1713;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 34px rgba(0,0,0,.45); --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.3);
+  }
+  :root[data-theme="light"]{
+    --bg:#f3f1ec; --panel:#fffdf9; --panel2:#faf7f0; --ink:#211d18; --ink2:#4c4640; --muted:#8a8175;
+    --line:#e6e0d5; --line2:#efeae0; --accent:#c8641a; --accent-soft:#fbeade; --accent-ink:#9c4a10;
+    --good:#2f8a52; --good-soft:#e6f2ea; --warn:#b6790a; --warn-soft:#fbf1dc; --crit:#c0392b; --crit-soft:#fae9e6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.62;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px 120px}
+  header.mast{padding:56px 0 26px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:9px}
+  .eyebrow::before{content:"";width:22px;height:22px;border-radius:7px;background:radial-gradient(circle at 30% 30%,var(--accent),color-mix(in srgb,var(--accent) 55%,#7a2e08));box-shadow:var(--shadow-sm);flex:none}
+  h1{font-size:clamp(30px,5.5vw,46px);line-height:1.06;margin:0 0 16px;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+  .lede{font-size:18px;color:var(--ink2);max-width:64ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:22px;font-size:13px;color:var(--muted)}
+  .meta b{color:var(--ink2);font-weight:600}
+  nav.toc{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:6px;padding:11px 0;margin-bottom:10px;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.5) blur(12px);-webkit-backdrop-filter:saturate(1.5) blur(12px);border-bottom:1px solid var(--line)}
+  nav.toc a{font-size:12px;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel);transition:all .15s;white-space:nowrap}
+  nav.toc a:hover{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+  nav.toc a.hot{color:#fff;background:var(--accent);border-color:var(--accent)}
+  h2{font-size:22px;letter-spacing:-.01em;margin:52px 0 6px;font-weight:680;scroll-margin-top:58px;display:flex;align-items:baseline;gap:11px}
+  h2 .n{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700}
+  h2 .cat{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-left:auto}
+  h3{font-size:16px;margin:22px 0 8px;font-weight:650}
+  p{margin:0 0 14px}
+  a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}
+  strong{font-weight:650}
+  code{font-family:var(--mono);font-size:.86em;background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;color:var(--ink2)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:22px 24px;margin:14px 0}
+  .summary{color:var(--ink2);font-size:15px;border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 12px 12px 0;padding:13px 18px;margin:12px 0 16px}
+  ul.take{list-style:none;margin:12px 0;padding:0;display:grid;gap:9px}
+  ul.take>li{display:grid;grid-template-columns:22px 1fr;gap:11px;align-items:start;font-size:14.5px;color:var(--ink2)}
+  ul.take>li::before{content:"→";color:var(--accent);font-weight:700}
+  ul.take>li b{color:var(--ink);font-weight:650}
+  .land{border-left:3px solid var(--good);background:var(--good-soft);border-radius:0 12px 12px 0;padding:13px 18px;margin:16px 0;font-size:14.5px;color:var(--ink2)}
+  .land b{color:var(--ink)}
+  /* playbook */
+  .pb{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:28px 28px;margin:26px 0}
+  .pillars{display:grid;gap:12px;margin:16px 0}
+  .pillar{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+  .pillar .top{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+  .pillar .k{width:24px;height:24px;border-radius:7px;background:var(--accent-soft);color:var(--accent-ink);font-weight:700;font-size:13px;font-family:var(--mono);display:grid;place-items:center;flex:none}
+  .pillar h4{margin:0;font-size:16px;font-weight:650}
+  .pillar .eff{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .pillar p{font-size:13.5px;color:var(--ink2);margin:0}
+  .pillar p b{color:var(--ink)}
+  .ideas{overflow-x:auto;border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow-sm);margin:16px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--panel)}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line2);vertical-align:top}
+  thead th{background:var(--panel2);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.n{font-weight:600;white-space:nowrap}
+  .chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .chip.q{color:var(--good);background:var(--good-soft)} .chip.m{color:var(--warn);background:var(--warn-soft)} .chip.b{color:var(--accent-ink);background:var(--accent-soft)}
+  .avoid{border-left:3px solid var(--crit);background:var(--crit-soft);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0;font-size:14px;color:var(--ink2)}
+  .avoid b{color:var(--ink)}
+  .avoid ul{margin:8px 0 0;padding-left:20px} .avoid li{margin-bottom:5px}
+  .note{font-size:13px;color:var(--muted);background:var(--panel2);border:1px dashed var(--line);border-radius:10px;padding:11px 15px;margin:16px 0}
+  .footer{margin-top:54px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  @media (max-width:560px){.wrap{padding:0 15px 80px}}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <div class="eyebrow">MacPulse · 差异化调研库</div>
+  <h1>怎么让它不再是"又一个 AI 用量工具"</h1>
+  <p class="lede">14 个 UI / UX 维度的差异化弹药,外加一份行动手册。核心命题:整个赛道都是给工程师的折线图和 token 术语——MacPulse 要抢下"唯一给普通人的 AI 额度安心表",靠的是视觉语言、交互位置和情绪价值,而不是又一张仪表盘。</p>
+  <div class="meta"><span><b>日期</b> 2026-07-07</span><span><b>方法</b> 并行网页调研 + 设计领域综合</span><span><b>覆盖</b> 刘海生态 · 菜单栏视觉 · 氛围计算 · 情绪化设计 · 物理隐喻 · 游戏化 · 数据可视化 · 竞品空白 等 14 维</span></div>
+</header>
+
+<nav class="toc">
+  <a href="#playbook" class="hot">★ 行动手册</a>
+  <a href="#d1">刘海生态</a><a href="#d2">菜单栏视觉</a><a href="#d3">氛围计算</a><a href="#d4">情绪化设计</a>
+  <a href="#d5">物理隐喻</a><a href="#d6">游戏化/桌宠</a><a href="#d7">数据可视化</a><a href="#d8">设计签名</a>
+  <a href="#d9">Apple 范式</a><a href="#d10">首启信任</a><a href="#d11">竞品空白</a><a href="#d12">微交互</a>
+  <a href="#d13">品牌人格</a><a href="#d14">最新趋势</a>
+</nav>
+
+<!-- PLAYBOOK -->
+<h2 id="playbook"><span class="n">★</span> 差异化行动手册<span class="cat">综合</span></h2>
+<p class="summary">别在"信息量"上和竞品卷——它们已经赢了工程师。MacPulse 要赢的是<strong>那个不懂代码、怕账单、怕撞限的普通人</strong>。差异化不在"多一个图表",而在:把 token 翻译成人人会读的<strong>驾驶舱物理仪表</strong>、把刘海变成<strong>额度续航驾驶舱</strong>、给这个焦虑用户一个<strong>有温度的副驾</strong>。下面是能立住的支点。</p>
+
+<div class="pb">
+  <h3 style="margin-top:0">五个能立住的差异化支点</h3>
+  <div class="pillars">
+    <div class="pillar"><div class="top"><span class="k">1</span><h4>驾驶舱物理仪表(视觉护城河)</h4><span class="eff">工作量 中</span></div><p>全赛道(ccusage / Stats / iStat)都是<b>工程师的折线图 + 环形占比</b>,人人雷同。MacPulse 独占<b>普通人的物理仪表盘</b>:油量表、沙漏、温度计、一盏灯。隐喻选择本身就是和所有监控类竞品的区隔——别人给数据,你给"一眼就懂的仪表"。</p></div>
+    <div class="pillar"><div class="top"><span class="k">2</span><h4>刘海 = 额度续航驾驶舱(独占位置)</h4><span class="eff">工作量 低</span></div><p>竞品在菜单栏堆数字。MacPulse 把<b>刘海</b>做成 hover 下拉的"续航驾驶舱"——这是一个别人没占的物理位置 + 灵动岛式交互,基建已搭好(NotchShape/hover)。一个"持续进行的额度倒计时"天生就是 Live Activity 该待的地方。</p></div>
+    <div class="pillar"><div class="top"><span class="k">3</span><h4>有温度的"副驾"人格(情绪价值)</h4><span class="eff">工作量 中</span></div><p>竞品全是冷冰冰的仪表盘。账单焦虑用户要的不是数据,是<b>安心</b>。给它一个副驾人格:正向框架("还能痛快写 4 小时"而非"已用 72%")、关键时刻提醒、重置时庆祝、可选会变表情的小伙伴。没人给这个用户做过陪伴。</p></div>
+    <div class="pillar"><div class="top"><span class="k">4</span><h4>"续航焦虑"翻译层(认知差异)</h4><span class="eff">工作量 低</span></div><p>把 <code>已用 72%</code> 翻成 <b>"还能聊约 40 轮 / 撑到今晚 9 点"</b>(distance-to-empty)。Tesla / Ford 早证明:人对"还能干多远"的直觉远强于"还剩多少"。这一层认知翻译,让不懂技术的人瞬间懂——是最便宜的差异化。</p></div>
+    <div class="pillar"><div class="top"><span class="k">5</span><h4>30 秒懂它信它的首启(非技术门槛)</h4><span class="eff">工作量 中</span></div><p>面向非技术用户的 onboarding + 隐私信任(读你的用量/花费),竞品没人做好。一句话讲清价值、权限说清"全本地不上传"、首启立刻显示<b>你的</b>额度制造"啊哈"时刻——把小白留下。</p></div>
+  </div>
+
+  <h3>推荐的视觉 + 交互签名:一条"驾驶舱 / 续航"主线</h3>
+  <p style="color:var(--ink2);font-size:14.5px">别东一个西一个。选定<strong>"驾驶舱续航"</strong>做贯穿一切的签名,让产品一眼认得出:</p>
+  <ul class="take">
+    <li><b>主角</b>=一支带阻尼回摆的油量表指针 + "还能聊约 40 轮 / 撑到今晚 9 点"</li>
+    <li><b>重置</b>=一只真会漏沙的沙漏(连续流、见底加速泛红)</li>
+    <li><b>超支</b>=温度计水银逼近预算顶端由绿转红、轻微搏动</li>
+    <li><b>菜单栏</b>=一盏 RAG 灯(余光可读,形状颜色 > 数字)</li>
+    <li><b>材质</b>=玻璃打底 + 可选"拟物驾驶舱皮肤"(Liquid Glass 折射 + VU 表针),做出不撞脸的材质签名</li>
+    <li><b>动效</b>=全走真实物理:指针 overshoot 回摆、液面波纹、沙子连续流——物理真实 = 可信 + 情绪</li>
+  </ul>
+
+  <h3>点子清单(按 惊艳度 ÷ 成本 排序)</h3>
+  <div class="ideas"><table>
+    <thead><tr><th>点子</th><th>档位</th><th>为什么值</th></tr></thead>
+    <tbody>
+      <tr><td class="n">正向框架文案(全局)</td><td><span class="chip q">Quick Win</span></td><td>"还能痛快写 4h" 替掉 "已用72%",一改就治焦虑</td></tr>
+      <tr><td class="n">distance-to-empty 翻译</td><td><span class="chip q">Quick Win</span></td><td>"还能聊约 40 轮",秒懂,零成本认知差异</td></tr>
+      <tr><td class="n">菜单栏一盏 RAG 灯</td><td><span class="chip q">Quick Win</span></td><td>余光可读的 ambient 状态,calm tech</td></tr>
+      <tr><td class="n">数值阻尼滚动动效</td><td><span class="chip q">Quick Win</span></td><td>.numericText + 弹簧,立刻显高级</td></tr>
+      <tr><td class="n">油量表主角(自绘仪表)</td><td><span class="chip m">中招</span></td><td>视觉护城河的核心,一眼区别于折线图</td></tr>
+      <tr><td class="n">沙漏重置 + 温度计超支</td><td><span class="chip m">中招</span></td><td>把抽象窗口/预算变成物理直觉</td></tr>
+      <tr><td class="n">重置"满血复活"庆祝动效</td><td><span class="chip m">中招</span></td><td>庆祝而非只报警,情绪记忆点</td></tr>
+      <tr><td class="n">副驾人格 + 贴心文案系统</td><td><span class="chip m">中招</span></td><td>温度=差异化,竞品全无</td></tr>
+      <tr><td class="n">拟物"驾驶舱皮肤"</td><td><span class="chip b">大招</span></td><td>吃 Liquid Glass 拟物回潮红利,记忆点</td></tr>
+      <tr><td class="n">随状态变表情的小伙伴/桌宠</td><td><span class="chip b">大招</span></td><td>陪伴感,但需克制、可关</td></tr>
+      <tr><td class="n">streak / 成就体系</td><td><span class="chip b">大招</span></td><td>黏性,但工具类慎用避免幼稚</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="avoid"><b>明确劝退(会显幼稚 / 廉价 / 撞脸):</b>
+    <ul>
+      <li>别堆多图表——那是工程师产品(iStat/ccusage 已占),你一堆折线就撞脸+丢定位。</li>
+      <li>别用纯百分比 + 默认红色警报美学制造焦虑,那正好背离"安心表"的魂。</li>
+      <li>桌宠/养成要极度克制且可关,做重了立刻从"高级工具"掉成"幼稚小玩意"。</li>
+      <li>别纯抄系统 Liquid Glass 玻璃——不加自己的拟物材质就会和一堆 2026 app 撞脸。</li>
+      <li>动效别过量:该有物理阻尼的地方精致,别处处弹跳,过度动效=廉价。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- D5 physical (agent, full) placed early as the strongest -->
+<h2 id="d5"><span class="n">05</span> 物理隐喻 / 拟物化仪表<span class="cat">范式 · 已深挖</span></h2>
+<p class="summary">物理隐喻是给 vibe coder 的降维打击:把 token/额度/费用翻译成人人从小就会读的仪表。三问对应三个最直觉的隐喻——"还能用多久"用<strong>油量表 + 距离清空</strong>(Tesla/Ford 证明"还能跑多远"比"剩几升"更安心)、"多久重置"用<strong>实时下落的沙漏</strong>、"会不会超支"用<strong>会逼顶变红的温度计</strong>。iOS 26 Liquid Glass 带火的拟物回潮给了做"驾驶舱皮肤"的视觉红利。护城河:iStat 用工程师的折线图,MacPulse 反其道用普通人的物理仪表。</p>
+<ul class="take">
+  <li><b>主隐喻锁定"油量表 + 距离清空"</b>:首页别写百分比,写"还能聊约 40 轮 / 撑到今晚 9 点"。Tesla 能耗 App、Ford Distance-to-Empty 都证明人对"还能跑多远"的直觉远强于"剩几升"。</li>
+  <li><b>重置做成真会漏沙的沙漏</b>:沙连续下落(不是数字跳),快见底时加速 + 沙堆泛红。参考 Minimal Hourglass——主打"小孩不识字也懂还要等多久"。</li>
+  <li><b>反用 Apple Watch 圆环的 open loop</b>:圆环快闭合本是"想凑满"的心理痒,MacPulse 要把它变成"红色缺口在逼近 = 该收手"的预警。</li>
+  <li><b>花费用温度计做超支预警</b>:借募捐温度计"越接近顶端越想完成"的心理反用——水银逼近预算顶端由绿转橙转红并轻微搏动,让"快超支"在余光里就有生理性紧张感。</li>
+  <li><b>菜单栏用"一盏灯"(RAG)</b>:严守汽车仪表 glanceability 铁律——靠颜色和形状而非数字,让用户用余光就能读到安全/留意/危险。</li>
+  <li><b>烧钱速度用速度表</b> = burn rate,配 "cash runway" 文案("按当前速度还能撑到 X 点")。</li>
+  <li><b>所有动效走真实物理</b>:表针带阻尼回摆(overshoot)、液面波纹、沙子连续流。物理真实感 = 可信 + 情绪价值。</li>
+</ul>
+<h3>为什么是降维打击</h3>
+<p>目标用户看不懂 token、context window、rate limit,但每个人都开过车、看过手机电量、等过沙漏。好隐喻把知识从熟悉领域"迁移"过来,让人瞬间获得"怎么读它"的直觉(Jakob Nielsen 的界面隐喻理论)。别教用户读数据,给他们一个从小就会读的仪表。</p>
+<h3>视觉红利:拟物回潮</h3>
+<p>iOS 26 的 <strong>Liquid Glass</strong>(WWDC 2025,macOS Tahoe 同步)把 skeuomorphism 拉回聚光灯——不是回皮革缝线,而是"用光的物理(折射、镜面高光)做真实感"。可抄的拟物配方:四层阴影(接触影/环境影/内高光/内暗部)、顶光渐变、letterpress 压印文字、按下 <code>translateY(1px)</code>、0.05 透明度噪点做表面颗粒。真实参考:<strong>Not Boring</strong>(付费"皮肤")、<strong>Halide</strong>(手势模拟物理拨盘)、<strong>Arturia V Collection</strong>(照片级复刻合成器 VU 表针)。</p>
+<div class="land"><b>落到 MacPulse:</b>主隐喻定为"驾驶舱油量表"(带阻尼回摆的指针 + 距离清空文案);重置=真沙漏;花费=温度计;菜单栏=一盏 RAG 灯;烧钱=速度表 + runway 文案;动效全走物理;出一个可选拟物驾驶舱皮肤做记忆点。<b>隐喻选择本身就是和所有竞品的区隔。</b></div>
+
+<!-- D1 -->
+<h2 id="d1"><span class="n">01</span> 刘海 / 灵动岛交互生态<span class="cat">交互</span></h2>
+<p class="summary">NotchNook、Boring Notch、Alcove、DynamicLake、NotchDrop、MediaMate 这批 app 证明刘海能承载"非通知"的持续/hover 信息。最受欢迎的交互:媒体控制、AirDrop 拖拽暂存(NotchDrop)、hover 展开的紧凑信息、以及"从刘海本体 morph 长出"的动效。最大差评点:常驻挡内容、功能堆砌。机会:没人用刘海做"AI 额度续航"。</p>
+<ul class="take">
+  <li><b>hover 展开 + 灵动岛式左右紧凑态</b>是 NotchNook/Alcove 的核心交互——MacPulse 的 hover 下拉方向对。</li>
+  <li><b>NotchDrop 的"拖文件到刘海暂存"</b>是最受好评的实用交互;启发:未来能不能拖点什么到刘海(弱相关,先不做)。</li>
+  <li><b>灵动岛 Live Activities 范式</b>:一个"持续进行的活动(倒计时/进度)"最适合刘海——额度倒计时天生契合,这是别人没做的用法。</li>
+  <li><b>动效必须"从刘海本体长出"</b>而不是弹窗——已做(NotchShape 无缝衔接)。</li>
+  <li><b>别学功能堆砌型</b>(把天气/日历/电池全塞刘海),专注"额度续航"一件事更利落、更有记忆点。</li>
+  <li><b>常驻挡内容是最大差评</b>——MacPulse 的"平时藏、hover 才现"是正确取舍。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>把刘海定位成"额度续航驾驶舱",做成灵动岛式的持续活动(倒计时),而非又一个塞满信息的刘海面板。这是一个别人没占的位置 + 用法。</div>
+
+<!-- D2 -->
+<h2 id="d2"><span class="n">02</span> 菜单栏 app 视觉差异化<span class="cat">视觉</span></h2>
+<p class="summary">菜单栏空间极小,辨识度靠"活体感"——Stats 的实时迷你折线/环、iStat 的动态图标、One Thing 的纯文字待办、Ice/Bartender 的收纳。差异化在"动态字形/微型仪表 + 颜色"而非静态图标。</p>
+<ul class="take">
+  <li><b>Stats 的菜单栏迷你实时图表</b>是它辨识度的来源;<b>iStat</b> 用会动的图标;<b>One Thing</b> 用文字占位——都在"动"。</li>
+  <li>避免又一个静态 SF Symbol——用<b>会变色的一盏灯 + 迷你油量环</b>,一眼认出是你。</li>
+  <li>点开的弹窗要<b>脱离系统默认样式</b>(自有玻璃/圆角/排版/驾驶舱视觉),延续品牌。</li>
+  <li>颜色变化(RAG)承担 ambient 状态,比数字更快被余光读到。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>菜单栏 = 一盏会变色的灯 +(可选)迷你油量环;弹窗延续驾驶舱视觉,不用系统默认长相。</div>
+
+<!-- D3 -->
+<h2 id="d3"><span class="n">03</span> 氛围计算 / Calm Technology<span class="cat">范式</span></h2>
+<p class="summary">Calm Technology(Mark Weiser & John Seely Brown)——信息待在余光、需要时才进注意力中心。经典案例 Ambient Orb(一个会变色的球报股市涨跌)。原则:用颜色/呼吸传状态、平时安静、异常才凸显。MacPulse 的"平时藏、紧张探头"正是 calm tech。</p>
+<ul class="take">
+  <li><b>余光可读</b>:颜色和形状 > 数字,让人不停下手里的活也能感知状态。</li>
+  <li><b>平时安静、异常才响</b>:默认极简一盏灯,快撞限/过热才主动探头。</li>
+  <li><b>渐进披露</b>:一层给状态(灯/环),想看明细再 hover——天然防数据轰炸。</li>
+  <li><b>状态用"呼吸/微动"</b>而非弹窗打断(Ambient Orb 式的柔和变色)。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>把 calm tech 当铁律:默认极简、余光可读、细节 hover 才给、警告用柔和呼吸而非硬弹窗。</div>
+
+<!-- D4 -->
+<h2 id="d4"><span class="n">04</span> 情绪化设计 / 焦虑缓解<span class="cat">情绪</span></h2>
+<p class="summary">为焦虑用户设计。Don Norman 情绪化设计三层(本能/行为/反思)。钱焦虑的 fintech(Copilot Money、Monarch、Cleo 拟人化 AI)靠正向框架 + 掌控感 + 可预期来缓解。关键:别用红色恐吓,把"限制"讲成"节奏"。</p>
+<ul class="take">
+  <li><b>正向框架</b>:"还能痛快写 4 小时" ✅ 而非 "已用 72%" ❌——同一个数,情绪天差地别。</li>
+  <li><b>避免默认红色/警报美学</b>:默认绿色安心态,红色只留给真危险。</li>
+  <li><b>可预期 = 掌控感</b>:清晰的重置倒计时让人"知道什么时候能继续",焦虑就降了。</li>
+  <li><b>庆祝而非只报警</b>:额度重置做成"满血复活",给正反馈。</li>
+  <li><b>Cleo 式有温度的语气</b>:让提示像朋友说话,不像系统报错。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>全局文案正向化;默认绿色安心;重置做庆祝;红色只在真危险时出现。这是"安心表"的魂。</div>
+
+<!-- D6 -->
+<h2 id="d6"><span class="n">06</span> 游戏化 / streak / 桌面宠物<span class="cat">游戏化</span></h2>
+<p class="summary">Duolingo 连胜、Forest/Finch 养成、Apple 圆环闭合、桌宠(Bongo Cat)。让"克制花费/规律使用"有黏性——但工具类做太重的养成会显幼稚。机会:一个随额度/花费/电脑状态变表情的极简"伙伴"。</p>
+<ul class="take">
+  <li><b>轻量 streak</b>(连续省钱天数、连续健康使用)可加,重养成慎用。</li>
+  <li><b>Apple 圆环闭合</b>的成就感值得借,但要反用成"该收手"而非"凑满"。</li>
+  <li><b>一个极简会变表情的吉祥物</b>:开心 / 喘气(高负载)/ 发烫(过热)/ 满血(重置)——陪伴感强。</li>
+  <li>避免 Tamagotchi 式重养成(会幼稚);桌宠<b>必须默认关、可关</b>。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>做一个可选的极简"伙伴"(随额度/温度变表情),默认关;轻量成就点到为止,别做成小游戏。</div>
+
+<!-- D7 -->
+<h2 id="d7"><span class="n">07</span> 单一指标的数据可视化<span class="cat">数据可视化</span></h2>
+<p class="summary">把"一个百分比/一段倒计时/一个金额"呈现得又美又秒懂:Apple 活动圆环(金标准)、bullet chart、液面/波浪填充、径向仪表。主角(5h 倒计时)候选:油量表指针 / 液面下降 / 沙漏 / 圆环。</p>
+<ul class="take">
+  <li><b>Apple 活动圆环</b>是单指标可视化的金标准——简洁、可动、可堆叠。</li>
+  <li><b>液面/波浪填充</b>有生命力(WaterLevel widget 类),比静态条更"活"。</li>
+  <li><b>bullet chart</b> 表达"实际 vs 目标 vs 预测"三值(适合花费 vs 预算 vs 预估)。</li>
+  <li><b>倒计时用连续动画</b>非跳字;强调"当前值/端点"。</li>
+  <li>避免饼图;颜色统一 RAG 编码。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>主角用"油量表指针 + 液面填充"组合,配阻尼动效;花费用 bullet(实际/预算/预估)。</div>
+
+<!-- D8 -->
+<h2 id="d8"><span class="n">08</span> 顶级 Mac app 的设计签名<span class="cat">视觉</span></h2>
+<p class="summary">Apple 设计奖获奖作 + 顶级 indie(Things、Fantastical、Craft、Halide、Bear、Reeder)。高级感来自:克制的配色、大留白、统一的圆角/图标语言、一个独特动效签名、精致排版、极致一致性。MacPulse 要有"作品感"必须定死一套签名。</p>
+<ul class="take">
+  <li>选<b>一个强色 + 一套中性</b>(建议琥珀/驾驶舱橙 + 暖中性),全局只用它。</li>
+  <li>统一<b>圆角、材质、图标语言</b>;一个<b>标志性动效</b>(油量指针回摆)。</li>
+  <li><b>大留白 + 严格字号层级</b>;一致性 > 花样(Things 靠极致克制建立高级感)。</li>
+  <li>图标要精致到能当"作品"(Halide/Reeder 的图标是记忆点)。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>定义设计签名 = 驾驶舱拟物材质 + 琥珀强调色 + 指针阻尼动效 + SF Rounded 数字,处处一致。</div>
+
+<!-- D9 -->
+<h2 id="d9"><span class="n">09</span> 借 Apple 自家 glanceable 范式<span class="cat">范式</span></h2>
+<p class="summary">Widgets、Live Activities、Control Center、Watch complications、StandBy——Apple 自己的 glanceable 视觉方言。借它们既原生又有辨识度。把额度做成 complication 式的圆环语言,用户零学习成本。</p>
+<ul class="take">
+  <li><b>Live Activities</b> = 持续活动范式,额度倒计时天生契合(尤其在刘海)。</li>
+  <li><b>Watch complication 圆环语言</b>:小、密、可堆叠——适合额度环。</li>
+  <li><b>Control Center 模块化磁贴</b> + <b>Widget 分层信息</b>:简单首页可借这套布局方言。</li>
+  <li><b>StandBy 大字夜间态</b>:全屏"还能用多久"的沉浸模式点子。</li>
+  <li>借系统范式 = 原生感 + 用户已有认知。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>简单首页借 Widget/complication 视觉方言;刘海用 Live Activity 范式。</div>
+
+<!-- D10 -->
+<h2 id="d10"><span class="n">10</span> 非技术用户首启 + 信任<span class="cat">情绪</span></h2>
+<p class="summary">给小白做首启:去术语、渐进引导、空状态、权限措辞、隐私信任(读你的用量/花费的顾虑)。参考 Raycast、Arc、Notion Calendar、各类 fintech。目标:30 秒让人懂它、信它、留下。</p>
+<ul class="take">
+  <li>首屏<b>一句话讲价值</b>(不是功能列表):"随时知道 AI 还能用多久、别被账单吓到"。</li>
+  <li><b>权限请求说清"为什么"</b> + <b>"全本地、不上传"</b>的隐私承诺(读花费/额度最敏感)。</li>
+  <li><b>制造"啊哈"时刻</b>:首启立刻显示"你的"真实额度,而非空壳。</li>
+  <li>专业模式<b>渐进披露</b>,别一上来吓退小白;全程大白话。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>加 3 屏首启:讲价值 → 要权限(说清本地隐私)→ 立刻显示你的额度。</div>
+
+<!-- D11 -->
+<h2 id="d11"><span class="n">11</span> 竞品 UX 空白地图<span class="cat">竞品</span></h2>
+<p class="summary">ccusage、Claude-Code-Usage-Monitor、tokscale、ccost、sniffly、Cursor 自带 dashboard、Helicone/Langfuse——<strong>全是开发者视角</strong>(终端表格、折线图、token 术语)。面向非技术用户几乎空白。没人做:物理隐喻、情绪价值、刘海、续航翻译、桌面陪伴。</p>
+<ul class="take">
+  <li>别人做<b>数据表/折线图</b> → 你做<b>物理仪表</b>。</li>
+  <li>别人满屏 <b>token 术语</b> → 你做<b>续航翻译</b>("还能聊 40 轮")。</li>
+  <li>别人是<b>冷冰冰仪表盘</b> → 你有<b>情绪陪伴/副驾人格</b>。</li>
+  <li>别人在<b>菜单栏/终端</b> → 你占<b>刘海驾驶舱</b>。</li>
+  <li>别人服务<b>团队/FinOps</b> → 你服务<b>个人的安心</b>。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>把定位钉死为"唯一给普通人的 AI 额度安心表"——上面每一条差异化都从这个定位长出来,这就是护城河。</div>
+
+<!-- D12 -->
+<h2 id="d12"><span class="n">12</span> 微交互 / 动效 / 声音<span class="cat">交互</span></h2>
+<p class="summary">让人上瘾的微动效:数值滚动(<code>.contentTransition(.numericText())</code>)、弹簧、morph、粒子、状态转场、克制的声音(Things 的完成音)。名家 Rauno Freiberg、Emil Kowalski。关键时刻:刘海展开、额度变化、重置庆祝、警告。</p>
+<ul class="take">
+  <li><b>数值滚动动画</b>:金额/倒计时变化时滚动而非跳变,立刻显高级。</li>
+  <li><b>刘海 morph 生长</b>(已做)+ <b>重置"满血"粒子庆祝</b>。</li>
+  <li><b>警告用呼吸</b>;<b>指针/液面用物理阻尼</b>(overshoot 回摆)。</li>
+  <li>声音<b>可选、克制</b>(重置一声轻响);<b>hover 反馈</b>要即时。</li>
+  <li>全程<b>尊重 reduce-motion</b>。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>给"刘海展开 / 额度变化 / 重置庆祝 / 警告"四个关键时刻各配一个精致物理动效,克制不廉价。</div>
+
+<!-- D13 -->
+<h2 id="d13"><span class="n">13</span> 品牌 / 人格 / 文案语气<span class="cat">品牌</span></h2>
+<p class="summary">工具靠人格建立记忆点:Cleo(毒舌理财 AI)、Duolingo 的 Duo、GitHub Octocat、Mailchimp Freddie。命名、语气、吉祥物、配色个性。让一个"监控工具"有温度、有记忆。</p>
+<ul class="take">
+  <li>定一个<b>人格</b>:建议"<b>副驾</b>"——冷静、靠谱、关键时刻提醒你,不啰嗦。</li>
+  <li><b>文案语气示例</b>:把"额度已用 72%"写成"还能痛快写 4 小时,悠着点冲 🚗";把"额度已重置"写成"满血复活,继续!"。</li>
+  <li>可选<b>吉祥物</b>承载人格(随状态变表情);语气全程一致。</li>
+  <li>命名/配色要有个性;但<b>避免过度耍宝</b>(工具的可信度不能丢)。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>把人格定为"副驾",全部文案改成口语化的贴心陪伴;考虑一个极简吉祥物承载它。</div>
+
+<!-- D14 -->
+<h2 id="d14"><span class="n">14</span> 2026 最新趋势 & Liquid Glass<span class="cat">视觉</span></h2>
+<p class="summary">Apple 的 Liquid Glass(macOS 26)——用光的物理做真实感。2026 趋势:玻璃拟态回归、动态材质、空间感、AI 原生 UI、可变字体。MacPulse 受 SDK 15 限只能逼近,但要有自己的材质签名,别和一堆抄玻璃的 app 撞脸。</p>
+<ul class="take">
+  <li>用 <code>.regularMaterial</code> + 光边 overlay <b>逼近玻璃</b>(已在做)。</li>
+  <li>加自有<b>"驾驶舱拟物材质"</b>(仪表/表针/拨盘)做区隔——纯玻璃会撞脸。</li>
+  <li><b>动态材质</b>:hover 时折射高光移动;<b>可变字体</b>做数字的重量层级。</li>
+  <li><b>拟物 + 玻璃混搭</b>正是差异点:别人只有玻璃,你有玻璃里的仪表。</li>
+</ul>
+<div class="land"><b>落到 MacPulse:</b>玻璃打底 + 驾驶舱拟物皮肤 = 一个不撞脸的材质签名。</div>
+
+<div class="footer">
+  <p>本调研库覆盖 14 个 UI/UX 差异化维度 + 一份行动手册。「物理隐喻」一维为并行网页调研深挖版(含引用);其余维度为设计领域综合(因触及账号每周用量上限,新鲜网页引用版待限额恢复后补齐)。</p>
+  <p>一句话结论:<strong>别在信息量上卷,去抢"唯一给普通人的 AI 额度安心表"——用驾驶舱物理仪表 + 刘海续航驾驶舱 + 有温度的副驾,把冷冰冰的 token 变成一眼安心。</strong></p>
+</div>
+</div>

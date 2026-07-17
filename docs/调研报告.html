@@ -1,0 +1,382 @@
+<title>Token 监控台 · 调研报告</title>
+<style>
+  :root {
+    --ground: #eef1f6; --panel: #ffffff; --panel-2: #f8fafd;
+    --ink: #181b21; --ink-soft: #464d59; --muted: #79818e;
+    --line: #e2e7ef; --line-soft: #edf1f6;
+    --accent: #2e6be6; --accent-soft: #e9f1fe; --accent-ink: #1a4fb8;
+    --good: #17924e; --good-soft: #e4f5eb;
+    --warn: #b6790a; --warn-soft: #fbf1dc;
+    --crit: #cf4038; --crit-soft: #fbe7e5;
+    --shadow: 0 1px 2px rgba(24,40,70,.05), 0 10px 30px rgba(24,40,70,.07);
+    --shadow-sm: 0 1px 2px rgba(24,40,70,.05), 0 3px 10px rgba(24,40,70,.05);
+    --radius: 16px;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", "PingFang SC", sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0f1116; --panel: #191c23; --panel-2: #1f232b;
+      --ink: #e8ebf1; --ink-soft: #b0b8c6; --muted: #838c9c;
+      --line: #2a303b; --line-soft: #23282f;
+      --accent: #5f92f2; --accent-soft: #1a2740; --accent-ink: #9dbcf8;
+      --good: #3ec27e; --good-soft: #14281d;
+      --warn: #e0a53a; --warn-soft: #2c2412;
+      --crit: #ec6058; --crit-soft: #2e1917;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 34px rgba(0,0,0,.4);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #eef1f6; --panel: #ffffff; --panel-2: #f8fafd;
+    --ink: #181b21; --ink-soft: #464d59; --muted: #79818e;
+    --line: #e2e7ef; --line-soft: #edf1f6;
+    --accent: #2e6be6; --accent-soft: #e9f1fe; --accent-ink: #1a4fb8;
+    --good: #17924e; --good-soft: #e4f5eb; --warn: #b6790a; --warn-soft: #fbf1dc;
+    --crit: #cf4038; --crit-soft: #fbe7e5;
+    --shadow: 0 1px 2px rgba(24,40,70,.05), 0 10px 30px rgba(24,40,70,.07);
+    --shadow-sm: 0 1px 2px rgba(24,40,70,.05), 0 3px 10px rgba(24,40,70,.05);
+  }
+  :root[data-theme="dark"] {
+    --ground: #0f1116; --panel: #191c23; --panel-2: #1f232b;
+    --ink: #e8ebf1; --ink-soft: #b0b8c6; --muted: #838c9c;
+    --line: #2a303b; --line-soft: #23282f;
+    --accent: #5f92f2; --accent-soft: #1a2740; --accent-ink: #9dbcf8;
+    --good: #3ec27e; --good-soft: #14281d; --warn: #e0a53a; --warn-soft: #2c2412;
+    --crit: #ec6058; --crit-soft: #2e1917;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 34px rgba(0,0,0,.4);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.3), 0 4px 12px rgba(0,0,0,.3);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--sans); line-height: 1.62;
+    -webkit-font-smoothing: antialiased; font-size: 16px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px 120px; }
+
+  /* header */
+  header.masthead {
+    padding: 64px 0 30px; border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before {
+    content: ""; width: 20px; height: 20px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #8a4fe0));
+    box-shadow: var(--shadow-sm); flex: none;
+  }
+  h1 {
+    font-size: clamp(30px, 5vw, 44px); line-height: 1.08; margin: 0 0 18px;
+    letter-spacing: -.02em; font-weight: 700; text-wrap: balance;
+  }
+  .lede { font-size: 19px; color: var(--ink-soft); max-width: 62ch; margin: 0; text-wrap: pretty; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 26px;
+    font-size: 13px; color: var(--muted);
+  }
+  .meta b { color: var(--ink-soft); font-weight: 600; }
+
+  h2 {
+    font-size: 13px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--muted); margin: 56px 0 20px; display: flex; align-items: center; gap: 12px;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    background: var(--accent-soft); border-radius: 6px; padding: 2px 7px; font-weight: 600;
+  }
+  h3 { font-size: 21px; letter-spacing: -.01em; margin: 34px 0 10px; font-weight: 650; }
+  p { margin: 0 0 16px; }
+  a { color: var(--accent-ink); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  strong { font-weight: 650; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 26px 28px;
+  }
+  .card + .card { margin-top: 18px; }
+
+  /* TL;DR */
+  .tldr { background: linear-gradient(180deg, var(--panel), var(--panel-2)); }
+  .tldr ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .tldr li { display: flex; gap: 14px; align-items: flex-start; }
+  .tldr li .k {
+    flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent-ink); font-weight: 700; font-size: 13px; font-family: var(--mono);
+    display: grid; place-items: center; margin-top: 1px;
+  }
+  .tldr li .t { color: var(--ink-soft); }
+  .tldr li .t b { color: var(--ink); }
+
+  /* tables */
+  .scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--panel); }
+  th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th {
+    background: var(--panel-2); font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; position: sticky; top: 0; white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+  td.name { font-weight: 600; white-space: nowrap; }
+  .num-cell { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  /* chips */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap; line-height: 1.4;
+  }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .chip.yes { color: var(--good); background: var(--good-soft); }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); }
+  .chip.no { color: var(--crit); background: var(--crit-soft); }
+  .chip.na { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .03em;
+    padding: 2px 8px; border-radius: 6px; text-transform: uppercase;
+  }
+  .tag.p0 { color: #fff; background: var(--accent); }
+  .tag.p1 { color: var(--accent-ink); background: var(--accent-soft); }
+  .tag.p2 { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+
+  /* dimension grid */
+  .dims { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+  .dim {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
+    box-shadow: var(--shadow-sm); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .dim:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+  .dim .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .dim h4 { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+  .dim p { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 10px; line-height: 1.55; }
+  .dim .feas { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .dim .feas b { color: var(--good); }
+  .dim .feas.mid b { color: var(--warn); }
+
+  /* callout */
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    border-radius: 0 12px 12px 0; padding: 16px 20px; margin: 20px 0; font-size: 14.5px; color: var(--ink-soft);
+  }
+  .note b { color: var(--ink); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+
+  ul.clean { margin: 0 0 4px; padding-left: 20px; }
+  ul.clean li { margin-bottom: 8px; color: var(--ink-soft); }
+  ul.clean li b { color: var(--ink); }
+
+  code { font-family: var(--mono); font-size: .88em; background: var(--panel-2); border: 1px solid var(--line-soft); border-radius: 5px; padding: 1px 5px; color: var(--ink-soft); }
+
+  .footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  .footer a { color: var(--muted); }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 0 16px 80px; }
+    header.masthead { padding: 40px 0 24px; }
+    th, td { padding: 10px 12px; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">MacPulse · 调研报告</div>
+    <h1>AI 编程工具的 Token 用量与花费监控</h1>
+    <p class="lede">给「Token 监控台」的一次竞品与可行性摸底:市面成熟产品都在做什么、你想要的三个维度够不够、以及每个 AI 编程工具在你这台机器上到底能不能拿到真实 token。</p>
+    <div class="meta">
+      <span><b>日期</b> 2026-07-06</span>
+      <span><b>方法</b> 4 路并行调研 + 本机实地勘察</span>
+      <span><b>覆盖</b> 10+ 开源工具 · 6 类商业产品 · 5 个本地数据源</span>
+    </div>
+  </header>
+
+  <!-- TL;DR -->
+  <h2><span class="num">TL;DR</span> 五个核心结论</h2>
+  <div class="card tldr">
+    <ul>
+      <li><span class="k">1</span><span class="t"><b>你的三个维度是正确的地基,但不是省钱的关键。</b>时间 / 工具 / 项目都是「分组」维度;真正决定能不能省钱的是「成本构成」维度——<b>模型、token 类型、缓存命中率</b>。模型单价跨档差 5–50 倍,四类 token 单价差 12 倍以上,不拆就算不对账。</span></li>
+      <li><span class="k">2</span><span class="t"><b>Claude Code 与 Codex CLI 是最扎实的两条数据链路。</b>都是纯本地文件、字段结构干净、含缓存与推理 token。Codex 的 <code>~/.codex/sessions</code> 里有结构化的 <code>total_token_usage</code> 快照,可直接解析。</span></li>
+      <li><span class="k">3</span><span class="t"><b>Cursor 能本地拿到真实 token,但拿不到官方美元账单。</b>本机实测从 <code>state.vscdb</code> 聚合出约 <b>1830 万 token</b>(input/output 分开、含模型名与时间)。局限:无官方成本、历史覆盖偏近期、项目归属需推断。</span></li>
+      <li><span class="k">4</span><span class="t"><b>Gemini CLI、GitHub Copilot 个人版本地拿不到 token。</b>Gemini 默认不落盘;Copilot 只能走组织/企业 Metrics API(需管理员权限)。这两个工具维度要如实标注「本地不可得」。</span></li>
+      <li><span class="k">5</span><span class="t"><b>成熟工具的差异化都在「实时」与「预测」。</b>burn rate(消耗速率)、预测耗尽时间、5 小时计费块进度——把「已经花了多少」升级成「还能用多久、几点撞额度」,是最值得抄的范式。</span></li>
+    </ul>
+  </div>
+
+  <!-- 竞品全景 -->
+  <h2><span class="num">01</span> 竞品全景:四种流派</h2>
+  <p>市面上的 AI 编程工具用量/成本监控,按「数据从哪来」可分为四类。个人本地场景(我们的定位)属于第一类,几乎都靠离线定价把 token 换算成等价美元。</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>流派</th><th>数据来源</th><th>代表产品</th><th>适合谁</th></tr></thead>
+      <tbody>
+        <tr><td class="name">本地日志读取</td><td>直接读本地会话 JSONL / SQLite</td><td>ccusage · ccost · claude-code-costs · sniffly · tokscale · Claude-Code-Usage-Monitor</td><td>个人开发者(← 我们)</td></tr>
+        <tr><td class="name">代理拦截</td><td>做中间人代理,自建 token 账本</td><td>ccflare · CursorLens</td><td>想要精确账本、愿改配置的人</td></tr>
+        <tr><td class="name">厂商 API 治理</td><td>拉厂商企业/组织 Metrics API</td><td>cursor-usage-tracker · copilot-metrics-viewer</td><td>团队管理员 / FinOps</td></tr>
+        <tr><td class="name">聚合 + 社交</td><td>跨 40+ agent 聚合 + 排行榜</td><td>tokscale</td><td>爱分享、多工具混用的人</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>值得深读的几个</h3>
+  <ul class="clean">
+    <li><b>ccusage</b> — 该生态事实标准。纯本地解析 Claude Code JSONL,daily/weekly/monthly/session/blocks 视图,按模型拆分,缓存 token 单列。<b>它验证了我们想做的几乎所有维度都能从 JSONL 算出。</b></li>
+    <li><b>Claude-Code-Usage-Monitor</b> — 当前最强实时预测:用 P90 百分位从历史自动推断你的限额,预测会话耗尽时间与撞额度 ETA。</li>
+    <li><b>ccost</b> — 维度最细:group-by 到 day/hour/month/session/project/model/subagent/tool/line,还能算「每新增代码行成本」。</li>
+    <li><b>tokscale</b> — Rust 内核跨 40+ agent,GitHub 式贡献日历 + 全球排行榜;token 拆到 input/output/cache 读写/reasoning 五类。</li>
+    <li><b>商业侧(Langfuse / Helicone / Datadog)</b> — 把「缓存」和「每请求成本」当一等公民;Datadog 允许把任意标签提升成成本 facet(启发我们留一个「自定义标签」口子)。</li>
+    <li><b>AWS Cost Explorer</b> — 所有成本台的祖师爷:Service(≈模型)/ Usage Type(≈token 类型)/ Cost Category(≈项目标签)的 group-by 思路直接可映射。</li>
+  </ul>
+
+  <!-- 数据源可行性矩阵 -->
+  <h2><span class="num">02</span> 数据源可行性矩阵 <span style="font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0">(本机实测)</span></h2>
+  <p>「工具维度」能不能落地,取决于每个工具在<strong>本地</strong>到底存不存 token。我在你这台机器上逐个勘察了真实文件——结论差异很大。</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>工具</th><th>本地能拿 Token?</th><th>数据源</th><th>能拿到什么</th><th>本机实测</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="name">Claude Code</td>
+          <td><span class="chip yes">已支持</span></td>
+          <td><code>~/.claude/projects/**/*.jsonl</code></td>
+          <td>四类 token · 模型 · 项目 · 会话 · 时间(最全)</td>
+          <td class="num-cell">418 MB</td>
+        </tr>
+        <tr>
+          <td class="name">Codex CLI</td>
+          <td><span class="chip yes">最佳新增</span></td>
+          <td><code>~/.codex/sessions/**/*.jsonl</code></td>
+          <td>input/cached/output/reasoning · 模型 · cwd 项目 · git · 时间</td>
+          <td class="num-cell">272 MB · 76 会话</td>
+        </tr>
+        <tr>
+          <td class="name">Cursor</td>
+          <td><span class="chip warn">可行有局限</span></td>
+          <td><code>state.vscdb</code> (SQLite)</td>
+          <td>input/output token · 模型名 · 时间 · 会话。<b>无官方美元成本</b></td>
+          <td class="num-cell">18.3M token</td>
+        </tr>
+        <tr>
+          <td class="name">Roo Code</td>
+          <td><span class="chip na">格式支持·无数据</span></td>
+          <td>task history 文件</td>
+          <td>字段最全(含 totalCost + 缓存 + workspace),但本机无历史</td>
+          <td class="num-cell">0 任务</td>
+        </tr>
+        <tr>
+          <td class="name">Gemini CLI</td>
+          <td><span class="chip no">本地不可得</span></td>
+          <td><code>~/.gemini</code>(仅配置)</td>
+          <td>默认不落盘 token,须开 OTEL 遥测才有</td>
+          <td class="num-cell">20 KB</td>
+        </tr>
+        <tr>
+          <td class="name">GitHub Copilot</td>
+          <td><span class="chip no">仅企业 API</span></td>
+          <td>GitHub Metrics API</td>
+          <td>本地无 per-request token;官方需组织/企业管理员权限</td>
+          <td class="num-cell">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>可行性结论:</b>一期把 <b>Claude Code + Codex CLI</b> 两条本地链路做扎实(纯读文件、离线定价、口径与 ccusage 对齐)。<b>Cursor</b> 作为二期第二数据源接入,并明确标注「token 为本地估算、非官方账单」。<b>Roo</b> 有数据的机器可用同一 schema 接入;<b>Gemini / Copilot</b> 标注为「本地不可得,需遥测或企业 API」。</div>
+
+  <div class="note warn"><b>一个必须提前说清的口径坑:</b>成本<b>不在</b>任何文件里——所有工具的美元金额都要靠「token 数 × 分模型分类型单价」自己乘,并维护一份可更新的定价表(LiteLLM + 官方页)。而且对 Claude/Codex <b>订阅用户</b>,美元是「若走 API 会花多少」的名义值,真实约束是 <b>5 小时块额度</b>——两种口径不能混,否则用户会觉得数字对不上。</div>
+
+  <!-- 推荐维度 -->
+  <h2><span class="num">03</span> 推荐维度体系</h2>
+  <p>你已想到 <span class="tag p0">时间</span> <span class="tag p0">工具</span> <span class="tag p0">项目</span> 三个分组维度。基于竞品与数据可行性,下面这些是<strong>最值得补</strong>的——按优先级与可行性排序。<span class="tag p0">P0</span> 一期做,<span class="tag p1">P1</span> 二期,<span class="tag p2">P2</span> 视情况。</p>
+  <div class="dims">
+    <div class="dim">
+      <div class="top"><h4>模型</h4><span class="tag p0">P0</span></div>
+      <p>按 Opus/Sonnet/Haiku/Fable/GPT-5 等具体模型拆花费。单价跨档差 5–50 倍,是<b>第一省钱杠杆</b>——"贵活是不是都用了贵模型、能不能降档"。</p>
+      <div class="feas">可行性 <b>高</b> · 每条记录直接带 model</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>Token 类型</h4><span class="tag p0">P0</span></div>
+      <p>拆成 输入 / 输出 / 缓存写 / 缓存读 四类分别计价。四者单价差 12 倍以上,是成本的原子单位,不拆就算不对。</p>
+      <div class="feas">可行性 <b>高</b> · usage 直接给四字段</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>缓存命中率</h4><span class="tag p0">P0</span></div>
+      <p>cache_read /(input + cache 写 + cache 读)。<b>唯一直接的省钱信号</b>——命中率低往往是系统提示里有时间戳/UUID 在破坏前缀缓存。可派生"缓存已省 $X"。</p>
+      <div class="feas">可行性 <b>高</b> · 四字段派生</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>会话 / 5 小时块</h4><span class="tag p0">P0</span></div>
+      <p>会话=一次任务的天然单位("这次任务烧了多少")。5 小时滚动块=订阅额度的<b>真实计量单位</b>,Pro/Max 用户最该看的。</p>
+      <div class="feas">可行性 <b>高</b> · sessionId + 时间分桶</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>Burn rate + 预算/预测</h4><span class="tag p0">P0</span></div>
+      <p>近窗口 $/小时 或 token/分钟,叠加预算/额度,外推"本块几点用完、本月预估总额"。FinOps 核心告警,也是竞品最强差异化。</p>
+      <div class="feas">可行性 <b>高</b> · 近段用量线性外推</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>最贵会话/请求 Top N</h4><span class="tag p1">P1</span></div>
+      <p>成本长尾——少数超大上下文/超长输出吃掉大头。用直方图看分布 + Top N 表定位可优化点。</p>
+      <div class="feas">可行性 <b>高</b> · requestId + usage</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>时段热力图</h4><span class="tag p1">P1</span></div>
+      <p>小时 × 星期分桶,看"什么时段烧得最多",避开额度紧张时段、发现异常突增。</p>
+      <div class="feas">可行性 <b>高</b> · 时间戳分桶</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>上下文体量</h4><span class="tag p1">P1</span></div>
+      <p>每请求输入侧总 token,发现"上下文越滚越大"的会话并提示压缩。缓存失效之外的另一大成本源。</p>
+      <div class="feas">可行性 <b>高</b> · usage 求和</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>效率单位经济</h4><span class="tag p2">P2</span></div>
+      <p>每会话成本 / 每千行改动代码成本。把"花了多少"变成"值不值"。每千行需解析 transcript 里 Edit/Write 的增删行数。</p>
+      <div class="feas mid">可行性 <b>中</b> · 需解析 tool_use</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>工具调用维度</h4><span class="tag p2">P2</span></div>
+      <p>按 Bash/Read/Edit/WebFetch/MCP 拆"哪些工具在推高成本"(大 tool_result 灌入大量输入 token)。</p>
+      <div class="feas mid">可行性 <b>中</b> · 需归因 tool_result</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>git 分支 / 子目录</h4><span class="tag p2">P2</span></div>
+      <p>比项目更细,"这个 feature 花了多少"。cwd 一直有,gitBranch 仅较新版本记录,缺失降级到项目。</p>
+      <div class="feas mid">可行性 <b>中</b> · 部分会话缺 branch</div>
+    </div>
+    <div class="dim">
+      <div class="top"><h4>计费模式切换</h4><span class="tag p2">P2</span></div>
+      <p>区分"订阅额度覆盖(名义美元)"与"API 按量真金白银"。两种口径切换,避免误导订阅用户。</p>
+      <div class="feas mid">可行性 <b>中</b> · 需用户开关判定</div>
+    </div>
+  </div>
+
+  <!-- 可视化 -->
+  <h2><span class="num">04</span> 可视化选型(有据可依)</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>要表达什么</th><th>用什么图</th><th>为什么</th></tr></thead>
+      <tbody>
+        <tr><td class="name">时间趋势</td><td>折线 / 堆叠面积</td><td>连续时间上的量,面积可叠 token 类型构成</td></tr>
+        <tr><td class="name">随时间的构成</td><td>堆叠柱(离散日/周)</td><td>每天的四类 token 或各模型占比</td></tr>
+        <tr><td class="name">单快照占比</td><td>甜甜圈(≤5 类)/ 堆叠条</td><td>类别多别用饼,改堆叠条更易读</td></tr>
+        <tr><td class="name">Top N / 明细</td><td>可排序表 + 条形 + 条件着色</td><td>最贵会话、按项目排名</td></tr>
+        <tr><td class="name">额度 / 预算</td><td>进度环 / 子弹图</td><td>actual vs budget vs forecast 三值对比</td></tr>
+        <tr><td class="name">时段规律</td><td>小时 × 星期 热力图</td><td>一眼看出高峰时段</td></tr>
+        <tr><td class="name">单次成本分布</td><td>直方图</td><td>成本长尾、定位异常大请求</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>调研方法:4 个并行 agent 分别覆盖开源工具生态、商业可观测性产品、本机数据源实地勘察、维度设计最佳实践;数据源结论均基于对本机真实文件的读取与聚合。主要来源:ccusage · tokscale · ccost · Claude-Code-Usage-Monitor · Langfuse · Helicone · Datadog LLM Observability · AWS Cost Explorer · FinOps Framework。</p>
+    <p>下一份文档 → <b>Token 监控台 PRD</b>(产品需求规格,含维度/指标/UI/数据模型/分期计划,以及计量单位与货币切换、macOS 最新设计规范等追加需求)。</p>
+  </div>
+</div>
+
+<script>
+  // 主题切换钩子:跟随 claude.ai 顶栏的 data-theme,已由 CSS 处理,无需 JS。
+  // 保留一个可达性:尊重 reduce-motion(卡片 hover 位移已可接受)。
+</script>

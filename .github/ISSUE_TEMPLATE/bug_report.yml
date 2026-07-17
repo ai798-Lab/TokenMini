@@ -1,0 +1,41 @@
+name: Bug report
+description: 报告可复现的问题（请勿上传 token 或会话正文）
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "感谢反馈。提交前请移除用户名、项目路径、token 和会话内容。"
+  - type: input
+    id: version
+    attributes:
+      label: MacPulse 版本与构建号
+      placeholder: "0.9.0 (2)"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Mac 与 macOS
+      placeholder: "MacBook Pro M3 Pro / macOS 15.5"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期与实际结果
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我已移除 token、会话正文与真实项目路径
+          required: true
