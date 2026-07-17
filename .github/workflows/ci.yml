@@ -12,11 +12,11 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Tests
         run: ./scripts/test.sh
       - name: Build app bundle
-        run: ./scripts/build.sh 0.9.0 2
+        run: ./scripts/build.sh 0.10.0 3
       - name: Verify bundle
         run: |
           test "$(lipo -archs dist/MacPulse.app/Contents/MacOS/MacPulse)" = "arm64"
