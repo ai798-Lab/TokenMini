@@ -19,6 +19,7 @@ final class UsageStore: ObservableObject {
     @Published var monthProjectionUSD: Double = 0     // 按本月日均外推整月
     @Published var lastScan: Date?
     @Published var scanning = false
+    @Published private(set) var recentActivity: RecentAIActivity?
 
     // 监控台窗口:多维筛选 + 即时重聚合
     @Published var filter = UsageFilter() {
@@ -32,9 +33,9 @@ final class UsageStore: ObservableObject {
     /// 最近有活动的工具("当前在用",3 小时内才算),用于额度主角/C 位选择;
     /// 没有近期活动返回 nil,由调用方退回"用得最多"的工具。
     var activeTool: ToolKind? {
-        guard let last = priced.max(by: { $0.timestamp < $1.timestamp }),
-              last.timestamp > Date().addingTimeInterval(-3 * 3600) else { return nil }
-        return last.tool
+        guard let recentActivity,
+              recentActivity.timestamp > Date().addingTimeInterval(-3 * 3600) else { return nil }
+        return recentActivity.tool
     }
 
     static let refreshInterval: TimeInterval = 60
@@ -62,6 +63,40 @@ final class UsageStore: ObservableObject {
         timer?.invalidate(); timer = nil
     }
 
+    /// 排行榜上传用的上海时区当日总量。只返回汇总值，不暴露模型、项目、路径或会话。
+    func rankingDailyAggregate(now: Date = Date()) -> RankingDailyAggregate {
+        Self.rankingDailyAggregate(events: priced, now: now, appVersion: AppInfo.displayVersion)
+    }
+
+    nonisolated static func rankingDailyAggregate(
+        events: [PricedEvent],
+        now: Date,
+        appVersion: String
+    ) -> RankingDailyAggregate {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 1, to: start)
+            ?? start.addingTimeInterval(86_400)
+        var tokens: Int64 = 0
+        var costUSD = 0.0
+        for event in events where event.timestamp >= start && event.timestamp < end {
+            tokens += Int64(event.totalTokens)
+            costUSD += max(0, event.cost.total)
+        }
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return RankingDailyAggregate(
+            localDay: formatter.string(from: now),
+            totalTokens: max(0, tokens),
+            estimatedCostMicroUSD: max(0, Int64((costUSD * 1_000_000).rounded())),
+            pricingVersion: PricingTable.snapshotVersion,
+            appVersion: appVersion)
+    }
+
     func refresh() {
         guard !scanning else { return }
         scanning = true
@@ -75,7 +110,8 @@ final class UsageStore: ObservableObject {
             // 让 resourceValues/URL/Decoder 的临时对象拖到 GCD block 结束。
             let scanResult = autoreleasepool { () -> (
                 priced: [PricedEvent], summary: AggregateResult,
-                dashboard: DashboardData, alertDashboard: DashboardData
+                dashboard: DashboardData, alertDashboard: DashboardData,
+                recentActivity: RecentAIActivity?
             ) in
                 // 合并多数据源:Claude Code + Codex CLI(各自内部已防重,来源不重叠可直接拼)
                 var events = scanner.scanAll()
@@ -86,12 +122,13 @@ final class UsageStore: ObservableObject {
                 let dash = UsageAggregator.run(priced, filter: filter, now: now, calendar: .current)
                 let alertDash = UsageAggregator.run(
                     priced, filter: UsageFilter(time: .today), now: now, calendar: .current)
-                return (priced, result, dash, alertDash)
+                return (priced, result, dash, alertDash, Self.latestActivity(in: priced))
             }
             malloc_zone_pressure_relief(nil, 0)
             Task { @MainActor in
                 guard let self else { return }
                 self.priced = scanResult.priced
+                self.recentActivity = scanResult.recentActivity
                 self.today = scanResult.summary.today
                 self.thisMonth = scanResult.summary.thisMonth
                 self.last7Days = scanResult.summary.last7Days
@@ -114,6 +151,11 @@ final class UsageStore: ObservableObject {
                     topProject: topProject)
             }
         }
+    }
+
+    nonisolated static func latestActivity(in events: [PricedEvent]) -> RecentAIActivity? {
+        guard let latest = events.max(by: { $0.timestamp < $1.timestamp }) else { return nil }
+        return RecentAIActivity(tool: latest.tool, model: latest.model, timestamp: latest.timestamp)
     }
 
     /// 筛选变更:只重聚合内存事件表,不重扫。60ms 去抖 + 代次丢弃过期结果。

@@ -4,8 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="${1:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.9.0> <递增构建号,如 2>}"
-BUILD_NUMBER="${2:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.9.0> <递增构建号,如 2>}"
+VERSION="${1:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.10.0> <递增构建号,如 3>}"
+BUILD_NUMBER="${2:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.10.0> <递增构建号,如 3>}"
 REPOSITORY="${GITHUB_REPOSITORY:-hepinga/MacPulse}"
 TAG="v${VERSION}"
 DMG="dist/MacPulse-${VERSION}.dmg"

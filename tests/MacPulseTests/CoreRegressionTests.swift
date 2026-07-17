@@ -102,6 +102,73 @@ final class CoreRegressionTests: XCTestCase {
         XCTAssertEqual(cost, 47.73, accuracy: 0.000_001)
     }
 
+    func testModelNameDisplayAndRecentActivityFreshness() {
+        XCTAssertEqual(ModelName.display("openai/gpt-5.6-sol-2026-07-01"), "GPT-5.6 Sol")
+        XCTAssertEqual(ModelName.display("claude-opus-4-8-20260701"), "Opus 4.8")
+        XCTAssertEqual(ModelName.display("unknown"), "模型未知")
+
+        let now = Date(timeIntervalSince1970: 2_000_000)
+        let current = RecentAIActivity(tool: .codex, model: "gpt-5.6-sol",
+                                       timestamp: now.addingTimeInterval(-90))
+        XCTAssertTrue(current.isCurrent(now: now))
+        XCTAssertEqual(current.statusLabel(now: now), "正在使用")
+
+        let recent = RecentAIActivity(tool: .claude, model: "claude-sonnet-5",
+                                      timestamp: now.addingTimeInterval(-12 * 60))
+        XCTAssertFalse(recent.isCurrent(now: now))
+        XCTAssertEqual(recent.statusLabel(now: now), "最近使用 · 12分钟前")
+    }
+
+    func testLatestActivityUsesNewestActualEvent() throws {
+        let old = priced(at: Date(timeIntervalSince1970: 1_000), cost: 1,
+                         model: "claude-sonnet-5", tool: .claude)
+        let latest = priced(at: Date(timeIntervalSince1970: 2_000), cost: 1,
+                            model: "gpt-5.6-sol", tool: .codex)
+
+        let activity = try XCTUnwrap(UsageStore.latestActivity(in: [latest, old]))
+        XCTAssertEqual(activity.tool, .codex)
+        XCTAssertEqual(activity.model, "gpt-5.6-sol")
+        XCTAssertEqual(activity.timestamp, latest.timestamp)
+    }
+
+    func testCompanionMoodKeepsRisksFirstAndAddsContext() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let late = date(2026, 7, 17, 23, calendar)
+        let activity = RecentAIActivity(tool: .codex, model: "gpt-5.6-sol",
+                                        timestamp: late.addingTimeInterval(-60))
+
+        let critical = CompanionMood.resolve(
+            activity: activity, quotaUsedPercent: 20, quotaReset: false,
+            health: .critical, now: late, calendar: calendar)
+        XCTAssertEqual(critical.tone, .urgent)
+        XCTAssertEqual(critical.text, "电脑也累了，先照顾一下它")
+
+        let constrained = CompanionMood.resolve(
+            activity: activity, quotaUsedPercent: 90, quotaReset: false,
+            health: .good, now: late, calendar: calendar)
+        XCTAssertEqual(constrained.tone, .urgent)
+        XCTAssertEqual(constrained.text, "快到边了，我替你盯着")
+
+        let night = CompanionMood.resolve(
+            activity: activity, quotaUsedPercent: 20, quotaReset: false,
+            health: .good, now: late, calendar: calendar)
+        XCTAssertEqual(night.tone, .warm)
+        XCTAssertEqual(night.text, "夜深了，我陪你写完这一段")
+    }
+
+    func testVibeGreetingIncludesActualModelIdentity() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let morning = date(2026, 7, 17, 9, calendar)
+        let activity = RecentAIActivity(tool: .codex, model: "gpt-5.6-sol",
+                                        timestamp: morning)
+
+        let greeting = VibeCopy.greeting(at: morning, activity: activity, calendar: calendar)
+        XCTAssertEqual(greeting.title, "早呀，慢慢进入状态 ☕")
+        XCTAssertTrue(greeting.subtitle.contains("Codex · GPT-5.6 Sol"))
+    }
+
     func testMonthProjectionDoesNotDependOnSelectedTimeRange() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -264,6 +331,130 @@ final class CoreRegressionTests: XCTestCase {
         XCTAssertEqual(quota.plan, "plus")
         XCTAssertEqual(quota.fiveHour?.usedPercent, 100)
         XCTAssertEqual(quota.weekly?.usedPercent, 0)
+    }
+
+    func testCodexQuotaChoosesNewestIdentifiedSnapshotAcrossSessions() throws {
+        let fm = FileManager.default
+        let sandbox = try makeSandbox()
+        defer { try? fm.removeItem(at: sandbox) }
+
+        func write(_ name: String, timestamp: String, used: Double, plan: String?) throws -> URL {
+            var rateLimits: [String: Any] = [
+                "primary": [
+                    "used_percent": used,
+                    "resets_at": 1_784_822_681,
+                    "window_minutes": 10_080
+                ]
+            ]
+            if let plan { rateLimits["plan_type"] = plan }
+            let event: [String: Any] = [
+                "timestamp": timestamp,
+                "payload": ["type": "token_count", "rate_limits": rateLimits]
+            ]
+            let url = sandbox.appendingPathComponent(name)
+            var data = try JSONSerialization.data(withJSONObject: event)
+            data.append(0x0A)
+            try data.write(to: url)
+            return url
+        }
+
+        let olderPro = try write("older-pro.jsonl", timestamp: "2026-07-17T06:38:06Z",
+                                 used: 60, plan: "pro")
+        let anonymous = try write("newer-anonymous.jsonl", timestamp: "2026-07-17T06:38:30Z",
+                                  used: 0, plan: nil)
+        let newestPro = try write("newest-pro.jsonl", timestamp: "2026-07-17T06:38:40Z",
+                                  used: 61, plan: "pro")
+
+        let quota = try XCTUnwrap(CodexQuotaReader.mostRecentRateLimits(
+            in: [anonymous, olderPro, newestPro]))
+        XCTAssertEqual(quota.plan, "pro")
+        XCTAssertEqual(quota.weekly?.usedPercent, 61)
+        XCTAssertEqual(quota.asOf, ISO8601TimestampParser.parse("2026-07-17T06:38:40Z"))
+    }
+
+    func testQuotaResetDetectorIgnoresPrematureDriftAndSnapshotOscillation() {
+        var detector = QuotaResetDetector()
+        let now = Date(timeIntervalSince1970: 1_784_270_400)
+
+        func quota(used: Double, reset: TimeInterval, asOf: TimeInterval) -> ToolQuota {
+            let window = QuotaWindow(tool: .codex, kind: .weekly, usedPercent: used,
+                                     resetsAt: Date(timeIntervalSince1970: reset),
+                                     asOf: Date(timeIntervalSince1970: asOf))
+            return ToolQuota(tool: .codex, plan: "pro", windows: [window],
+                             authoritative: true, asOf: window.asOf)
+        }
+
+        let normalReset: TimeInterval = 1_784_822_681
+        let driftingReset: TimeInterval = 1_784_875_076
+        XCTAssertTrue(detector.observe([
+            quota(used: 60, reset: normalReset, asOf: now.timeIntervalSince1970 - 30)
+        ], now: now).isEmpty)
+        XCTAssertTrue(detector.observe([
+            quota(used: 0, reset: driftingReset, asOf: now.timeIntervalSince1970 - 20)
+        ], now: now).isEmpty, "旧周期未到期时,resetsAt 向后漂移不是重置")
+        XCTAssertTrue(detector.observe([
+            quota(used: 60, reset: normalReset, asOf: now.timeIntervalSince1970 - 10)
+        ], now: now).isEmpty)
+        XCTAssertTrue(detector.observe([
+            quota(used: 0, reset: driftingReset + 90, asOf: now.timeIntervalSince1970)
+        ], now: now).isEmpty, "旧→新→旧→新快照振荡不应反复提醒")
+    }
+
+    func testQuotaResetDetectorEmitsOnceAfterPreviousBoundary() {
+        var detector = QuotaResetDetector()
+        let oldBoundary = Date(timeIntervalSince1970: 2_000_000)
+
+        func quota(reset: Date, asOf: Date) -> ToolQuota {
+            let window = QuotaWindow(tool: .codex, kind: .weekly, usedPercent: 1,
+                                     resetsAt: reset, asOf: asOf)
+            return ToolQuota(tool: .codex, plan: "pro", windows: [window],
+                             authoritative: true, asOf: asOf)
+        }
+
+        XCTAssertTrue(detector.observe([
+            quota(reset: oldBoundary, asOf: oldBoundary.addingTimeInterval(-60))
+        ], now: oldBoundary.addingTimeInterval(-60)).isEmpty)
+
+        let nextBoundary = oldBoundary.addingTimeInterval(7 * 24 * 3600)
+        let next = quota(reset: nextBoundary, asOf: oldBoundary.addingTimeInterval(1))
+        XCTAssertEqual(detector.observe([next], now: oldBoundary.addingTimeInterval(1)).count, 1)
+        XCTAssertTrue(detector.observe([next], now: oldBoundary.addingTimeInterval(2)).isEmpty,
+                      "同一周期只提醒一次")
+    }
+
+    func testRankingAggregateUsesShanghaiDayAndOnlySummaryFields() throws {
+        let now = try XCTUnwrap(ISO8601TimestampParser.parse("2026-07-16T16:30:00Z"))
+        let before = try XCTUnwrap(ISO8601TimestampParser.parse("2026-07-16T15:59:00Z"))
+        let insideA = try XCTUnwrap(ISO8601TimestampParser.parse("2026-07-16T16:01:00Z"))
+        let insideB = try XCTUnwrap(ISO8601TimestampParser.parse("2026-07-17T15:59:00Z"))
+        let nextDay = try XCTUnwrap(ISO8601TimestampParser.parse("2026-07-17T16:00:00Z"))
+        let aggregate = UsageStore.rankingDailyAggregate(
+            events: [
+                priced(at: before, cost: 99),
+                priced(at: insideA, cost: 1.25),
+                priced(at: insideB, cost: 2.50),
+                priced(at: nextDay, cost: 99),
+            ],
+            now: now,
+            appVersion: "0.10.0 (3)")
+
+        XCTAssertEqual(aggregate.localDay, "2026-07-17")
+        XCTAssertEqual(aggregate.totalTokens, 2)
+        XCTAssertEqual(aggregate.estimatedCostMicroUSD, 3_750_000)
+        XCTAssertEqual(aggregate.pricingVersion, PricingTable.snapshotVersion)
+        XCTAssertEqual(aggregate.appVersion, "0.10.0 (3)")
+
+        let json = try XCTUnwrap(String(data: JSONEncoder().encode(aggregate), encoding: .utf8))
+        XCTAssertTrue(json.contains("estimated_cost_micro_usd"))
+        XCTAssertFalse(json.contains("project"))
+        XCTAssertFalse(json.contains("model"))
+        XCTAssertFalse(json.contains("session"))
+    }
+
+    func testRankingNicknameDefaultsToFixedMask() {
+        XCTAssertEqual(RankingProfile.masked("和平"), "＊＊＊平")
+        XCTAssertEqual(RankingProfile.masked("A"), "＊＊＊")
+        XCTAssertEqual(RankingProfile.masked(""), "＊＊＊")
     }
 
     func testLiveAggregationInvariantsWhenRequested() throws {

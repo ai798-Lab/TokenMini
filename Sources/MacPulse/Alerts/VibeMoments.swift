@@ -45,9 +45,10 @@ final class VibeMoments {
         let today = Self.dayString(now)
         if d.string(forKey: kGreetDay) != today, usage.today.eventCount > 0 {
             d.set(today, forKey: kGreetDay)
+            let greeting = VibeCopy.greeting(at: now, activity: usage.recentActivity)
             NotchController.shared.flash(
-                NotchAlert(icon: "cup.and.saucer.fill", title: "开工大吉 ☕",
-                           subtitle: "今天也顺顺利利,冲!", tint: .orange),
+                NotchAlert(icon: "sparkles", title: greeting.title,
+                           subtitle: greeting.subtitle, tint: .orange),
                 duration: 5)
         }
 
@@ -57,8 +58,8 @@ final class VibeMoments {
             if now.timeIntervalSince1970 - last > breakInterval {
                 d.set(now.timeIntervalSince1970, forKey: kBreak)
                 NotchController.shared.flash(
-                    NotchAlert(icon: "figure.walk.motion", title: "喝口水?🥤",
-                               subtitle: "连着写有一会儿了,歇 5 分钟更清醒", tint: .teal),
+                    NotchAlert(icon: "figure.walk.motion", title: "你已经很投入了",
+                               subtitle: "喝口水、看看远处，我替你守着进度", tint: .teal),
                     duration: 6)
             }
         }
@@ -70,8 +71,8 @@ final class VibeMoments {
             if now.timeIntervalSince1970 - last > healthInterval {
                 d.set(now.timeIntervalSince1970, forKey: kHealth)
                 NotchController.shared.flash(
-                    NotchAlert(icon: "thermometer.high", title: h.title,
-                               subtitle: h.detail + " · 给它喘口气", tint: .red),
+                    NotchAlert(icon: "thermometer.high", title: "电脑也累了",
+                               subtitle: h.detail + " · 先让它喘口气", tint: .red),
                     duration: 6, sound: true)
             }
         }

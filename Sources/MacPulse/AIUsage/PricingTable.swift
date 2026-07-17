@@ -5,6 +5,9 @@ import Foundation
 /// 未匹配返回 nil,调用方按 0 计——宁可少算也不默默套错价。
 enum PricingTable {
 
+    /// 随排行榜日汇总一起上报，便于后台识别不同版本价格表造成的估值差异。
+    static let snapshotVersion = "2026-07-06"
+
     // 计价热路径:每次 pricing(for:) 都做 normalize(多个正则)+ 前缀匹配,
     // 而 distinct 模型只有几十个。memo 把十几万次调用降到几十次实算。
     // 计价发生在串行 scanQueue 上,但仍用锁兜底以防未来多线程调用。

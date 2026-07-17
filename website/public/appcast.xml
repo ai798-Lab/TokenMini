@@ -1,9 +1,50 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>MacPulse Updates</title>
-    <link>https://macpulse-monitor.peaceaii.chatgpt.site/appcast.xml</link>
-    <description>MacPulse 公开版本更新</description>
-    <language>zh-CN</language>
-  </channel>
+<?xml version="1.0" standalone="yes"?>
+<!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+-->
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>MacPulse</title>
+        <item>
+            <title>0.9.0</title>
+            <pubDate>Fri, 17 Jul 2026 12:11:20 +0800</pubDate>
+            <link>https://macpulse-monitor.peaceaii.chatgpt.site</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.9.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[# MacPulse 0.9.0 Public Beta
+
+首个公开 Beta，面向 Apple Silicon 与 macOS 14 及以上版本。
+
+## 主要功能
+
+- 菜单栏系统状态与独立 Token 监控台
+- Claude Code / Codex 本地会话用量与 API 等价成本估算
+- Claude / Codex 额度窗口与可选提醒
+- CPU、内存、网络、磁盘、电池、温度与风扇监控
+- 安全缓存清理、进程结束与 Skills 管理
+- 经典、HUD、LED 三套主题
+- Sparkle 应用内检查更新
+
+## 隐私变化
+
+- 首次启动先展示数据使用说明
+- Claude 额度默认关闭，主动开启后才访问钥匙串
+- 通知默认关闭，主动开启后才申请系统权限
+- 不上传会话正文，不包含统计、广告或崩溃遥测
+
+## 已知边界
+
+- 暂不支持 Intel Mac
+- 不同 M 系列芯片可用的温度与风扇传感器可能不同
+- Claude 额度依赖实验性接口，失效时不影响其他功能
+]]></description>
+            <enclosure url="https://github.com/hepinga/MacPulse/releases/download/v0.9.0/MacPulse-0.9.0.dmg" length="3868356" type="application/octet-stream" sparkle:edSignature="eVuEgCsjniQCH4HuBt7R18IXr0zyIb3IIFV3ihgCWwefWrF0YLPe+J1Sgp4RE7un6+d/7bGpb/uL7ptfaH+RAA=="/>
+        </item>
+    </channel>
 </rss>
+<!-- sparkle-signatures:
+edSignature: sZcYsYGbb2zuTI8tLQqnNiGEFYmqbM64+Z5JjfugY40lGpdBKF/f5GUp1E0l4pA+LzsMZAIHKHmOuc8UXtFTCw==
+length: 2160
+-->

@@ -2,14 +2,14 @@
 # MacPulse 官网分发版：构建 → 嵌套签名 → 公证 → DMG → Sparkle appcast。
 #
 # 用法:
-#   ./scripts/release.sh 0.9.0 2
-#   SKIP_NOTARIZE=1 ./scripts/release.sh 0.9.0 2  # 仅验证本地打包，不能公开分发
+#   ./scripts/release.sh 0.10.0 3
+#   SKIP_NOTARIZE=1 ./scripts/release.sh 0.10.0 3  # 仅验证本地打包，不能公开分发
 #   SKIP_APPCAST=1 ./scripts/release.sh 0.8.99 1  # 公证内测旧版，不发布 feed
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="${1:?用法: ./scripts/release.sh <版本,如 0.9.0> <递增构建号,如 2>}"
-BUILD_NUMBER="${2:?用法: ./scripts/release.sh <版本,如 0.9.0> <递增构建号,如 2>}"
+VERSION="${1:?用法: ./scripts/release.sh <版本,如 0.10.0> <递增构建号,如 3>}"
+BUILD_NUMBER="${2:?用法: ./scripts/release.sh <版本,如 0.10.0> <递增构建号,如 3>}"
 APP_NAME="MacPulse"
 APP_DIR="dist/${APP_NAME}.app"
 NOTARY_PROFILE="${NOTARY_PROFILE:-macpulse-notary}"
@@ -26,7 +26,7 @@ RELEASE_NOTES="release-notes/${VERSION}.md"
 
 if [[ ! "${VERSION}" =~ '^[0-9]+\.[0-9]+\.[0-9]+$' ]] || \
    [[ ! "${BUILD_NUMBER}" =~ '^[1-9][0-9]*$' ]]; then
-    echo "错误:版本必须是 0.9.0 形式,构建号必须是递增正整数" >&2
+    echo "错误:版本必须是 0.10.0 形式,构建号必须是递增正整数" >&2
     exit 1
 fi
 if [ ! -f "${RELEASE_NOTES}" ]; then

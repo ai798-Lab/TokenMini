@@ -23,14 +23,45 @@ test("server-renders the MacPulse public beta landing page", async () => {
   assert.match(html, /PUBLIC BETA/);
   assert.match(html, /Apple Silicon/);
   assert.match(html, /macOS 14\+/);
-  assert.match(html, /NO TELEMETRY/);
+  assert.match(html, /LOCAL BY DEFAULT/);
+  assert.match(html, /OPT-IN RANKING/);
   assert.match(html, /github\.com\/hepinga\/MacPulse/);
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);
 });
 
-test("ships an empty production appcast shell before the signed release", async () => {
+test("keeps the signed 0.9.0 update available while the next release is prepared", async () => {
   const appcast = await readFile(new URL("../public/appcast.xml", import.meta.url), "utf8");
   assert.match(appcast, /xmlns:sparkle=/);
-  assert.match(appcast, /https:\/\/macpulse-monitor\.peaceaii\.chatgpt\.site\/appcast\.xml/);
-  assert.doesNotMatch(appcast, /<item>/);
+  assert.match(appcast, /<sparkle:shortVersionString>0\.9\.0<\/sparkle:shortVersionString>/);
+  assert.match(appcast, /releases\/download\/v0\.9\.0\/MacPulse-0\.9\.0\.dmg/);
+  assert.match(appcast, /sparkle:edSignature=/);
+  assert.match(appcast, /sparkle-signatures:/);
+});
+
+test("server-renders the public leaderboard without a login wall", async () => {
+  const response = await render("/rankings");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /本周社区排行/);
+  assert.match(html, /无需登录|无需登录即可浏览/);
+  assert.match(html, /Token 消耗/);
+  assert.match(html, /API 等价费用/);
+});
+
+test("server-renders a dedicated privacy policy for Google OAuth", async () => {
+  const response = await render("/privacy");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /隐私说明/);
+  assert.match(html, /Google 登录/);
+  assert.match(html, /默认没有账号/);
+  assert.match(html, /会话正文/);
+});
+
+test("keeps the operations console out of search results", async () => {
+  const response = await render("/admin");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /MacPulse 运营后台/);
+  assert.match(html, /noindex/i);
 });

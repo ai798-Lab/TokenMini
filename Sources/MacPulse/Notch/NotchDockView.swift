@@ -157,8 +157,14 @@ struct NotchDockView: View {
         let windows = QuotaRank.ranked(quota.quotas, now: now, activeTool: usage.activeTool)
         let hero = windows.first
         let rest = Array(windows.dropFirst())
+        let health = ComputerHealth.evaluate(system)
+        let mood = CompanionMood.resolve(
+            activity: usage.recentActivity,
+            quotaUsedPercent: hero?.1.effectiveUsed(now: now),
+            quotaReset: hero?.1.hasReset(now: now) ?? true,
+            health: companionHealth(health.level), now: now)
         return VStack(alignment: .leading, spacing: hud || led ? 10 : 12) {
-            if hud { hudHeaderRow } else if led { ledHeaderRow }
+            activityIdentity(now: now, mood: mood)
             if let hero { heroBlock(tool: hero.0, w: hero.1, now: now) } else { noQuotaHero }
             divider
             HStack(alignment: .firstTextBaseline, spacing: 20) {
@@ -189,40 +195,63 @@ struct NotchDockView: View {
         }
     }
 
-    /// HUD 标头行:与弹窗同一套语言(状态灯 + MACPULSE + 代号 + 实时时钟)
-    private var hudHeaderRow: some View {
-        HStack(spacing: 6) {
-            HUDStatusDot(color: HUD.green, size: 5)
-            Text("MACPULSE")
-                .font(HUD.mono(9, .bold)).kerning(1.8)
-                .foregroundStyle(HUD.text.opacity(0.9))
-            Text("QUOTA.DOCK")
-                .font(HUD.mono(7, .medium)).kerning(1.0)
-                .foregroundStyle(HUD.faint)
-            Spacer()
-            HUDClock()
-        }
-    }
-
-    /// LED 标头行:与 LED 弹窗同一套语言(呼吸圆灯 + 圆体 MACPULSE + 代号 + 时钟)
-    private var ledHeaderRow: some View {
-        HStack(spacing: 6) {
-            NotchLEDBreathDot(color: LED.green, size: 5)
-            Text("MACPULSE")
-                .font(LED.display(9, .bold))
-                .foregroundStyle(LED.text.opacity(0.9))
-            LEDCaption(text: "QUOTA", tint: LED.faint, size: 7)
-            Spacer()
-            TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                Text(Self.clockFmt.string(from: ctx.date))
-                    .font(LED.mono(9)).foregroundStyle(LED.dim)
+    /// 第一层先回答“我刚才在用什么”。工具和模型来自最新本地会话事件;
+    /// 超过 3 分钟就明说“最近使用”,不把历史快照冒充当前状态。
+    @ViewBuilder
+    private func activityIdentity(now: Date, mood: CompanionMoment) -> some View {
+        if let activity = usage.recentActivity {
+            let current = activity.isCurrent(now: now)
+            let accent = current ? (led ? LED.green : (hud ? HUD.green : Color.green))
+                                 : (led ? LED.amber : (hud ? HUD.amber : Color.orange))
+            HStack(spacing: 9) {
+                if led {
+                    NotchLEDBreathDot(color: accent, size: 7, pulses: current)
+                } else if hud {
+                    HUDStatusDot(color: accent, size: 6, pulses: current)
+                } else {
+                    Circle().fill(accent).frame(width: 7, height: 7)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(activity.statusLabel(now: now))
+                        .font(led ? LED.mono(8) : (hud ? HUD.mono(8) : .system(size: 9)))
+                        .foregroundStyle(.white.opacity(0.48))
+                    Text("\(activity.tool == .claude ? "Claude" : "Codex") · \(ModelName.display(activity.model))")
+                        .font(led ? LED.display(14, .bold)
+                                  : (hud ? .system(size: 14, weight: .bold, design: .monospaced)
+                                         : .system(size: 15, weight: .semibold, design: .rounded)))
+                        .foregroundStyle(.white.opacity(0.94))
+                        .lineLimit(1).minimumScaleFactor(0.78)
+                    companionLine(mood)
+                }
+                Spacer(minLength: 0)
+            }
+        } else {
+            HStack(spacing: 7) {
+                Circle().fill(.white.opacity(0.25)).frame(width: 7, height: 7)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("等待 AI 活动")
+                        .font(.system(size: 9)).foregroundStyle(.white.opacity(0.45))
+                    Text("模型待识别")
+                        .font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.72))
+                    companionLine(mood)
+                }
             }
         }
     }
 
-    private static let clockFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "HH:mm:ss"; return f
-    }()
+    private func companionLine(_ mood: CompanionMoment) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: mood.icon)
+                .font(.system(size: 8, weight: .semibold))
+            Text(mood.text)
+                .font(led ? LED.display(9, .medium)
+                          : (hud ? HUD.mono(8, .medium)
+                                 : .system(size: 10, weight: .medium, design: .rounded)))
+                .lineLimit(1).minimumScaleFactor(0.82)
+        }
+        .foregroundStyle(companionColor(mood.tone).opacity(0.9))
+        .padding(.top, 1)
+    }
 
     @ViewBuilder
     private var divider: some View {
@@ -267,7 +296,8 @@ struct NotchDockView: View {
             } else {
                 HStack(alignment: .bottom, spacing: 8) {
                     SevenSegmentText(text: seg.digits, height: 30, color: c)
-                    LEDCaption(text: "TIME REMAINING", tint: c.opacity(0.75), size: 7)
+                    LEDCaption(text: w.usedPercent >= 85 ? "我替你盯着" : "还能痛快写",
+                               tint: c.opacity(0.75), size: 7)
                         .padding(.bottom, 3)
                 }
             }
@@ -437,6 +467,23 @@ struct NotchDockView: View {
         case .good: return LED.green
         case .warn: return LED.amber
         case .critical: return LED.red
+        }
+    }
+
+    private func companionHealth(_ level: ComputerHealth.Level) -> CompanionHealth {
+        switch level {
+        case .good: return .good
+        case .warn: return .warn
+        case .critical: return .critical
+        }
+    }
+
+    private func companionColor(_ tone: CompanionTone) -> Color {
+        switch tone {
+        case .calm: return led ? LED.green : (hud ? HUD.green : .green)
+        case .warm: return led ? LED.amber : (hud ? HUD.cyan : .orange)
+        case .caution: return led ? LED.amber : (hud ? HUD.amber : .orange)
+        case .urgent: return led ? LED.red : (hud ? HUD.red : .red)
         }
     }
 

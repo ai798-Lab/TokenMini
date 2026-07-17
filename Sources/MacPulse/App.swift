@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import UserNotifications
+import Darwin
 
 @main
 struct MacPulseApp: App {
@@ -10,6 +11,7 @@ struct MacPulseApp: App {
     @StateObject private var cleanup = CleanupStore()
     @StateObject private var quota = QuotaStore()
     @StateObject private var skillStore = SkillManagerStore()
+    @StateObject private var leaderboard = LeaderboardStore()
 
     var body: some Scene {
         MenuBarExtra {
@@ -19,10 +21,12 @@ struct MacPulseApp: App {
                 .environmentObject(cleanup)
                 .environmentObject(quota)
                 .environmentObject(skillStore)
+                .environmentObject(leaderboard)
         } label: {
             MenuBarLabel(system: system, usage: usage, quota: quota)
                 .onAppear {
                     system.start()
+                    leaderboard.start(usage: usage)
                     NotchDock.shared.start(system: system, usage: usage, quota: quota)
                     if UserDefaults.standard.bool(forKey: "macpulse.onboardingCompleted") {
                         usage.start()
@@ -40,16 +44,54 @@ struct MacPulseApp: App {
                 .environmentObject(usage)
                 .environmentObject(system)
                 .environmentObject(quota)
+                .environmentObject(leaderboard)
         }
         .windowResizability(.contentMinSize)
         .defaultSize(width: 980, height: 660)
+
+        Window("社区排行", id: "leaderboard") {
+            LeaderboardView()
+                .environmentObject(leaderboard)
+        }
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 620, height: 700)
     }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let singleInstance = SingleInstanceGuard()
+    private var duplicateLaunchObserver: NSObjectProtocol?
+    private var duplicateGuardTimer: Timer?
+    private var terminatingDuplicatePIDs: Set<pid_t> = []
+
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        guard singleInstance.acquire() else {
+            // 同一用户已经有一份 MacPulse 在运行。第二份必须在创建菜单栏与刘海浮层前退出，
+            // 否则 /Applications 与工作区 dist 同时启动时会出现两个“灵动岛”。
+            NSLog("[single-instance] another MacPulse is already running; terminating duplicate")
+            NSApp.terminate(nil)
+            return
+        }
+        terminateOtherInstances()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 菜单栏应用:不占 Dock、不抢焦点
         NSApp.setActivationPolicy(.accessory)
+        duplicateLaunchObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didLaunchApplicationNotification,
+            object: nil, queue: .main
+        ) { [weak self] note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey]
+                    as? NSRunningApplication else { return }
+            self?.terminateIfDuplicate(app)
+        }
+        let guardTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            self?.terminateOtherInstances()
+        }
+        guardTimer.tolerance = 0.2
+        RunLoop.main.add(guardTimer, forMode: .common)
+        duplicateGuardTimer = guardTimer
         NotificationManager.shared.bootstrap()
         showInstallLocationWarningIfNeeded()
 
@@ -84,6 +126,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationWillTerminate(_ notification: Notification) {
+        duplicateGuardTimer?.invalidate()
+        if let duplicateLaunchObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(duplicateLaunchObserver)
+        }
+    }
+
+    /// 兼容电脑里尚未升级、还不知道互斥锁的旧副本：当前新版启动时清掉旧副本，
+    /// 之后若旧副本又被登录项/用户启动，也会在它创建第二个刘海后立即终止。
+    private func terminateOtherInstances() {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return }
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+            .filter { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+            .forEach(terminateIfDuplicate)
+    }
+
+    private func terminateIfDuplicate(_ app: NSRunningApplication) {
+        guard app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
+              app.bundleIdentifier == Bundle.main.bundleIdentifier,
+              !terminatingDuplicatePIDs.contains(app.processIdentifier) else { return }
+        let pid = app.processIdentifier
+        terminatingDuplicatePIDs.insert(pid)
+        NSLog("[single-instance] terminating later duplicate pid=\(app.processIdentifier)")
+        let accepted = app.terminate()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            if !accepted || !app.isTerminated { _ = app.forceTerminate() }
+            self?.terminatingDuplicatePIDs.remove(pid)
+        }
+    }
+
     private func showInstallLocationWarningIfNeeded() {
         guard Bundle.main.bundlePath.hasPrefix("/Volumes/") else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -99,15 +171,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+
 }
 
-/// 调试用:设环境变量 MACPULSE_AUTOOPEN 时启动数秒后自动打开监控台窗口(正常使用不受影响)
+/// 进程级互斥锁:同一 macOS 用户只能有一个 MacPulse 实例。
+/// 文件可以留在 /private/tmp;真正的锁由内核持有，进程退出后会自动释放。
+private final class SingleInstanceGuard {
+    private var descriptor: Int32 = -1
+
+    func acquire() -> Bool {
+        guard descriptor < 0 else { return true }
+        let path = "/private/tmp/macpulse-\(getuid()).lock"
+        let fd = open(path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+        guard fd >= 0 else {
+            // 临时目录异常不应让 app 完全打不开；仅在明确拿不到锁时阻止重复实例。
+            return true
+        }
+        _ = fcntl(fd, F_SETFD, FD_CLOEXEC)
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {
+            close(fd)
+            return false
+        }
+        descriptor = fd
+        return true
+    }
+
+    deinit {
+        guard descriptor >= 0 else { return }
+        flock(descriptor, LOCK_UN)
+        close(descriptor)
+    }
+}
+
+/// 调试用:用环境变量自动打开指定窗口,便于离屏验收(正常使用不受影响)。
 private struct AutoOpenDashboard: ViewModifier {
     @Environment(\.openWindow) private var openWindow
     func body(content: Content) -> some View {
         content.onAppear {
-            guard ProcessInfo.processInfo.environment["MACPULSE_AUTOOPEN"] != nil else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 12) { openWindow(id: "dashboard") }
+            let environment = ProcessInfo.processInfo.environment
+            if environment["MACPULSE_AUTOOPEN"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 12) { openWindow(id: "dashboard") }
+            }
+            if environment["MACPULSE_OPEN_LEADERBOARD"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { openWindow(id: "leaderboard") }
+            }
         }
     }
 }

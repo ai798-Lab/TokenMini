@@ -15,8 +15,8 @@ DISPLAY_NAME="Mac监控器"
 BUNDLE_ID="com.liangheping.macpulse"
 BUILD_DIR=".build/release"
 APP_DIR="dist/${APP_NAME}.app"
-VERSION="${1:-0.9.0}"
-BUILD_NUMBER="${2:-2}"
+VERSION="${1:-0.10.0}"
+BUILD_NUMBER="${2:-3}"
 SITE_URL="${MACPULSE_SITE_URL:-https://macpulse-monitor.peaceaii.chatgpt.site}"
 UPDATE_FEED_URL="${MACPULSE_UPDATE_FEED_URL:-${SITE_URL}/appcast.xml}"
 SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/hepinga/MacPulse}"
@@ -93,7 +93,7 @@ cat > "${APP_DIR}/Contents/Info.plist" << PLIST
     <key>NSHighResolutionCapable</key><true/>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Liang Heping · MIT License</string>
     <key>MacPulseHomepageURL</key><string>${SITE_URL}</string>
-    <key>MacPulsePrivacyURL</key><string>${SITE_URL}/#privacy</string>
+    <key>MacPulsePrivacyURL</key><string>${SITE_URL}/privacy</string>
     <key>MacPulseSourceURL</key><string>${SOURCE_URL}</string>
     <key>SUFeedURL</key><string>${UPDATE_FEED_URL}</string>
     <key>SUPublicEDKey</key><string>${SPARKLE_PUBLIC_KEY}</string>

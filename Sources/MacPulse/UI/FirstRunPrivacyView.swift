@@ -29,8 +29,8 @@ struct FirstRunPrivacyView: View {
             VStack(spacing: 10) {
                 notice("doc.text.magnifyingglass", "本地会话统计",
                        "只读扫描 Claude Code / Codex JSONL；会话正文不上传。")
-                notice("hand.raised", "没有遥测",
-                       "不接入统计分析、广告或崩溃自动上报。")
+                notice("hand.raised", "默认不上传",
+                       "不接入分析或广告；只有主动登录排行榜后才同步每日汇总。")
                 notice("dollarsign.circle", "费用是等价预估",
                        "按 token 与公开价格计算，不代表订阅实际扣款。")
                 notice("trash.slash", "清理需要再次确认",

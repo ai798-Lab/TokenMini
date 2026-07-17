@@ -3,7 +3,7 @@
 一款面向 Apple Silicon 与 macOS 14+的菜单栏工具:系统监控 + AI 编程助手的用量/费用/额度监控,
 灵感来自 SystemPal,架构参考开源项目 [exelban/stats](https://github.com/exelban/stats) 与 [ccusage](https://github.com/ryoppippi/ccusage)。
 
-> 当前为免费公开 Beta 0.9.0，中文优先，MIT 开源。官网:
+> 当前为免费公开 Beta 0.10.0，中文优先，MIT 开源。官网:
 > [macpulse-monitor.peaceaii.chatgpt.site](https://macpulse-monitor.peaceaii.chatgpt.site)。
 > 使用前请阅读 [隐私说明](PRIVACY.md)；暂不支持 Intel Mac 和 Mac App Store。
 
@@ -74,6 +74,12 @@
 - 跟随三主题,深色皮肤用自绘发光滚动条
 - LED Canvas 数码读数提供完整辅助功能语义,VoiceOver 可读金额、额度、速度和缓存率
 
+**社区排行**(完全可选)
+- 游客无需登录即可浏览 Token 与 API 等价费用本周榜单，本地监控功能不受影响
+- 使用 Google 登录后自动加入两个榜，默认昵称打码为 `＊＊＊平` 形式
+- 只同步上海时区每日总量、价格表版本与 App 版本，不上传会话正文、项目或模型明细
+- 登录用户可查看个人名次、自愿公开完整昵称，或退出并删除榜单汇总
+
 **灵动岛(刘海)**
 - 平时完全隐藏,鼠标移到刘海 → 无缝长出黑色下拉面板(高度随内容自适应),移开自动收起
 - 刘海强提醒 + Vibe 时刻:开工大吉(每天首次 AI 活动)/ 满血复活(额度重置)/
@@ -86,7 +92,7 @@
 ## 构建与运行
 
 ```bash
-./scripts/build.sh 0.9.0 2  # 编译 + 打包 dist/MacPulse.app + ad-hoc 签名
+./scripts/build.sh 0.10.0 3 # 编译 + 打包 dist/MacPulse.app + ad-hoc 签名
 ./scripts/test.sh           # 生产代码回归测试(含清理安全守卫)
 open dist/MacPulse.app      # 启动
 ```
@@ -121,8 +127,8 @@ sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install
 
 ```bash
 ./scripts/preflight-release.sh       # 当前源码 + 全部 Git 历史的发布闸门
-./scripts/release.sh 0.9.0 2         # 版本号 + 单调递增构建号
-SKIP_NOTARIZE=1 ./scripts/release.sh 0.9.0 2  # 本地干跑，绝不能公开分发
+./scripts/release.sh 0.10.0 3         # 版本号 + 单调递增构建号
+SKIP_NOTARIZE=1 ./scripts/release.sh 0.10.0 3  # 本地干跑，绝不能公开分发
 ```
 
 正式脚本会从内到外签名 Sparkle helper/framework 与主应用，开启 Hardened Runtime，
@@ -161,7 +167,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.liangheping.macpulse
 
 ## 实测指标(M5 Pro,1.6GB 会话数据,2026-07-17)
 
-- 最新回归:34,349 条事件冷扫描 + 聚合检查约 17.0 秒;热扫描(文件 size/mtime 缓存命中)约 0.16 秒
+- 最新回归:40,058 条事件冷扫描 + 聚合检查约 18.6 秒;热扫描(文件 size/mtime 缓存命中)约 0.21 秒
 - 内存:安装版冷扫描完成物理占用 60.4MB,实测峰值 70.9MB(`vmmap -summary`)
 - 实现:会话文件只读映射,避免把 1.6GB JSONL 反复拷进 malloc 脏页
 - 今日费用与独立脚本重算误差 < 时间窗口内的自然增量

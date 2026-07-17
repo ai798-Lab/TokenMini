@@ -10,12 +10,10 @@ final class CodexQuotaReader: @unchecked Sendable {
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: base, isDirectory: &isDir), isDir.boolValue else { return nil }
 
-        // rollout 文件按修改时间倒序,新的先看;找到含非空 rate_limits 的最新一条即停
+        // 文件 mtime 只用来缩小候选集。多个 Codex 会话会并发追加,
+        // 不能把“mtime 最新的文件”等同于“rate_limits 事件最新”。
         let files = rolloutFiles(base: base).sorted { $0.mtime > $1.mtime }
-        for f in files.prefix(12) {   // 最近 12 个会话足够,避免全库扫
-            if let q = Self.latestRateLimits(in: f.url) { return q }
-        }
-        return nil
+        return Self.mostRecentRateLimits(in: files.prefix(12).map(\.url))
     }
 
     private struct FileEntry { let url: URL; let mtime: Date }
@@ -63,6 +61,14 @@ final class CodexQuotaReader: @unchecked Sendable {
             return Self.build(rateLimits: rl, asOf: ts)
         }
         return nil
+    }
+
+    /// 跨会话按 rate_limits 事件时间选最新快照。如果同时存在带套餐身份与无身份快照,
+    /// 优先选已知套餐,避免后台/异常会话的 plan_type=null、0% 快照覆盖真实账户。
+    static func mostRecentRateLimits(in urls: [URL]) -> ToolQuota? {
+        let candidates = urls.compactMap(Self.latestRateLimits(in:))
+        let identified = candidates.filter { $0.plan != nil }
+        return (identified.isEmpty ? candidates : identified).max { $0.asOf < $1.asOf }
     }
 
     private static func build(rateLimits rl: [String: Any], asOf: Date) -> ToolQuota? {

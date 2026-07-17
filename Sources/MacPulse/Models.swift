@@ -88,6 +88,168 @@ struct UsageEvent: Sendable {
     let sessionID: String            // 会话标识(JSONL 文件/rollout 名),供会话维度与 Top N
 }
 
+/// 从本地会话事件得到的最近 AI 活动身份。它是“最近观测到”,不是对运行中进程的猜测。
+struct RecentAIActivity: Sendable, Equatable {
+    let tool: ToolKind
+    let model: String
+    let timestamp: Date
+
+    /// 会话扫描每分钟刷新;只有 3 分钟内的事件才能称为“正在使用”。
+    func isCurrent(now: Date) -> Bool {
+        now.timeIntervalSince(timestamp) < 3 * 60
+    }
+
+    func statusLabel(now: Date) -> String {
+        let age = max(0, now.timeIntervalSince(timestamp))
+        if age < 3 * 60 { return "正在使用" }
+        if age < 60 * 60 { return "最近使用 · \(max(1, Int(age / 60)))分钟前" }
+        if age < 24 * 60 * 60 { return "最近使用 · \(Int(age / 3600))小时前" }
+        return "最近使用 · \(Int(age / 86400))天前"
+    }
+}
+
+/// 把 JSONL 里的 provider/日期/内部后缀模型名转成灵动岛和 UI 可直接阅读的名称。
+enum ModelName {
+    static func display(_ raw: String) -> String {
+        let normalized = PricingTable.normalize(raw)
+        guard !normalized.isEmpty, normalized != "unknown" else { return "模型未知" }
+
+        if normalized.hasPrefix("claude-") {
+            return familyName(String(normalized.dropFirst("claude-".count)))
+        }
+        if normalized.hasPrefix("gpt-") {
+            let parts = String(normalized.dropFirst("gpt-".count)).split(separator: "-").map(String.init)
+            guard let version = parts.first else { return "GPT" }
+            let suffix = parts.dropFirst().map { $0.capitalized }.joined(separator: " ")
+            return suffix.isEmpty ? "GPT-\(version)" : "GPT-\(version) \(suffix)"
+        }
+        if normalized.hasPrefix("gemini-") {
+            let tail = String(normalized.dropFirst("gemini-".count))
+            return "Gemini " + familyName(tail)
+        }
+        if normalized.hasPrefix("codex-") {
+            return "Codex " + words(String(normalized.dropFirst("codex-".count)))
+        }
+        if normalized.hasPrefix("o3-") || normalized.hasPrefix("o4-") {
+            return normalized.replacingOccurrences(of: "-", with: " ")
+        }
+        return words(normalized)
+    }
+
+    private static func familyName(_ value: String) -> String {
+        let parts = value.split(separator: "-").map(String.init)
+        guard let family = parts.first else { return words(value) }
+        var version: [String] = []
+        var suffix: [String] = []
+        for part in parts.dropFirst() {
+            if suffix.isEmpty, part.allSatisfy(\.isNumber) { version.append(part) }
+            else { suffix.append(part.capitalized) }
+        }
+        return ([family.capitalized]
+                + (version.isEmpty ? [] : [version.joined(separator: ".")])
+                + suffix).joined(separator: " ")
+    }
+
+    private static func words(_ value: String) -> String {
+        value.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
+    }
+}
+
+/// 灵动岛的陪伴语气。情绪只改变措辞与点缀色，不替代模型、额度等事实信息。
+enum CompanionTone: Sendable, Equatable {
+    case calm, warm, caution, urgent
+}
+
+enum CompanionHealth: Sendable, Equatable {
+    case good, warn, critical
+}
+
+struct CompanionMoment: Sendable, Equatable {
+    let text: String
+    let icon: String
+    let tone: CompanionTone
+}
+
+/// 把“正在创作 / 夜间陪伴 / 额度吃紧 / 电脑疲惫”收敛成一句克制的陪伴话术。
+/// 优先级刻意把健康和额度风险放前面，避免温柔文案掩盖真正需要处理的事。
+enum CompanionMood {
+    static func resolve(activity: RecentAIActivity?, quotaUsedPercent: Double?,
+                        quotaReset: Bool, health: CompanionHealth,
+                        now: Date, calendar: Calendar = .current) -> CompanionMoment {
+        if health == .critical {
+            return CompanionMoment(text: "电脑也累了，先照顾一下它",
+                                   icon: "heart.slash.fill", tone: .urgent)
+        }
+        if health == .warn {
+            return CompanionMoment(text: "电脑有点忙，慢一点也没关系",
+                                   icon: "heart.fill", tone: .caution)
+        }
+        if let used = quotaUsedPercent, used >= 85 {
+            return CompanionMoment(text: "快到边了，我替你盯着",
+                                   icon: "eye.fill", tone: .urgent)
+        }
+        if let used = quotaUsedPercent, used >= 60 {
+            return CompanionMoment(text: "进入后半程，把火力留给重点",
+                                   icon: "scope", tone: .caution)
+        }
+
+        if let activity, activity.isCurrent(now: now) {
+            let hour = calendar.component(.hour, from: now)
+            if hour >= 23 || hour < 6 {
+                return CompanionMoment(text: "夜深了，我陪你写完这一段",
+                                       icon: "moon.stars.fill", tone: .warm)
+            }
+            return CompanionMoment(text: "状态在线，放心往前写",
+                                   icon: "sparkles", tone: .warm)
+        }
+        if let activity, now.timeIntervalSince(activity.timestamp) < 60 * 60 {
+            return CompanionMoment(text: "刚才的思路还热着",
+                                   icon: "flame.fill", tone: .warm)
+        }
+        if quotaReset {
+            return CompanionMoment(text: "余量满满，等你开工",
+                                   icon: "battery.100percent", tone: .calm)
+        }
+        return CompanionMoment(text: "我在这儿，等你继续",
+                               icon: "heart.fill", tone: .calm)
+    }
+}
+
+struct VibeGreeting: Sendable, Equatable {
+    let title: String
+    let subtitle: String
+}
+
+/// 每日第一次 AI 活动的问候。模型身份带进问候里，让提醒像“搭档已就位”。
+enum VibeCopy {
+    static func greeting(at date: Date, activity: RecentAIActivity?,
+                         calendar: Calendar = .current) -> VibeGreeting {
+        let hour = calendar.component(.hour, from: date)
+        let identity: String
+        if let activity {
+            let tool = activity.tool == .claude ? "Claude" : "Codex"
+            identity = "\(tool) · \(ModelName.display(activity.model))"
+        } else {
+            identity = "AI 搭档"
+        }
+
+        if hour >= 5 && hour < 11 {
+            return VibeGreeting(title: "早呀，慢慢进入状态 ☕",
+                                subtitle: "\(identity) 已就位，今天也一起顺顺利利")
+        }
+        if hour >= 11 && hour < 18 {
+            return VibeGreeting(title: "开工啦，灵感上线 ✨",
+                                subtitle: "\(identity) 已就位，今天也一起顺顺利利")
+        }
+        if hour >= 18 && hour < 23 {
+            return VibeGreeting(title: "晚上好，一起写一会儿",
+                                subtitle: "\(identity) 已就位，慢慢写，不着急")
+        }
+        return VibeGreeting(title: "夜深了，我陪你写一段",
+                            subtitle: "\(identity) 已就位，写完记得早点休息")
+    }
+}
+
 /// 一个模型的价格,单位:美元 / 1M token。
 /// above200k*:部分模型(Sonnet 4.5/4、Gemini Pro 系)单条请求超过 200K token 的部分用更高单价。
 /// fullRequest*:GPT-5.6 等模型在输入越过阈值后,整次请求分别乘输入/输出倍率。
@@ -291,6 +453,99 @@ struct DailyUsage: Identifiable, Sendable {
     let totalTokens: Int
 }
 
+// MARK: - 社区排行榜类型
+
+/// 排行榜只上传按天汇总后的数值，不包含会话正文、项目名、路径或模型明细。
+enum RankingMetric: String, Codable, CaseIterable, Identifiable, Sendable {
+    case tokens, cost
+    var id: String { rawValue }
+    var label: String { self == .tokens ? "Token 消耗" : "API 等价费用" }
+}
+
+struct RankingEntry: Codable, Identifiable, Sendable, Equatable {
+    var id: String { "\(rank)-\(name)" }
+    let rank: Int
+    let name: String
+    let value: Int64
+}
+
+struct RankingListResponse: Codable, Sendable, Equatable {
+    let metric: RankingMetric
+    let period: String
+    let periodStart: String
+    let entries: [RankingEntry]
+}
+
+struct RankingProfile: Codable, Sendable, Equatable {
+    let id: String
+    let nickname: String
+    var displayMode: String
+    let joinedAt: String
+
+    var displayedName: String {
+        displayMode == "public" ? nickname : Self.masked(nickname)
+    }
+
+    static func masked(_ raw: String) -> String {
+        let characters = Array(raw.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard characters.count > 1, let last = characters.last else { return "＊＊＊" }
+        return "＊＊＊\(last)"
+    }
+}
+
+struct RankingStanding: Codable, Sendable, Equatable {
+    let rank: Int?
+    let value: Int64
+}
+
+struct RankingMeResponse: Codable, Sendable, Equatable {
+    var profile: RankingProfile
+    let periodStart: String
+    let tokens: RankingStanding
+    let cost: RankingStanding
+}
+
+struct RankingDailyAggregate: Codable, Sendable, Equatable {
+    let localDay: String
+    let totalTokens: Int64
+    let estimatedCostMicroUSD: Int64
+    let pricingVersion: String
+    let appVersion: String
+
+    enum CodingKeys: String, CodingKey {
+        case localDay = "local_day"
+        case totalTokens = "total_tokens"
+        case estimatedCostMicroUSD = "estimated_cost_micro_usd"
+        case pricingVersion = "pricing_version"
+        case appVersion = "app_version"
+    }
+}
+
+struct RankingConfigResponse: Codable, Sendable {
+    let googleDesktopClientID: String?
+    let googleWebClientID: String?
+    let authReady: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case googleDesktopClientID = "google_desktop_client_id"
+        case googleWebClientID = "google_web_client_id"
+        case authReady = "auth_ready"
+    }
+}
+
+struct RankingAuthResponse: Codable, Sendable {
+    let accessToken: String
+    let refreshToken: String
+    let expiresIn: Int
+    let profile: RankingProfile
+}
+
+struct RankingRefreshResponse: Codable, Sendable {
+    let accessToken: String
+    let refreshToken: String
+    let expiresIn: Int
+}
+
 // MARK: - 通用工具
 
 enum ByteFormat {
@@ -395,7 +650,7 @@ enum AppInfo {
     }
 
     static var privacy: URL {
-        bundleURL("MacPulsePrivacyURL") ?? URL(string: "https://macpulse-monitor.peaceaii.chatgpt.site/#privacy")!
+        bundleURL("MacPulsePrivacyURL") ?? URL(string: "https://macpulse-monitor.peaceaii.chatgpt.site/privacy")!
     }
 
     static var source: URL {
@@ -403,6 +658,7 @@ enum AppInfo {
     }
 
     static var releases: URL { source.appendingPathComponent("releases") }
+    static var rankings: URL { homepage.appendingPathComponent("rankings") }
 
     private static func bundleURL(_ key: String) -> URL? {
         guard let raw = Bundle.main.object(forInfoDictionaryKey: key) as? String,

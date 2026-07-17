@@ -127,6 +127,7 @@ struct DashboardRoot: View {
 
 private struct FilterBar: View {
     @EnvironmentObject var usage: UsageStore
+    @Environment(\.openWindow) private var openWindow
     private let presets: [UsageFilter.TimeRange] = [.last24h, .today, .last7Days, .last30Days]
 
     @ObservedObject private var settings = DisplaySettings.shared
@@ -139,6 +140,14 @@ private struct FilterBar: View {
                 Spacer()
                 ThemedSegmented(items: DashboardMode.allCases.map { ($0, $0.label) },
                                 selection: $settings.dashboardMode, size: 9)
+                Button { openWindow(id: "leaderboard") } label: {
+                    Label("排行", systemImage: "trophy")
+                        .font(settings.isLED ? LED.display(9, .medium)
+                              : (settings.isHUD ? HUD.mono(9) : .caption))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(settings.isDarkSkin ? themeAccent() : Color.accentColor)
+                .help("社区排行榜")
                 DisplaySettingsMenu()
                     .foregroundStyle(settings.isLED ? LED.dim
                                      : (settings.isHUD ? HUD.dim : Color.secondary))
@@ -868,6 +877,7 @@ struct DisplaySettingsMenu: View {
     @ObservedObject private var alerts = NotificationManager.shared
     @ObservedObject private var updates = UpdateController.shared
     @EnvironmentObject private var quota: QuotaStore
+    @Environment(\.openWindow) private var openWindow
     var body: some View {
         Menu {
             // 主题切换:所有界面(弹窗/二级页/监控台/灵动岛)一起换肤
@@ -925,6 +935,7 @@ struct DisplaySettingsMenu: View {
                     duration: 6, sound: true)
             }
             Divider()
+            Button("社区排行榜…") { openWindow(id: "leaderboard") }
             Button("检查更新…") { updates.checkForUpdates() }
                 .disabled(!updates.canCheckForUpdates)
             Menu("关于 MacPulse") {

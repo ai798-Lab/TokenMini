@@ -1,6 +1,39 @@
 import Foundation
 import Combine
 
+/// 额度重置的纯状态机:只有旧窗口确实到达边界后,才把更晚的 resetsAt 视为新周期。
+/// Codex 多会话快照可能乱序,且滚动额度的 resetsAt 会在未重置时向后漂移;两者都不是重置事件。
+struct QuotaResetDetector {
+    private var latest: [String: QuotaWindow] = [:]
+    private let minimumCycleShift: TimeInterval = 120
+    private let boundaryTolerance: TimeInterval = 120
+
+    mutating func observe(_ quotas: [ToolQuota], now: Date) -> [QuotaWindow] {
+        var resets: [QuotaWindow] = []
+        for window in quotas.flatMap(\.windows) {
+            guard let previous = latest[window.id] else {
+                latest[window.id] = window
+                continue
+            }
+
+            // 不让其他会话中更旧的事件把检测基线拉回去。
+            guard window.asOf >= previous.asOf else { continue }
+
+            let shift = window.resetsAt.timeIntervalSince(previous.resetsAt)
+            if shift > minimumCycleShift {
+                // 旧周期还有很久才到期却出现新的 resetsAt,是漂移/异常快照。
+                // 忽略它且不污染基线,避免形成“旧→新→旧→新”的反复提醒。
+                guard now >= previous.resetsAt.addingTimeInterval(-boundaryTolerance) else { continue }
+                if window.resetsAt > now { resets.append(window) }
+            }
+
+            // 新事件的向前校正可以接受,但不会触发提醒。
+            latest[window.id] = window
+        }
+        return resets
+    }
+}
+
 /// 额度中心:聚合 Claude(OAuth 端点,权威、实时)与 Codex(rollout 文件,截至上次会话)。
 /// Codex 随文件读取(快),Claude 走网络(低频)。
 @MainActor
@@ -23,7 +56,7 @@ final class QuotaStore: ObservableObject {
 
     private var claudeQuota: ToolQuota?
     private var codexQuota: ToolQuota?
-    private var seenResets: [String: Date] = [:]   // 窗口 → 上次见到的 resetsAt,用于探测重置
+    private var resetDetector = QuotaResetDetector()
     private var warnedCycles: Set<String> = []     // 本轮已提醒过"快用完"的窗口周期,防重复
 
     private static let claudeAccessKey = "macpulse.claudeQuotaAccessEnabled"
@@ -103,9 +136,9 @@ final class QuotaStore: ObservableObject {
                 if !w.hasReset(now: now), w.usedPercent >= 85, !warnedCycles.contains(cycle) {
                     warnedCycles.insert(cycle)
                     NotchController.shared.flash(
-                        NotchAlert(icon: "exclamationmark.triangle.fill",
-                                   title: "\(q.tool.label) · 5 小时额度快用完",
-                                   subtitle: "还剩约 \(QuotaFormat.duration(w.remaining(now: now))),悠着点写",
+                        NotchAlert(icon: "eye.fill",
+                                   title: "快到边啦，我帮你盯着",
+                                   subtitle: "\(q.tool.label) 还剩约 \(QuotaFormat.duration(w.remaining(now: now)))，先写最重要的",
                                    tint: .orange),
                         duration: 6, sound: true)
                 }
@@ -114,22 +147,18 @@ final class QuotaStore: ObservableObject {
         warnedCycles.formIntersection(current)   // 清掉已过期周期,下个周期可再提醒
     }
 
-    /// 探测重置:某窗口的 resetsAt 明显前移 = 上一个窗口已经重置 → 弹刘海强提醒。
+    /// 探测重置:旧窗口已到期 + resetsAt 进入新周期 → 弹刘海强提醒。
     /// 首次见到只建基线不弹,避免启动时补弹一堆历史。
     private func detectResets(_ quotas: [ToolQuota]) {
-        let alertsOn = NotificationManager.shared.enabled
-        for q in quotas {
-            for w in q.windows {
-                if alertsOn, let prev = seenResets[w.id], w.resetsAt > prev.addingTimeInterval(120) {
-                    NotchController.shared.flash(
-                        NotchAlert(icon: "checkmark.circle.fill",
-                                   title: "\(q.tool.label) · \(w.kind.label)已重置",
-                                   subtitle: "满血复活,可以继续了 🎉",
-                                   tint: .green),
-                        duration: 7, sound: true)
-                }
-                seenResets[w.id] = w.resetsAt
-            }
+        let resetWindows = resetDetector.observe(quotas, now: Date())
+        guard NotificationManager.shared.enabled else { return }
+        for w in resetWindows {
+            NotchController.shared.flash(
+                NotchAlert(icon: "checkmark.circle.fill",
+                           title: "满血回来啦，可以继续了 🎉",
+                           subtitle: "\(w.tool.label) · \(w.kind.label)已经恢复",
+                           tint: .green),
+                duration: 7, sound: true)
         }
     }
 

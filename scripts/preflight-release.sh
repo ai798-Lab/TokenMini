@@ -11,6 +11,7 @@ HISTORY_REF="${PUBLIC_HISTORY_REF:-HEAD}"
 
 SECRET_PATTERN='sk-ant-[A-Za-z0-9_-]{16,}|sk-proj-[A-Za-z0-9_-]{16,}|github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----|"access_token"[[:space:]]*:[[:space:]]*"[A-Za-z0-9._-]{20,}"'
 SCAN_GLOBS=(
+    --glob '!.git'
     --glob '!.git/**'
     --glob '!.build/**'
     --glob '!dist/**'

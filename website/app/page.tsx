@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const releaseUrl = "https://github.com/hepinga/MacPulse/releases";
 const sourceUrl = "https://github.com/hepinga/MacPulse";
 
@@ -15,12 +17,13 @@ export default function Home() {
     <main>
       <nav className="nav shell" aria-label="主导航">
         <a className="brand" href="#top" aria-label="MacPulse 首页">
-          <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>
+          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" />
           <span>MACPULSE</span>
         </a>
         <div className="nav-links">
           <a href="#features">功能</a>
-          <a href="#privacy">隐私</a>
+          <a href="/rankings">社区排行</a>
+          <a href="/privacy">隐私</a>
           <a href="#install">安装</a>
           <a href={sourceUrl}>GitHub</a>
         </div>
@@ -28,7 +31,7 @@ export default function Home() {
 
       <section className="hero shell" id="top">
         <div className="hero-copy">
-          <p className="eyebrow"><span className="status-dot" /> PUBLIC BETA · 0.9.0</p>
+          <p className="eyebrow"><span className="status-dot" /> PUBLIC BETA · 0.10.0</p>
           <h1>看懂你的 Mac，<br /><span>也看懂 AI 花费。</span></h1>
           <p className="lede">MacPulse 是一款面向 Apple Silicon 的开源菜单栏监控器，把系统状态、Claude Code 与 Codex 用量放进同一个清晰的仪表盘。</p>
           <div className="actions">
@@ -38,7 +41,7 @@ export default function Home() {
           <div className="requirements" aria-label="系统要求">
             <span>Apple Silicon</span><span>macOS 14+</span><span>MIT 开源</span><span>中文界面</span>
           </div>
-          <p className="release-note">首个签名安装包正在完成公证与更新链验收；发布前下载入口会指向 GitHub Release。</p>
+          <p className="release-note">公开安装包通过 Developer ID 签名与 Apple 公证，并支持 Sparkle 应用内更新。</p>
         </div>
 
         <div className="console" aria-label="MacPulse HUD 界面示意">
@@ -54,7 +57,7 @@ export default function Home() {
           <div className="quota-row"><span>CLAUDE · 5H</span><div><i /></div><b>42%</b></div>
           <div className="quota-row"><span>CODEX · WEEK</span><div><i className="codex" /></div><b>68%</b></div>
           <div className="sparkline" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-          <div className="console-foot"><span>LOCAL DATA</span><span>NO TELEMETRY</span><span>ARM64</span></div>
+          <div className="console-foot"><span>LOCAL BY DEFAULT</span><span>OPT-IN RANKING</span><span>ARM64</span></div>
         </div>
       </section>
 
@@ -73,13 +76,13 @@ export default function Home() {
         <div className="privacy-copy">
           <p className="eyebrow">02 / PRIVACY BY DEFAULT</p>
           <h2>你的会话数据，留在你的 Mac。</h2>
-          <p>MacPulse 在本地读取 Claude Code 与 Codex 的会话 JSONL，只做统计聚合，不上传会话正文，也不接入分析、广告或崩溃遥测。</p>
-          <a href={`${sourceUrl}/blob/main/PRIVACY.md`}>阅读完整隐私说明 →</a>
+          <p>MacPulse 在本地读取 Claude Code 与 Codex 会话。只有用户主动使用 Google 登录加入排行榜后，才同步每日 Token 总量、API 等价费用和应用版本；会话正文、项目和路径始终留在本机。</p>
+          <a href="/privacy">阅读完整隐私说明 →</a>
         </div>
         <div className="privacy-list">
           <div><b>01</b><span><strong>Claude 凭证默认不读取</strong><small>额度功能只有在你明确开启后才访问钥匙串。</small></span></div>
           <div><b>02</b><span><strong>通知由你决定</strong><small>首次启动不自动申请通知权限。</small></span></div>
-          <div><b>03</b><span><strong>删除前明确确认</strong><small>清理与结束进程均展示目标并提供确认。</small></span></div>
+          <div><b>03</b><span><strong>排行榜完全自愿</strong><small>不登录不上传；退出排行榜后停止同步并移除公开记录。</small></span></div>
         </div>
       </section>
 
@@ -99,9 +102,9 @@ export default function Home() {
       </section>
 
       <footer className="footer shell">
-        <div className="brand"><span className="brand-mark" aria-hidden="true"><i /><i /><i /></span><span>MACPULSE</span></div>
+        <div className="brand"><Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" /><span>MACPULSE</span></div>
         <p>系统监控与 AI 用量，全部从本地开始。</p>
-        <div><a href={sourceUrl}>源码</a><a href={`${sourceUrl}/issues`}>反馈</a><a href={`${sourceUrl}/blob/main/PRIVACY.md`}>隐私</a></div>
+        <div><a href="/rankings">排行</a><a href={sourceUrl}>源码</a><a href={`${sourceUrl}/issues`}>反馈</a><a href="/privacy">隐私</a></div>
       </footer>
     </main>
   );
