@@ -26,6 +26,8 @@ test("server-renders the MacPulse public beta landing page", async () => {
   assert.match(html, /LOCAL BY DEFAULT/);
   assert.match(html, /OPT-IN RANKING/);
   assert.match(html, /github\.com\/hepinga\/MacPulse/);
+  assert.match(html, /src="\/icon\.png"/);
+  assert.doesNotMatch(html, /\/_vinext\/image/);
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);
 });
 
@@ -46,6 +48,8 @@ test("server-renders the public leaderboard without a login wall", async () => {
   assert.match(html, /无需登录|无需登录即可浏览/);
   assert.match(html, /Token 消耗/);
   assert.match(html, /API 等价费用/);
+  assert.match(html, /src="\/icon\.png"/);
+  assert.doesNotMatch(html, /\/_vinext\/image/);
 });
 
 test("server-renders a dedicated privacy policy for Google OAuth", async () => {
@@ -56,6 +60,8 @@ test("server-renders a dedicated privacy policy for Google OAuth", async () => {
   assert.match(html, /Google 登录/);
   assert.match(html, /默认没有账号/);
   assert.match(html, /会话正文/);
+  assert.match(html, /src="\/icon\.png"/);
+  assert.doesNotMatch(html, /\/_vinext\/image/);
 });
 
 test("keeps the operations console out of search results", async () => {
@@ -64,4 +70,6 @@ test("keeps the operations console out of search results", async () => {
   const html = await response.text();
   assert.match(html, /MacPulse 运营后台/);
   assert.match(html, /noindex/i);
+  assert.match(html, /src="\/icon\.png"/);
+  assert.doesNotMatch(html, /\/_vinext\/image/);
 });

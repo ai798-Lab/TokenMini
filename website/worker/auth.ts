@@ -112,6 +112,7 @@ export async function rotateRefreshSession(
         SET token_hash = ?, expires_at = ?, last_used_at = ?
       WHERE token_hash = ?`,
   ).bind(newHash, expires, now.toISOString(), oldHash).run();
-  if (!result.success) return null;
+  const changes = result.meta?.changes;
+  if (!result.success || (typeof changes === "number" && changes !== 1)) return null;
   return { token, userID: row.user_id, email: row.email };
 }

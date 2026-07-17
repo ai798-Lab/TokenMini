@@ -31,6 +31,11 @@ export default function RankingsClient() {
   const [data, setData] = useState<RankingResponse>(empty);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [reload, setReload] = useState(0);
+  const selectMetric = (next: Metric) => {
+    if (next === metric) return;
+    setStatus("loading");
+    setMetric(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -52,10 +57,10 @@ export default function RankingsClient() {
     <div className="ranking-console">
       <div className="ranking-toolbar">
         <div className="metric-switch" role="group" aria-label="排行榜指标">
-          <button className={metric === "tokens" ? "active" : ""} onClick={() => setMetric("tokens")}>
+          <button className={metric === "tokens" ? "active" : ""} onClick={() => selectMetric("tokens")}>
             Token 消耗
           </button>
-          <button className={metric === "cost" ? "active" : ""} onClick={() => setMetric("cost")}>
+          <button className={metric === "cost" ? "active" : ""} onClick={() => selectMetric("cost")}>
             API 等价费用
           </button>
         </div>

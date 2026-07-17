@@ -17,7 +17,7 @@ export default function Home() {
     <main>
       <nav className="nav shell" aria-label="主导航">
         <a className="brand" href="#top" aria-label="MacPulse 首页">
-          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" />
+          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized />
           <span>MACPULSE</span>
         </a>
         <div className="nav-links">
@@ -102,7 +102,7 @@ export default function Home() {
       </section>
 
       <footer className="footer shell">
-        <div className="brand"><Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" /><span>MACPULSE</span></div>
+        <div className="brand"><Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized /><span>MACPULSE</span></div>
         <p>系统监控与 AI 用量，全部从本地开始。</p>
         <div><a href="/rankings">排行</a><a href={sourceUrl}>源码</a><a href={`${sourceUrl}/issues`}>反馈</a><a href="/privacy">隐私</a></div>
       </footer>

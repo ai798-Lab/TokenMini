@@ -12,7 +12,7 @@ export default function AdminPage() {
     <main className="admin-page">
       <nav className="nav shell" aria-label="后台导航">
         <Link className="brand" href="/">
-          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" />
+          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized />
           <span>MACPULSE // ADMIN</span>
         </Link>
         <div className="nav-links"><Link href="/rankings">公开榜单</Link><Link href="/">首页</Link></div>

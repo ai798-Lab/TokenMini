@@ -291,6 +291,8 @@ async function upsertDailyUsage(
   session: SessionIdentity,
   db: D1DatabaseLike,
 ): Promise<Response> {
+  const notJoined = await requireActiveMembership(session, db);
+  if (notJoined) return notJoined;
   const body = await bodyJSON(request);
   const day = body?.local_day;
   const tokens = body?.total_tokens;
@@ -336,6 +338,8 @@ async function updateDisplayMode(
   session: SessionIdentity,
   db: D1DatabaseLike,
 ): Promise<Response> {
+  const notJoined = await requireActiveMembership(session, db);
+  if (notJoined) return notJoined;
   const body = await bodyJSON(request);
   if (body?.display_mode !== "masked" && body?.display_mode !== "public") {
     return errorResponse("invalid_display_mode", "名称显示方式不正确");
@@ -354,6 +358,16 @@ async function leaveRanking(session: SessionIdentity, db: D1DatabaseLike): Promi
     db.prepare("DELETE FROM refresh_sessions WHERE user_id = ?").bind(session.userID),
   ]);
   return json({ ok: true });
+}
+
+async function requireActiveMembership(
+  session: SessionIdentity,
+  db: D1DatabaseLike,
+): Promise<Response | null> {
+  const profile = await db.prepare(
+    "SELECT id FROM profiles WHERE id = ? AND left_at IS NULL AND consent_version != 'admin'",
+  ).bind(session.userID).first<{ id: string }>();
+  return profile ? null : errorResponse("not_joined", "当前账号未加入排行榜", 409);
 }
 
 async function requireSession(request: Request, env: Env): Promise<SessionIdentity | Response> {
@@ -384,13 +398,20 @@ async function adminOverview(
   if (denied) return denied;
   const today = shanghaiDayKey();
   const [members, dau, versions, d1, d7, d30] = await Promise.all([
-    db.prepare("SELECT COUNT(*) AS count FROM profiles WHERE left_at IS NULL").first<{ count: number }>(),
-    db.prepare("SELECT COUNT(DISTINCT user_id) AS count FROM daily_usage WHERE local_day = ?")
+    db.prepare(
+      "SELECT COUNT(*) AS count FROM profiles WHERE left_at IS NULL AND consent_version != 'admin'",
+    ).first<{ count: number }>(),
+    db.prepare(
+      `SELECT COUNT(DISTINCT d.user_id) AS count
+         FROM daily_usage d JOIN profiles p ON p.id = d.user_id
+        WHERE d.local_day = ? AND p.consent_version != 'admin'`,
+    )
       .bind(today).first<{ count: number }>(),
     db.prepare(
-      `SELECT app_version, COUNT(DISTINCT user_id) AS count
-         FROM daily_usage WHERE local_day >= ?
-        GROUP BY app_version ORDER BY count DESC LIMIT 10`,
+      `SELECT d.app_version, COUNT(DISTINCT d.user_id) AS count
+         FROM daily_usage d JOIN profiles p ON p.id = d.user_id
+        WHERE d.local_day >= ? AND p.consent_version != 'admin'
+        GROUP BY d.app_version ORDER BY count DESC LIMIT 10`,
     ).bind(weekStartKey()).all<{ app_version: string; count: number }>(),
     retention(db, 1, today),
     retention(db, 7, today),

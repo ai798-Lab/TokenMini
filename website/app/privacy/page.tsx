@@ -25,7 +25,7 @@ export default function PrivacyPage() {
     <main className="policy-page">
       <nav className="nav shell" aria-label="隐私页导航">
         <Link className="brand" href="/" aria-label="MacPulse 首页">
-          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" />
+          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized />
           <span>MACPULSE</span>
         </Link>
         <div className="nav-links"><Link href="/rankings">社区排行</Link><Link href="/">返回首页</Link></div>

@@ -96,6 +96,7 @@ export default function AdminClient() {
           sessionStorage.removeItem("macpulse.admin.token");
           setAccessToken("");
           setMessage(error.message);
+          location.reload();
         });
       return;
     }

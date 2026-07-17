@@ -12,7 +12,7 @@ export default function RankingsPage() {
     <main className="rank-page">
       <nav className="nav shell" aria-label="排行榜导航">
         <Link className="brand" href="/" aria-label="返回 MacPulse 首页">
-          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" />
+          <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized />
           <span>MACPULSE</span>
         </Link>
         <div className="nav-links">

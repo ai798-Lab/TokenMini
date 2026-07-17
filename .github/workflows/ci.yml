@@ -13,6 +13,17 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Website tests
+        working-directory: website
+        run: |
+          npm ci
+          npm run lint
+          npm test
       - name: Tests
         run: ./scripts/test.sh
       - name: Build app bundle
