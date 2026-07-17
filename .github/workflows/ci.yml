@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # Match the Node/npm pair used to generate and validate package-lock.json.
           node-version: 24.11.0
