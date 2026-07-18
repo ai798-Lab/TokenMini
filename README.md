@@ -1,193 +1,156 @@
-# Mac监控器(MacPulse)
+<div align="center">
+  <img src="website/public/icon.png" width="112" alt="MacPulse app icon">
+  <h1>MacPulse</h1>
+  <p><strong>Monitor your Mac. Understand your AI.</strong></p>
+  <p>A native menu bar monitor for Apple Silicon: system health, Claude Code and Codex usage, cost estimates, quotas, and local-first tools.</p>
 
-一款面向 Apple Silicon 与 macOS 14+的菜单栏工具:系统监控 + AI 编程助手的用量/费用/额度监控,
-灵感来自 SystemPal,架构参考开源项目 [exelban/stats](https://github.com/exelban/stats) 与 [ccusage](https://github.com/ryoppippi/ccusage)。
+  <p><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
-> 当前为免费公开 Beta 0.10.0，中文优先，MIT 开源。官网:
-> [macpulse-monitor.peaceaii.chatgpt.site](https://macpulse-monitor.peaceaii.chatgpt.site)。
-> 使用前请阅读 [隐私说明](PRIVACY.md)；暂不支持 Intel Mac 和 Mac App Store。
+  <p>
+    <a href="https://github.com/hepinga/MacPulse/releases/latest"><img src="https://img.shields.io/github/v/release/hepinga/MacPulse?include_prereleases&style=flat-square&label=release" alt="Latest release"></a>
+    <a href="https://github.com/hepinga/MacPulse/actions/workflows/ci.yml"><img src="https://github.com/hepinga/MacPulse/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/hepinga/MacPulse?style=flat-square" alt="MIT license"></a>
+    <img src="https://img.shields.io/badge/status-public%20beta-F0A54A?style=flat-square" alt="Public beta">
+  </p>
+  <p>
+    <img src="https://img.shields.io/badge/macOS-14%2B-000000?style=flat-square&logo=apple" alt="macOS 14 or later">
+    <img src="https://img.shields.io/badge/Apple%20Silicon-arm64-222222?style=flat-square" alt="Apple Silicon arm64">
+    <img src="https://img.shields.io/badge/SwiftUI-Swift%205-F05138?style=flat-square&logo=swift&logoColor=white" alt="SwiftUI and Swift 5">
+    <img src="https://img.shields.io/badge/privacy-local--first-2EA44F?style=flat-square" alt="Local-first privacy">
+  </p>
 
-## 功能总览
+  <p>
+    <a href="https://github.com/hepinga/MacPulse/releases/latest"><strong>Download latest signed DMG</strong></a>
+    · <a href="https://macpulse-monitor.peaceaii.chatgpt.site">Website</a>
+    · <a href="#gallery">Gallery</a>
+    · <a href="PRIVACY.md">Privacy</a>
+  </p>
+</div>
 
-**菜单栏常驻**:`C12 M85 ¥52` —— CPU 使用率 / 内存使用率 / 今日 AI API 等价预估,2 秒刷新;
-可选追加最紧张的额度(`◔78%` 已用 + 重置倒计时)。
+![MacPulse product overview](docs/assets/github/hero.webp)
 
-**弹窗两种模式**(右上角一键切换)
-- **简单模式**(默认):不出现 token/burn rate 等术语,用大白话回答三个问题——
-  额度还能用多久 / 今天会不会超支 / 电脑扛得住吗。
-- **专业模式**:系统 / AI 用量 / Skills 三个页签,细节全量展开。
+> [!IMPORTANT]
+> The latest public release and signed Sparkle feed are currently **v0.9.0**. The `main` branch contains unreleased v0.10 preview work, including the optional community ranking. The app interface is Chinese-first; the language switch above changes project documentation, not the app UI.
 
-**三套 UI 主题**(设置菜单切换,覆盖弹窗、监控台、灵动岛全部界面)
-- **经典**:系统原生风,控件一律走系统原生。
-- **HUD**(默认):俄式影视包装 / FUI 风——深空底 + 示波青 + 中英双层代号 + 切角面板 + 四角取景框。
-- **LED**:复古健身器材仪表风——近黑底 + LED 点阵 + 七段数码管大读数(Canvas 真绘制,含残影)+
-  圆点灯珠电平条;单色琥珀亮度阶梯,多系列靠亮度区分。
-- 微交互全套:开机充能、扫描线、页签滑动、按钮 hover 辉光、鼠标跟随扫光(`SweepEffects`),
-  全部尊重 `accessibilityReduceMotion`。
+## Why MacPulse
 
-**系统页签**
-- CPU:总使用率 + 系统/用户拆分 + 60 点实时折线图 + CPU 温度
-- 内存:已用/总量、联动/已压缩、压力配色进度条
-- 网络/磁盘:实时收发与读写速率
-- 传感器:CPU/GPU 温度(SMC Tp*/Tg* 键)、双风扇转速(F0Ac/F1Ac)
-- 电池健康:健康度/循环次数/温度/充电状态(IOKit AppleSmartBattery)
-- 进程 Top 6 按 CPU 排序;含清理与内存回收(见下)
+| | What it gives you |
+| --- | --- |
+| **System pulse** | CPU, memory, network, disk, battery, temperature, fans, and top processes in a menu bar app. |
+| **AI usage** | Local aggregation of Claude Code and Codex JSONL sessions, with token composition, trends, and API-equivalent cost estimates. |
+| **Quota awareness** | Claude and Codex quota windows, reset countdowns, optional notifications, and a compact notch experience. |
+| **Local-first tools** | Privacy mode, safe cache cleanup, bounded memory release, process termination, and recoverable Skills management. |
 
-**清理与内存回收**(删文件,安全第一)
-- 磁盘空间进度条 + 一键回收内存:免 root 的有界方案(mmap 申请并释放促使系统回收非活跃内存),
-  上限 = min(3GB, 空闲一半),诚实显示回收量;真想腾内存优先结束应用(内存 Top 进程一键 SIGTERM,先弹确认)
-- 垃圾清理:安全白名单只清可再生缓存——废纸篓 / 应用缓存(~/Library/Caches)/ 系统日志 /
-  开发者缓存(npm _cacache、Xcode 派生数据),扫描后按类目勾选
-- **绝不触碰**:文档/桌面/下载、偏好设置、Application Support、pnpm store、SSH/iCloud 等——
-  三重路径守卫(在 home 下 + 归属白名单根 + 不命中保护目录),经 23 条生产守卫用例 + 符号链接/假 Home 端到端测试验证
-- 本机实测可清理约 13GB,并行扫描 ~1.3 秒
+MacPulse is designed for people who use AI coding tools heavily but still want a clear view of the Mac underneath them. The default simple mode answers three practical questions: how long the quota may last, whether today's pace is expensive, and whether the computer is under pressure. Analysis mode keeps the detailed token and model breakdown available when needed.
 
-**AI 用量页签**(双数据源,逻辑对齐 ccusage v18)
-- 数据源:Claude Code(`~/.claude/projects` 会话 JSONL)+ Codex CLI(`~/.codex/sessions` rollout JSONL,
-  按 `last_token_usage` 增量计数,经本机 190M token 实测校准)
-- 今日 API 等价预估(非订阅实际扣款)+ token 构成 + 调用次数;近 1 小时燃烧率 / 本月已用 / 整月外推预估
-- 近 7 天费用柱状图 + 本月按模型明细
-- 去重:跨文件 `messageId:requestId` 全局去重,文件按最早时间戳排序;
-  流式多行快照取组内最大 output(比 ccusage v18 的 keep-first 更准,实测它少算 ~30% output)
-- 计价:内置 2026-07-06 双源验证价格表(LiteLLM + Anthropic 官方页),区分 5m/1h 缓存写入、
-  读取 0.1x、200K 分层价、fast 模式倍率;JSONL 自带 costUSD 时优先采用
+## Gallery
 
-**额度中心**(菜单栏/简单模式/灵动岛共用)
-- Claude:OAuth 端点,权威、实时(5 分钟一刷防 429)
-- Codex:rollout 文件解析,截至上次会话(90 秒一刷)
-- 额度重置自动探测 → 刘海提醒「满血复活」;快用完也会提醒(每周期一次防重复)
+### Three visual systems
 
-**Skills 管理页签**
-- 列出本机各 AI 工具已装的 skills,支持安装 / 卸载 / 跨工具复制
-- 安装对齐开源生态(skills.sh):支持 `owner/repo`、子路径、完整 GitHub URL,
-  单仓多 skill 自动发现并弹窗挑选
-- 卸载比生态更安全:移入废纸篓(可恢复),不做 rm
+| HUD | LED | Classic |
+| --- | --- | --- |
+| ![HUD dashboard](docs/assets/github/dashboard-hud.png) | ![LED dashboard](docs/assets/github/dashboard-led.png) | ![Classic dashboard](docs/assets/github/dashboard-classic.png) |
 
-**Token 监控台**(独立大窗口,760×560 起)
-- 信息模式与视觉主题解耦:**一眼看懂**只保留决策信息;**分析模式**展开 Token 构成、模型和项目明细
-- 顶部筛选时间/工具/项目/模型/Token 构成;项目与模型排行可点击下钻,选中态、占比和重置入口一致
-- 首屏四项:筛选范围内的 API 等价预估(明确环比基准和绝对差额)、最紧张额度、固定近 1 小时速度、缓存复用率
-- 自动洞察主要模型/项目/峰值时段;本月外推明确使用固定月度窗口,不会随顶部时间范围跳变
-- 分析模式把“新增处理量 = 输入 + 输出 + 缓存写”与“缓存复用”分列,避免总 Token 与明细口径误解
-- 数据状态显示刷新时间、Claude/Codex 来源覆盖、未知模型告警;隐私模式用稳定别名隐藏真实项目名
-- 可选等价成本提醒(默认关闭),每小时/每日阈值可配置且按周期去重
-- 跟随三主题,深色皮肤用自绘发光滚动条
-- LED Canvas 数码读数提供完整辅助功能语义,VoiceOver 可读金额、额度、速度和缓存率
+### Analysis mode
 
-**社区排行**(完全可选)
-- 游客无需登录即可浏览 Token 与 API 等价费用本周榜单，本地监控功能不受影响
-- 使用 Google 登录后自动加入两个榜，默认昵称打码为 `＊＊＊平` 形式
-- 只同步上海时区每日总量、价格表版本与 App 版本，不上传会话正文、项目或模型明细
-- 登录用户可查看个人名次、自愿公开完整昵称，或退出并删除榜单汇总
+![Token analysis mode with privacy aliases](docs/assets/github/analysis-mode.png)
 
-**灵动岛(刘海)**
-- 平时完全隐藏,鼠标移到刘海 → 无缝长出黑色下拉面板(高度随内容自适应),移开自动收起
-- 刘海强提醒 + Vibe 时刻:开工大吉(每天首次 AI 活动)/ 满血复活(额度重置)/
-  喝口水(久坐关怀)/ 电脑体温(过热提醒),各自有防打扰节流,受总开关约束
+### Public website
 
-**显示设置**
-- Token 单位:中文单位(万/亿)或 K/M/B;货币:¥(可设汇率)/ $
-- 主题切换、隐私模式、额度重置提醒、等价成本提醒阈值、菜单栏额度开关等
+![MacPulse public website](docs/assets/github/website-home.png)
 
-## 构建与运行
+All app screenshots above were captured from the built macOS app with privacy mode enabled. Project names are replaced with stable aliases. Screens showing unavailable services, credentials, admin tools, or private paths are intentionally excluded.
 
-```bash
-./scripts/build.sh 0.10.0 3 # 编译 + 打包 dist/MacPulse.app + ad-hoc 签名
-./scripts/test.sh           # 生产代码回归测试(含清理安全守卫)
-open dist/MacPulse.app      # 启动
-```
+## Features
 
-真实 Claude/Codex 会话回归(只读本机 JSONL,显式开启):
+<details open>
+<summary><strong>System monitoring</strong></summary>
 
-```bash
-MACPULSE_LIVE_TEST=1 swift test --filter CoreRegressionTests/testLiveAggregationInvariantsWhenRequested
-```
+- Menu bar label for CPU, memory, and today's AI API-equivalent estimate; optional tightest-quota indicator.
+- CPU total/user/system load, real-time chart, and AppleSMC temperature sampling.
+- Memory pressure, compression, disk and network throughput, battery health, and fan speed.
+- Top processes by CPU or memory, with confirmation before sending `SIGTERM`.
+- Safe cache cleanup guarded by lexical path validation, protected paths, and sandbox-style regression tests.
 
-**双版本约定**:日常从 `/Applications` 启动;每次 `build.sh` 之后要把 `dist/MacPulse.app`
-拷贝覆盖 `/Applications`,否则桌面启动的仍是旧版(两版可同时运行,容易误判"改动没生效")。
+</details>
 
-本机 2026-07 起已装 Xcode 26.6(xcode-select 指向 Xcode,SDK MacOSX26)。
+<details open>
+<summary><strong>AI usage and quotas</strong></summary>
 
-### 本机 CLT 残留说明(历史问题)
+- Reads local Claude Code (`~/.claude/projects`) and Codex (`~/.codex/sessions`) JSONL files.
+- Daily and monthly API-equivalent estimates, recent burn rate, seven-day trends, model/project drill-down, and cache reuse.
+- Global `messageId:requestId` de-duplication aligned with ccusage semantics when both identifiers exist.
+- Claude OAuth quota access is optional and disabled by default; Codex quota is derived from local rollout events.
+- Cost figures are estimates for comparison and planning, not subscription invoices or actual charges.
 
-这台机器的 CLT 有两个旧版本残留文件,曾导致任何 `swift build` 失败。
-`build.sh` 已内置无 sudo 的绕过方案(`.clt-fix/`,自动生成);残留文件存在时 workaround
-仍会激活但无害。永久修复(二选一):
+</details>
 
-```bash
-# 方案 A:精准删除两个残留文件
-sudo rm /Library/Developer/CommandLineTools/usr/lib/swift/pm/ManifestAPI/PackageDescription.swiftmodule/*.private.swiftinterface
-sudo rm /Library/Developer/CommandLineTools/usr/include/swift/module.modulemap
+<details>
+<summary><strong>Experience and optional tools</strong></summary>
 
-# 方案 B:重装 CLT
-sudo rm -rf /Library/Developer/CommandLineTools && xcode-select --install
-```
+- Simple and professional information modes.
+- Classic, HUD, and LED themes across the popover, dashboard, and notch surfaces.
+- Local Skills discovery, installation, copying, and recoverable uninstall-to-Trash behavior.
+- Optional quota-reset and wellbeing moments, each rate-limited and controlled by a master switch.
+- Optional community ranking on `main` as an unreleased v0.10 preview; local monitoring works without signing in.
 
-## 发布(GitHub Releases + 官网，不上 MAS)
+</details>
+
+## Download and requirements
+
+| Requirement | Support |
+| --- | --- |
+| Hardware | Apple Silicon (`arm64`) |
+| macOS | 14 or later |
+| Distribution | GitHub Releases, Developer ID signed and Apple notarized |
+| App Store | Not available; sandboxing would block SMC and local session access |
+
+1. Download the latest `.dmg` from [GitHub Releases](https://github.com/hepinga/MacPulse/releases/latest).
+2. Drag `MacPulse.app` to `/Applications`.
+3. Open the app and review the first-run privacy explanation before enabling optional features.
+
+> [!NOTE]
+> There is another macOS product using the `macpulse` Homebrew cask name. MacPulse does not currently publish a Homebrew install command, so use this repository's signed GitHub Release.
+
+## Privacy model
+
+MacPulse is local-first. It does not upload conversation text, prompts, responses, private project paths, or AI credentials. Product analytics, advertising telemetry, and automatic crash reporting are not enabled.
+
+Network access only occurs for user-visible features such as update checks, optional Claude quota access, installing a Skill from a user-selected GitHub repository, and the optional community ranking. See the full [Privacy Notice](PRIVACY.md) and [Security Policy](SECURITY.md).
+
+## Build from source
+
+Use the project scripts rather than a bare `swift build` when you need a runnable app bundle:
 
 ```bash
-./scripts/preflight-release.sh       # 当前源码 + 全部 Git 历史的发布闸门
-./scripts/release.sh 0.10.0 3         # 版本号 + 单调递增构建号
-SKIP_NOTARIZE=1 ./scripts/release.sh 0.10.0 3  # 本地干跑，绝不能公开分发
+./scripts/test.sh
+./scripts/build.sh 0.10.0 3
+open dist/MacPulse.app
 ```
 
-正式脚本会从内到外签名 Sparkle helper/framework 与主应用，开启 Hardened Runtime，
-公证 App 与 DMG，然后产出 DMG、SHA-256、签名 appcast、发布说明和私下保留的 dSYM。
-一次性前置(Developer ID、`macpulse-notary`、Sparkle 密钥备份)及完整上线顺序见
-[`docs/发布指南.md`](docs/发布指南.md)。
-不上 App Store 的原因:沙盒禁 SMC(温度/风扇)、清理功能需授权目录改造。
+The package uses Swift 5 language mode, targets macOS 14+, and is built with Swift Package Manager. The build script compiles, assembles `dist/MacPulse.app`, generates the icon when needed, and applies an ad-hoc signature for local testing.
 
-## 应用图标
+For release signing, notarization, Sparkle appcast generation, and Gatekeeper checks, follow [`docs/发布指南.md`](docs/发布指南.md). Do not distribute artifacts produced with `SKIP_NOTARIZE=1`.
 
-唯一设计源是根目录 `logo icon.svg`(满 1024 出血、透明底、不画圆角);
-`scripts/make-icon.swift` 用 WKWebView 渲染 SVG 再套 Apple 规范 squircle
-(1024 画布 / 824 主体 / 半径 185.4 / continuous 连续曲率)生成 `Resources/AppIcon.icns`。
-`build.sh` 检测到 svg 比 icns 新会自动重新生成——换图标只改 svg 即可。
+## Architecture highlights
 
-## 登录自启(可选)
+- SwiftUI `MenuBarExtra(.window)` and Swift Charts; no Xcode project is required.
+- Mach APIs for CPU and memory, `getifaddrs` for network, IOKit for disk/battery, and AppleSMC for temperature/fans.
+- Serial sampling queues behind `@MainActor` observable stores.
+- Sparkle 2 for signed application updates.
+- A separate website and lightweight worker for the optional public ranking preview.
 
-```bash
-cat > ~/Library/LaunchAgents/com.liangheping.macpulse.plist <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key><string>com.liangheping.macpulse</string>
-    <key>ProgramArguments</key>
-    <array><string>/Applications/MacPulse.app/Contents/MacOS/MacPulse</string></array>
-    <key>RunAtLoad</key><true/>
-    <key>ProcessType</key><string>Interactive</string>
-</dict>
-</plist>
-EOF
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.liangheping.macpulse.plist
-```
+## Contributing and support
 
-停用:`launchctl bootout gui/$(id -u)/com.liangheping.macpulse`
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+- Use the structured [bug report](https://github.com/hepinga/MacPulse/issues/new?template=bug_report.yml) and remove tokens, session text, usernames, and real project paths.
+- Use GitHub's private vulnerability reporting flow for security issues; do not post credentials in a public Issue.
+- Release history is maintained in [CHANGELOG.md](CHANGELOG.md).
 
-## 实测指标(M5 Pro,1.6GB 会话数据,2026-07-17)
+## Acknowledgements
 
-- 最新回归:40,058 条事件冷扫描 + 聚合检查约 18.6 秒;热扫描(文件 size/mtime 缓存命中)约 0.21 秒
-- 内存:安装版冷扫描完成物理占用 60.4MB,实测峰值 70.9MB(`vmmap -summary`)
-- 实现:会话文件只读映射,避免把 1.6GB JSONL 反复拷进 malloc 脏页
-- 今日费用与独立脚本重算误差 < 时间窗口内的自然增量
+MacPulse was inspired by SystemPal and references ideas from [exelban/stats](https://github.com/exelban/stats) and [ccusage](https://github.com/ryoppippi/ccusage). Third-party license notices are listed in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
-## 技术要点
+## License
 
-- 纯 SwiftUI `MenuBarExtra`(.window 样式)+ Swift Charts,SPM 构建,无 Xcode 工程
-- CPU/内存:`host_processor_info` / `host_statistics64`(Mach API)
-- 网络:`getifaddrs` 增量;磁盘:IOKit `IOBlockStorageDriver` Statistics 增量
-- 温度/风扇:AppleSMC IOKit 用户客户端(M5 上 `flt ` 小端 float32,
-  温度键 Tp*/Te*/Tf*/Tg* 前缀筛选 + 合理区间过滤;无需 sudo、无需 entitlement)
-- 主题系统:弹窗三套独立视图树(`UI/Classic` / `HUD*` / `UI/LED`),监控台与灵动岛在组件内按主题分支,
-  共享逻辑只有一份;系统原生控件(分段/按钮)在深色主题下由 `ThemedControls` 自绘替代
-- 刘海面板:NSPanel + 全局鼠标监听驱动(非激活浮层上 SwiftUI hover 不可靠),
-  高度由内容测量上报(`NotchContentHeight` preference)
-- 非沙盒(SMC 与 `~/.claude` 读取都不允许沙盒)；本地构建使用 ad-hoc，公开包使用 Developer ID + Apple 公证
-
-## 文档索引
-
-- `AGENTS.md` / `CLAUDE.md` —— 构建约定、架构红线与安全测试要求
-- `docs/PRD.md`、`docs/追加需求.md` —— 产品需求
-- `docs/发布指南.md` —— 发布一次性前置配置
-- `PRIVACY.md`、`SECURITY.md`、`CONTRIBUTING.md` —— 公开隐私、安全与贡献政策
+[MIT](LICENSE) © 2026 Liang Heping
