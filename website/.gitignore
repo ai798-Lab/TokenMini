@@ -40,3 +40,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Local hosting project metadata; keep account-level IDs out of the public repo.
+/.openai/

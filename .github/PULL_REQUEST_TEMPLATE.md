@@ -23,6 +23,8 @@
 
 - [ ] Screenshots and logs contain no tokens, credentials, usernames, private paths, or conversation text.
 - [ ] 截图与日志不包含 token、凭证、用户名、私人路径或会话正文。
+- [ ] This PR contains no internal roadmap, private research, account/deployment identifier, maintainer runbook, or collaboration note.
+- [ ] 本 PR 不包含内部路线图、私有调研、账号/部署标识、维护者手册或协作纪要。
 - [ ] Cleanup/path changes preserve the documented safety invariants, or this PR does not touch them.
 - [ ] 清理/路径改动保持既有安全不变量，或本 PR 未涉及这些逻辑。
 

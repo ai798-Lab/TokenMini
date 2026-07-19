@@ -130,7 +130,7 @@ open dist/MacPulse.app
 
 The package uses Swift 5 language mode, targets macOS 14+, and is built with Swift Package Manager. The build script compiles, assembles `dist/MacPulse.app`, generates the icon when needed, and applies an ad-hoc signature for local testing.
 
-For release signing, notarization, Sparkle appcast generation, and Gatekeeper checks, follow [`docs/发布指南.md`](docs/发布指南.md). Do not distribute artifacts produced with `SKIP_NOTARIZE=1`.
+Public release artifacts must be Developer ID-signed, notarized by Apple, and delivered through a signed Sparkle appcast. Maintainer credentials and operational runbooks are intentionally kept outside this public repository. Do not distribute artifacts produced with `SKIP_NOTARIZE=1`.
 
 ## Architecture highlights
 

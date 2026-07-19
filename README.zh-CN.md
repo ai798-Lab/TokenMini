@@ -130,7 +130,7 @@ open dist/MacPulse.app
 
 项目采用 Swift 5 语言模式、目标 macOS 14+，使用 Swift Package Manager。构建脚本会编译、组装 `dist/MacPulse.app`、按需生成图标，并为本地测试执行 ad-hoc 签名。
 
-正式发布签名、公证、Sparkle appcast 和 Gatekeeper 检查见 [`docs/发布指南.md`](docs/发布指南.md)。`SKIP_NOTARIZE=1` 生成的产物不得公开分发。
+公开发布产物必须经过 Developer ID 签名、Apple 公证，并通过已签名的 Sparkle appcast 分发。维护者凭证与内部发布手册刻意保留在公开仓库之外；`SKIP_NOTARIZE=1` 生成的产物不得公开分发。
 
 ## 架构要点
 

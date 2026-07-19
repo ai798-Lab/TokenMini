@@ -45,7 +45,7 @@ fi
 
 if (( failures > 0 )); then
     echo "" >&2
-    echo "发布前置尚有 ${failures} 项待完成。请按 docs/Gatekeeper操作清单.md 处理。" >&2
+    echo "发布前置尚有 ${failures} 项待完成。请按维护者私有发布手册处理。" >&2
     exit 1
 fi
 
