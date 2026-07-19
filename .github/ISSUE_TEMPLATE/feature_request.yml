@@ -1,24 +1,40 @@
-name: Feature request
-description: 提出功能或体验建议
+name: Feature request / 功能建议
+description: Propose a user problem and a focused improvement. / 提出用户问题与聚焦的改进方案
 title: "[Feature] "
-labels: ["enhancement"]
+labels: ["enhancement", "needs triage"]
 body:
+  - type: markdown
+    attributes:
+      value: "Please describe the problem before the solution, and do not include private session content. / 请先描述问题，再描述方案；不要附上私人会话内容。"
   - type: textarea
     id: problem
     attributes:
-      label: 想解决的问题
+      label: Problem to solve / 想解决的问题
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: 建议方案
+      label: Proposed outcome / 建议结果
     validations:
       required: true
   - type: dropdown
     id: area
     attributes:
-      label: 功能区域
-      options: [系统监控, AI 用量, 额度提醒, 清理, Skills, 自动更新, 其他]
+      label: Product area / 功能区域
+      options:
+        - System monitoring / 系统监控
+        - AI usage / AI 用量
+        - Quotas and notifications / 额度与提醒
+        - Cleanup and memory / 清理与内存
+        - Skills
+        - UI and themes / 界面与主题
+        - Website / 官网
+        - Other / 其他
     validations:
       required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 考虑过的替代方案
+      description: Optional, but useful for understanding the trade-off. / 可选，用于理解取舍。

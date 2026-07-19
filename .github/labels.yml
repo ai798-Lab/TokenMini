@@ -1,0 +1,46 @@
+# Reviewable source of truth for repository labels. Sync these values in GitHub Settings.
+- name: bug
+  color: D73A4A
+  description: Something is not working / 可复现的问题
+- name: enhancement
+  color: A2EEEF
+  description: New feature or improvement / 新功能或改进
+- name: documentation
+  color: 0075CA
+  description: Documentation changes / 文档改进
+- name: privacy
+  color: 6F42C1
+  description: Privacy boundary or local-data handling / 隐私边界或本地数据处理
+- name: security
+  color: B60205
+  description: Security-sensitive work; disclose vulnerabilities privately / 安全相关；漏洞请私密披露
+- name: "area: system"
+  color: C5DEF5
+  description: System metrics, sampling, temperature, fans, or processes
+- name: "area: ai-usage"
+  color: C5DEF5
+  description: Claude Code or Codex usage, tokens, and cost estimates
+- name: "area: quota"
+  color: C5DEF5
+  description: Quota windows, countdowns, and notifications
+- name: "area: cleanup"
+  color: C5DEF5
+  description: Cache cleanup, path safety, and memory release
+- name: "area: skills"
+  color: C5DEF5
+  description: Local Skills discovery and lifecycle
+- name: "area: ui"
+  color: C5DEF5
+  description: Menu bar, popover, dashboard, themes, or notch UI
+- name: "area: website"
+  color: C5DEF5
+  description: Public website or optional community service
+- name: needs triage
+  color: EDEDED
+  description: Awaiting maintainer review / 等待维护者分流
+- name: good first issue
+  color: 7057FF
+  description: Approachable for a first contribution / 适合首次贡献
+- name: help wanted
+  color: 008672
+  description: Maintainers welcome community help / 欢迎社区协助
