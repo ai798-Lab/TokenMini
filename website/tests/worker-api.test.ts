@@ -87,7 +87,7 @@ function env(db?: FakeDB, overrides: Partial<Env> = {}): Env {
 }
 
 test("masks every nickname to a fixed prefix and final character", () => {
-  assert.equal(maskNickname("和平"), "＊＊＊平");
+  assert.equal(maskNickname("示例用户"), "＊＊＊户");
   assert.equal(maskNickname("A"), "＊＊＊");
   assert.equal(maskNickname(""), "＊＊＊");
 });
@@ -115,7 +115,7 @@ test("Google app login automatically joins with a masked profile", async () => {
       body: JSON.stringify({ id_token: "verified-by-test", app_version: "0.10.0 (3)" }),
     }),
     env(db),
-    async () => ({ subject: "google-123", email: "person@example.com", name: "和平" }),
+    async () => ({ subject: "google-123", email: "person@example.com", name: "示例用户" }),
   );
   assert.equal(response?.status, 200);
   const body = await response?.json() as {
@@ -127,7 +127,7 @@ test("Google app login automatically joins with a masked profile", async () => {
   assert.equal(typeof body.refresh_token, "string");
   assert.equal(body.profile.id, db.profile?.id);
   assert.equal(body.profile.display_mode, "masked");
-  assert.equal(body.profile.name, "＊＊＊平");
+  assert.equal(body.profile.name, "＊＊＊户");
   assert.equal(db.profile?.left_at, null);
   assert.equal(db.refreshSessionCount, 1);
 });

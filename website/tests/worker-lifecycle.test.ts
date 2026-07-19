@@ -89,7 +89,7 @@ async function login(db: SQLiteDB, subject = "google-person") {
       body: JSON.stringify({ id_token: "verified-by-test", app_version: "0.10.0 (3)" }),
     }),
     env(db),
-    async () => ({ subject, email: `${subject}@example.com`, name: "和平" }),
+    async () => ({ subject, email: `${subject}@example.com`, name: "示例用户" }),
   );
   assert.equal(response?.status, 200);
   return await response?.json() as {
@@ -113,7 +113,7 @@ test("public ranking stays readable without login and protects masked names", as
   const now = new Date().toISOString();
   db.raw.exec(`
     INSERT INTO profiles VALUES
-      ('p1', 's1', 'one@example.com', '和平', 'masked', '${now}', NULL, NULL, 'v1', '0.10.0', '${now}', '${now}'),
+      ('p1', 's1', 'one@example.com', '示例用户', 'masked', '${now}', NULL, NULL, 'v1', '0.10.0', '${now}', '${now}'),
       ('p2', 's2', 'two@example.com', '公开用户', 'public', '${now}', NULL, NULL, 'v1', '0.10.0', '${now}', '${now}');
     INSERT INTO daily_usage VALUES
       ('p1', '${day}', 200, 3000000, 'test', '0.10.0', '${now}', '${now}'),
@@ -128,7 +128,7 @@ test("public ranking stays readable without login and protects masked names", as
     entries: Array<{ rank: number; name: string; value: number }>;
   };
   assert.deepEqual(body.entries, [
-    { rank: 1, name: "＊＊＊平", value: 200 },
+    { rank: 1, name: "＊＊＊户", value: 200 },
     { rank: 2, name: "公开用户", value: 100 },
   ]);
   assert.equal(JSON.stringify(body).includes("@example.com"), false);

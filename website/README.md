@@ -6,13 +6,12 @@ MacPulse 公开 Beta 的固定 HTTPS 下载入口，使用 vinext 和 Sites 托�
 - 下载页：`app/page.tsx`
 - 公开榜单：`app/rankings/page.tsx`（无需登录）
 - 隐私说明：`app/privacy/page.tsx`
-- 轻量后台：`app/admin/page.tsx`（仅 `ADMIN_EMAILS` 白名单）
 - API：`worker/api.ts`
 - D1 迁移：`drizzle/0001_rankings.sql`
 - 样式：`app/globals.css`
 - Sparkle feed：`public/appcast.xml`
 
-排行榜仅存用户标识、名称显示方式、上海时区每日总 Token、费用汇总、价格表版本与 App 版本。不会存会话正文、项目名、路径、模型明细或第三方 AI 凭证。后台的用户数、DAU 与留存都只代表已加入排行榜的成员，不代表全部 MacPulse 用户。
+排行榜仅存用户标识、名称显示方式、上海时区每日总 Token、费用汇总、价格表版本与 App 版本。不会存会话正文、项目名、路径、模型明细或第三方 AI 凭证。
 
 ## 本地验证
 

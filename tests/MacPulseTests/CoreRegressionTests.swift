@@ -234,7 +234,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testPrivacyAliasIsStableAndDoesNotLeakProjectName() {
-        let raw = "-Users-liangheping-Documents-Secret-Client"
+        let raw = "-Users-example-Documents-Sample-Project"
         let first = ProjectName.display(raw, privacy: true)
         XCTAssertEqual(first, ProjectName.display(raw, privacy: true))
         XCTAssertNotEqual(first, ProjectName.display(raw, privacy: false))
@@ -452,7 +452,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testRankingNicknameDefaultsToFixedMask() {
-        XCTAssertEqual(RankingProfile.masked("和平"), "＊＊＊平")
+        XCTAssertEqual(RankingProfile.masked("示例用户"), "＊＊＊户")
         XCTAssertEqual(RankingProfile.masked("A"), "＊＊＊")
         XCTAssertEqual(RankingProfile.masked(""), "＊＊＊")
     }

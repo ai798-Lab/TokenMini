@@ -49,7 +49,7 @@ if [ -z "${IDENTITY}" ]; then
         echo "==> 无 Developer ID 证书，干跑模式使用 ad-hoc 签名"
     else
         echo "错误:钥匙串中没有 Developer ID Application 证书。" >&2
-        echo "请按 docs/发布指南.md 完成证书和 macpulse-notary 配置。" >&2
+        echo "请按维护者私有发布手册完成证书和 macpulse-notary 配置。" >&2
         exit 1
     fi
 else

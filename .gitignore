@@ -9,3 +9,9 @@ dist/
 # 本机协作纪要，不进入公开源码快照
 会话纪要.md
 交接文档-*.md
+
+# 维护者内部资料与本机 Agent 指令，不进入公开仓库
+AGENTS.md
+CLAUDE.md
+docs/private/
+release-notes/*.draft.md
