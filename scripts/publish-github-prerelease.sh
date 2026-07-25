@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 
 VERSION="${1:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.10.0> <递增构建号,如 3>}"
 BUILD_NUMBER="${2:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.10.0> <递增构建号,如 3>}"
-REPOSITORY="${GITHUB_REPOSITORY:-hepinga/MacPulse}"
+REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/MacPulse}"
 TAG="v${VERSION}"
 DMG="dist/MacPulse-${VERSION}.dmg"
 CHECKSUM="${DMG}.sha256"
