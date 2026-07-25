@@ -40,7 +40,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 - 不同 M 系列芯片可用的温度与风扇传感器可能不同
 - Claude 额度依赖实验性接口，失效时不影响其他功能
 ]]></description>
-            <enclosure url="https://github.com/hepinga/MacPulse/releases/download/v0.9.0/MacPulse-0.9.0.dmg" length="3868356" type="application/octet-stream" sparkle:edSignature="eVuEgCsjniQCH4HuBt7R18IXr0zyIb3IIFV3ihgCWwefWrF0YLPe+J1Sgp4RE7un6+d/7bGpb/uL7ptfaH+RAA=="/>
+            <enclosure url="https://github.com/ai798-Lab/MacPulse/releases/download/v0.9.0/MacPulse-0.9.0.dmg" length="3868356" type="application/octet-stream" sparkle:edSignature="eVuEgCsjniQCH4HuBt7R18IXr0zyIb3IIFV3ihgCWwefWrF0YLPe+J1Sgp4RE7un6+d/7bGpb/uL7ptfaH+RAA=="/>
         </item>
     </channel>
 </rss>

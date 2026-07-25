@@ -7,9 +7,9 @@
   <p><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
   <p>
-    <a href="https://github.com/hepinga/MacPulse/releases/latest"><img src="https://img.shields.io/github/v/release/hepinga/MacPulse?include_prereleases&style=flat-square&label=release" alt="Latest release"></a>
-    <a href="https://github.com/hepinga/MacPulse/actions/workflows/ci.yml"><img src="https://github.com/hepinga/MacPulse/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/github/license/hepinga/MacPulse?style=flat-square" alt="MIT license"></a>
+    <a href="https://github.com/ai798-Lab/MacPulse/releases/latest"><img src="https://img.shields.io/github/v/release/ai798-Lab/MacPulse?include_prereleases&style=flat-square&label=release" alt="Latest release"></a>
+    <a href="https://github.com/ai798-Lab/MacPulse/actions/workflows/ci.yml"><img src="https://github.com/ai798-Lab/MacPulse/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/ai798-Lab/MacPulse?style=flat-square" alt="MIT license"></a>
     <img src="https://img.shields.io/badge/status-public%20beta-F0A54A?style=flat-square" alt="Public beta">
   </p>
   <p>
@@ -20,7 +20,7 @@
   </p>
 
   <p>
-    <a href="https://github.com/hepinga/MacPulse/releases/latest"><strong>Download latest signed DMG</strong></a>
+    <a href="https://github.com/ai798-Lab/MacPulse/releases/latest"><strong>Download latest signed DMG</strong></a>
     · <a href="https://macpulse-monitor.peaceaii.chatgpt.site">Website</a>
     · <a href="#gallery">Gallery</a>
     · <a href="PRIVACY.md">Privacy</a>
@@ -105,7 +105,7 @@ All app screenshots above were captured from the built macOS app with privacy mo
 | Distribution | GitHub Releases, Developer ID signed and Apple notarized |
 | App Store | Not available; sandboxing would block SMC and local session access |
 
-1. Download the latest `.dmg` from [GitHub Releases](https://github.com/hepinga/MacPulse/releases/latest).
+1. Download the latest `.dmg` from [GitHub Releases](https://github.com/ai798-Lab/MacPulse/releases/latest).
 2. Drag `MacPulse.app` to `/Applications`.
 3. Open the app and review the first-run privacy explanation before enabling optional features.
 
@@ -143,7 +143,7 @@ Public release artifacts must be Developer ID-signed, notarized by Apple, and de
 ## Contributing and support
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
-- Use the structured [bug report](https://github.com/hepinga/MacPulse/issues/new?template=bug_report.yml) and remove tokens, session text, usernames, and real project paths.
+- Use the structured [bug report](https://github.com/ai798-Lab/MacPulse/issues/new?template=bug_report.yml) and remove tokens, session text, usernames, and real project paths.
 - Use GitHub's private vulnerability reporting flow for security issues; do not post credentials in a public Issue.
 - Release history is maintained in [CHANGELOG.md](CHANGELOG.md).
 

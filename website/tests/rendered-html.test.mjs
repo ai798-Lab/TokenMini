@@ -25,7 +25,7 @@ test("server-renders the MacPulse public beta landing page", async () => {
   assert.match(html, /macOS 14\+/);
   assert.match(html, /LOCAL BY DEFAULT/);
   assert.match(html, /OPT-IN RANKING/);
-  assert.match(html, /github\.com\/hepinga\/MacPulse/);
+  assert.match(html, /github\.com\/ai798-Lab\/MacPulse/);
   assert.match(html, /src="\/icon\.png"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);

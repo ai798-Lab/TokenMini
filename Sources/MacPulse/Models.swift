@@ -654,7 +654,7 @@ enum AppInfo {
     }
 
     static var source: URL {
-        bundleURL("MacPulseSourceURL") ?? URL(string: "https://github.com/hepinga/MacPulse")!
+        bundleURL("MacPulseSourceURL") ?? URL(string: "https://github.com/ai798-Lab/MacPulse")!
     }
 
     static var releases: URL { source.appendingPathComponent("releases") }

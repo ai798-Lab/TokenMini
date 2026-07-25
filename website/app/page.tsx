@@ -1,7 +1,7 @@
 import Image from "next/image";
 
-const releaseUrl = "https://github.com/hepinga/MacPulse/releases";
-const sourceUrl = "https://github.com/hepinga/MacPulse";
+const releaseUrl = "https://github.com/ai798-Lab/MacPulse/releases";
+const sourceUrl = "https://github.com/ai798-Lab/MacPulse";
 
 const features = [
   ["系统实时监控", "CPU、内存、网络、磁盘、电池、温度与风扇，一眼看清电脑状态。"],

@@ -19,7 +19,7 @@ VERSION="${1:-0.10.0}"
 BUILD_NUMBER="${2:-3}"
 SITE_URL="${MACPULSE_SITE_URL:-https://macpulse-monitor.peaceaii.chatgpt.site}"
 UPDATE_FEED_URL="${MACPULSE_UPDATE_FEED_URL:-${SITE_URL}/appcast.xml}"
-SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/hepinga/MacPulse}"
+SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/ai798-Lab/MacPulse}"
 SPARKLE_KEY_FILE="Config/SparklePublicKey.txt"
 SPARKLE_FRAMEWORK_SOURCE=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 
