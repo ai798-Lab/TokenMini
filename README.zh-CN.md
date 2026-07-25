@@ -7,7 +7,7 @@
   <p><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
   <p>
-    <a href="https://github.com/ai798-Lab/MacPulse/releases/latest"><img src="https://img.shields.io/github/v/release/ai798-Lab/MacPulse?include_prereleases&style=flat-square&label=release" alt="最新版本"></a>
+    <a href="https://github.com/ai798-Lab/MacPulse/releases"><img src="https://img.shields.io/github/v/release/ai798-Lab/MacPulse?include_prereleases&style=flat-square&label=release" alt="最新版本"></a>
     <a href="https://github.com/ai798-Lab/MacPulse/actions/workflows/ci.yml"><img src="https://github.com/ai798-Lab/MacPulse/actions/workflows/ci.yml/badge.svg" alt="CI 状态"></a>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/ai798-Lab/MacPulse?style=flat-square" alt="MIT 许可证"></a>
     <img src="https://img.shields.io/badge/status-public%20beta-F0A54A?style=flat-square" alt="公开测试版">
@@ -20,7 +20,7 @@
   </p>
 
   <p>
-    <a href="https://github.com/ai798-Lab/MacPulse/releases/latest"><strong>下载最新签名 DMG</strong></a>
+    <a href="https://github.com/ai798-Lab/MacPulse/releases"><strong>下载最新签名 DMG</strong></a>
     · <a href="https://macpulse-monitor.peaceaii.chatgpt.site">官网</a>
     · <a href="#产品图集">产品图集</a>
     · <a href="PRIVACY.md">隐私说明</a>
@@ -105,7 +105,7 @@ MacPulse 面向高频使用 AI 编程工具、同时又希望看清电脑状态�
 | 分发 | GitHub Releases、Developer ID 签名与 Apple 公证 |
 | App Store | 不提供；沙盒会阻止 SMC 和本机会话读取 |
 
-1. 从 [GitHub Releases](https://github.com/ai798-Lab/MacPulse/releases/latest) 下载最新 `.dmg`。
+1. 从 [GitHub Releases](https://github.com/ai798-Lab/MacPulse/releases) 下载最新 `.dmg`。
 2. 将 `MacPulse.app` 拖入 `/Applications`。
 3. 打开应用，先阅读首次启动隐私说明，再决定是否开启可选功能。
 
