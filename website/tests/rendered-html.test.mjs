@@ -31,13 +31,14 @@ test("server-renders the MacPulse public beta landing page", async () => {
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);
 });
 
-test("keeps the signed 0.9.0 update available while the next release is prepared", async () => {
-  const appcast = await readFile(new URL("../public/appcast.xml", import.meta.url), "utf8");
-  assert.match(appcast, /xmlns:sparkle=/);
-  assert.match(appcast, /<sparkle:shortVersionString>0\.9\.0<\/sparkle:shortVersionString>/);
-  assert.match(appcast, /releases\/download\/v0\.9\.0\/MacPulse-0\.9\.0\.dmg/);
-  assert.match(appcast, /sparkle:edSignature=/);
-  assert.match(appcast, /sparkle-signatures:/);
+test("publishes the signed 0.10.0 update feed", async () => {
+    const appcast = await readFile(new URL("../public/appcast.xml", import.meta.url), "utf8");
+    assert.match(appcast, /xmlns:sparkle=/);
+    assert.match(appcast, /<sparkle:version>3<\/sparkle:version>/);
+    assert.match(appcast, /<sparkle:shortVersionString>0\.10\.0<\/sparkle:shortVersionString>/);
+    assert.match(appcast, /releases\/download\/v0\.10\.0\/MacPulse-0\.10\.0\.dmg/);
+    assert.match(appcast, /sparkle:edSignature=/);
+    assert.match(appcast, /sparkle-signatures:/);
 });
 
 test("server-renders the public leaderboard without a login wall", async () => {
