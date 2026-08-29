@@ -30,7 +30,7 @@
 ![MacPulse product overview](docs/assets/github/hero.webp)
 
 > [!IMPORTANT]
-> The latest public release and signed Sparkle feed are currently **v0.9.0**. The `main` branch contains unreleased v0.10 preview work, including the optional community ranking. The app interface is Chinese-first; the language switch above changes project documentation, not the app UI.
+> The latest public release and signed Sparkle feed are **v0.10.0**. Updating is recommended for v0.9.0 users because this release fixes menu-popover jitter, background Keychain prompts, and missing Opus 5 pricing. The app interface is Chinese-first; the language switch above changes project documentation, not the app UI.
 
 ## Why MacPulse
 
@@ -66,7 +66,7 @@ All app screenshots above were captured from the built macOS app with privacy mo
 <details open>
 <summary><strong>System monitoring</strong></summary>
 
-- Menu bar label for CPU, memory, and today's AI API-equivalent estimate; optional tightest-quota indicator.
+- Stable fixed-width menu bar label for CPU and memory, with an optional tightest-quota remaining indicator; today's AI API-equivalent estimate remains in the popover.
 - CPU total/user/system load, real-time chart, and AppleSMC temperature sampling.
 - Memory pressure, compression, disk and network throughput, battery health, and fan speed.
 - Top processes by CPU or memory, with confirmation before sending `SIGTERM`.
@@ -92,7 +92,7 @@ All app screenshots above were captured from the built macOS app with privacy mo
 - Classic, HUD, and LED themes across the popover, dashboard, and notch surfaces.
 - Local Skills discovery, installation, copying, and recoverable uninstall-to-Trash behavior.
 - Optional quota-reset and wellbeing moments, each rate-limited and controlled by a master switch.
-- Optional community ranking on `main` as an unreleased v0.10 preview; local monitoring works without signing in.
+- Optional community ranking; local monitoring works without signing in.
 
 </details>
 
@@ -138,7 +138,7 @@ Public release artifacts must be Developer ID-signed, notarized by Apple, and de
 - Mach APIs for CPU and memory, `getifaddrs` for network, IOKit for disk/battery, and AppleSMC for temperature/fans.
 - Serial sampling queues behind `@MainActor` observable stores.
 - Sparkle 2 for signed application updates.
-- A separate website and lightweight worker for the optional public ranking preview.
+- A separate website and lightweight worker for the optional public ranking.
 
 ## Contributing and support
 

@@ -6,7 +6,7 @@ import Foundation
 enum PricingTable {
 
     /// 随排行榜日汇总一起上报，便于后台识别不同版本价格表造成的估值差异。
-    static let snapshotVersion = "2026-07-06"
+    static let snapshotVersion = "2026-07-30"
 
     // 计价热路径:每次 pricing(for:) 都做 normalize(多个正则)+ 前缀匹配,
     // 而 distinct 模型只有几十个。memo 把十几万次调用降到几十次实算。
@@ -24,9 +24,10 @@ enum PricingTable {
     }
 
     /// fast 模式(usage.speed == "fast")的费用倍率;不支持 fast 的模型返回 1。
-    /// 数据来源:Anthropic 官方页 —— Opus 4.8 fast $10/$50(2x),Opus 4.7 fast $30/$150(6x,2026-07-24 移除)。
+    /// 数据来源:Anthropic 官方页 —— Opus 5/4.8 fast $10/$50(2x),Opus 4.7 fast $30/$150(6x,2026-07-24 移除)。
     static func fastMultiplier(for model: String) -> Double {
         let m = normalize(model)
+        if m == "claude-opus-5" { return 2.0 }
         if m.hasPrefix("claude-opus-4-8") { return 2.0 }
         if m.hasPrefix("claude-opus-4-7") { return 6.0 }
         return 1.0
@@ -77,6 +78,10 @@ enum PricingTable {
             inputPerMTok: 10.00, outputPerMTok: 50.00,
             cacheWritePerMTok: 12.50, cacheReadPerMTok: 1.00,
             cacheWrite1hPerMTok: 20.00),
+        "claude-opus-5": ModelPricing(
+            inputPerMTok: 5.00, outputPerMTok: 25.00,
+            cacheWritePerMTok: 6.25, cacheReadPerMTok: 0.50,
+            cacheWrite1hPerMTok: 10.00),
         "claude-opus-4-8": ModelPricing(
             inputPerMTok: 5.00, outputPerMTok: 25.00,
             cacheWritePerMTok: 6.25, cacheReadPerMTok: 0.50,
@@ -206,7 +211,7 @@ enum PricingTable {
 }
 
 // MARK: - 价格数据来源与维护提醒
-// 复核日期:2026-07-17。
+// 复核日期:2026-07-30。
 // 来源:LiteLLM model_prices_and_context_window.json(raw.githubusercontent.com/BerriAI/litellm/main)
 //      + OpenAI / Anthropic 官方模型与定价页交叉验证。
 // 注意:claude-sonnet-5 当前为介绍价(in 2.00 / out 10.00 / cacheW 2.50 / cacheR 0.20),

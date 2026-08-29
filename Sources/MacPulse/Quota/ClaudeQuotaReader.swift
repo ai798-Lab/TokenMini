@@ -1,5 +1,11 @@
 import Foundation
+import LocalAuthentication
 import Security
+
+enum ClaudeKeychainAccessMode {
+    case background
+    case userInitiated
+}
 
 /// Claude 额度:读 Keychain 的 OAuth token,调未公开的用量端点拿到权威的 5h/周额度。
 /// 端点:GET https://api.anthropic.com/api/oauth/usage —— 返回 five_hour/seven_day 的
@@ -17,8 +23,8 @@ final class ClaudeQuotaReader {
         else { try? line.data(using: .utf8)!.write(to: URL(fileURLWithPath: "/tmp/mp_claude.log")) }
     }
 
-    func fetch() async -> ToolQuota? {
-        guard let cred = keychainCredentials() else { Self.dbg("keychain 读取失败(被拒/不存在)"); return nil }
+    func fetch(accessMode: ClaudeKeychainAccessMode = .background) async -> ToolQuota? {
+        guard let cred = keychainCredentials(accessMode: accessMode) else { Self.dbg("keychain 读取失败(被拒/不存在)"); return nil }
         guard let oauth = cred["claudeAiOauth"] as? [String: Any],
               let token = oauth["accessToken"] as? String else { Self.dbg("凭证结构异常"); return nil }
         let plan = oauth["subscriptionType"] as? String
@@ -42,18 +48,33 @@ final class ClaudeQuotaReader {
 
     /// 直接通过 Security.framework 读 Keychain，避免启动 `security` 子进程。
     /// 只请求单条原始 Data；OAuth token 仅存在于当前调用栈，不落盘、不写日志。
-    private func keychainCredentials() -> [String: Any]? {
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: "Claude Code-credentials",
-            kSecMatchLimit: kSecMatchLimitOne,
-            kSecReturnData: true
-        ]
+    private func keychainCredentials(accessMode: ClaudeKeychainAccessMode) -> [String: Any]? {
+        let query = Self.keychainQuery(accessMode: accessMode)
         var item: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
               let data = item as? Data,
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         return obj
+    }
+
+    /// 启动与定时刷新不得在用户没有操作 MacPulse 时弹出系统认证框。
+    /// 只有用户在设置中明确开启实验功能时，才使用系统默认的可交互策略。
+    static func keychainQuery(accessMode: ClaudeKeychainAccessMode) -> [CFString: Any] {
+        var query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: "Claude Code-credentials",
+            kSecMatchLimit: kSecMatchLimitOne,
+            kSecReturnData: true
+        ]
+        if case .background = accessMode {
+            let context = LAContext()
+            context.interactionNotAllowed = true
+            query[kSecUseAuthenticationContext] = context
+            // Claude Code 的条目可能位于传统“登录”钥匙串；Skip 是
+            // SecItemCopyMatching 专用的静默策略，作为第二层保证避免 ACL 授权框。
+            query[kSecUseAuthenticationUI] = kSecUseAuthenticationUISkip
+        }
+        return query
     }
 
     static func parse(_ d: [String: Any], plan: String?) -> ToolQuota? {

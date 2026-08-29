@@ -92,7 +92,7 @@ final class QuotaStore: ObservableObject {
         claudeAccessEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: Self.claudeAccessKey)
         if enabled {
-            refreshClaude()
+            refreshClaude(accessMode: .userInitiated)
         } else {
             claudeQuota = nil
             publish()
@@ -107,12 +107,16 @@ final class QuotaStore: ObservableObject {
         }
     }
 
-    private func refreshClaude() {
+    private func refreshClaude(accessMode: ClaudeKeychainAccessMode = .background) {
         guard claudeAccessEnabled else { return }
         let reader = claudeReader
         Task { [weak self] in
-            let q = await reader.fetch()
-            await MainActor.run { self?.claudeQuota = q; self?.publish() }
+            let q = await reader.fetch(accessMode: accessMode)
+            await MainActor.run {
+                guard let self, self.claudeAccessEnabled else { return }
+                self.claudeQuota = q
+                self.publish()
+            }
         }
     }
 

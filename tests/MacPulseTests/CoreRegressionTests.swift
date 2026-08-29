@@ -1,4 +1,6 @@
 import Foundation
+import LocalAuthentication
+import Security
 import XCTest
 @testable import MacPulse
 
@@ -96,6 +98,13 @@ final class CoreRegressionTests: XCTestCase {
         XCTAssertNil(PricingTable.match("gpt-5.6-sol-unknown"))
         XCTAssertEqual(PricingTable.normalize("openai/gpt-5.6-sol-2026-07-01"), "gpt-5.6-sol")
         XCTAssertEqual(shortModel("claude-sonnet-5-2026-07-01"), "sonnet-5")
+        let opus5 = try XCTUnwrap(PricingTable.pricing(for: "anthropic.claude-opus-5"))
+        XCTAssertEqual(opus5.inputPerMTok, 5.00)
+        XCTAssertEqual(opus5.outputPerMTok, 25.00)
+        XCTAssertEqual(opus5.cacheWritePerMTok, 6.25)
+        XCTAssertEqual(opus5.cacheWrite1hPerMTok, 10.00)
+        XCTAssertEqual(opus5.cacheReadPerMTok, 0.50)
+        XCTAssertEqual(PricingTable.fastMultiplier(for: "claude-opus-5"), 2.0)
         let pricing = try XCTUnwrap(PricingTable.pricing(for: "gpt-5.6-sol"))
         let cost = pricing.cost(input: 273_000, output: 1_000_000,
                                 cacheWrite: 0, cacheWrite1h: 0, cacheRead: 0)
@@ -104,6 +113,7 @@ final class CoreRegressionTests: XCTestCase {
 
     func testModelNameDisplayAndRecentActivityFreshness() {
         XCTAssertEqual(ModelName.display("openai/gpt-5.6-sol-2026-07-01"), "GPT-5.6 Sol")
+        XCTAssertEqual(ModelName.display("claude-opus-5"), "Opus 5")
         XCTAssertEqual(ModelName.display("claude-opus-4-8-20260701"), "Opus 4.8")
         XCTAssertEqual(ModelName.display("unknown"), "模型未知")
 
@@ -313,6 +323,19 @@ final class CoreRegressionTests: XCTestCase {
         ], plan: "pro"))
         XCTAssertEqual(quota.fiveHour?.usedPercent, 100)
         XCTAssertEqual(quota.weekly?.usedPercent, 0)
+    }
+
+    func testClaudeQuotaBackgroundKeychainReadCannotShowAuthenticationUI() throws {
+        let background = ClaudeQuotaReader.keychainQuery(accessMode: .background)
+        let context = try XCTUnwrap(background[kSecUseAuthenticationContext] as? LAContext)
+        XCTAssertTrue(context.interactionNotAllowed)
+        XCTAssertEqual(background[kSecUseAuthenticationUI] as? String,
+                       kSecUseAuthenticationUISkip as String)
+        XCTAssertEqual(background[kSecAttrService] as? String, "Claude Code-credentials")
+
+        let userInitiated = ClaudeQuotaReader.keychainQuery(accessMode: .userInitiated)
+        XCTAssertNil(userInitiated[kSecUseAuthenticationContext])
+        XCTAssertNil(userInitiated[kSecUseAuthenticationUI])
     }
 
     func testCodexQuotaReadsOnlyTailAndClampsPercent() throws {

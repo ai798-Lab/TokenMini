@@ -20,6 +20,7 @@ let package = Package(
                 .linkedFramework("IOKit"),
                 .linkedFramework("Charts"),
                 .linkedFramework("Security"),
+                .linkedFramework("LocalAuthentication"),
                 .linkedFramework("Network"),
                 .linkedFramework("CryptoKit"),
                 .unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])
