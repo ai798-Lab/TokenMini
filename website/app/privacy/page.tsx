@@ -3,8 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "隐私说明 · MacPulse",
-  description: "MacPulse 的本地数据处理、可选 Google 登录与社区排行榜隐私说明。",
+  alternates: { canonical: "https://tokenmini.cc/privacy" },
+  openGraph: { url: "https://tokenmini.cc/privacy" },
+  title: "隐私说明 · TokenMini",
+  description: "TokenMini 的本地数据处理、可选 Google 登录与社区排行榜隐私说明。",
 };
 
 const localData = [
@@ -16,7 +18,7 @@ const localData = [
 const rankingData = [
   "Google 提供的账号标识、邮箱和昵称；邮箱不会公开显示。",
   "昵称显示方式；默认打码，只保留最后一个字符。",
-  "上海时区每日 Token 总量、API 等价费用汇总、价格表版本和 MacPulse 版本。",
+  "上海时区每日 Token 总量、API 等价费用汇总、价格表版本和 TokenMini 版本。",
   "加入时间、退出时间、最后同步时间和必要的安全审计记录。",
 ];
 
@@ -24,18 +26,18 @@ export default function PrivacyPage() {
   return (
     <main className="policy-page">
       <nav className="nav shell" aria-label="隐私页导航">
-        <Link className="brand" href="/" aria-label="MacPulse 首页">
+        <Link className="brand" href="/" aria-label="TokenMini 首页">
           <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized />
-          <span>MACPULSE</span>
+          <span>TokenMini</span>
         </Link>
         <div className="nav-links"><Link href="/rankings">社区排行</Link><Link href="/">返回首页</Link></div>
       </nav>
 
       <article className="policy-shell shell">
         <header className="policy-heading">
-          <p className="eyebrow">PRIVACY · 2026-07-17</p>
+          <p className="eyebrow">PRIVACY · 2026-09-20</p>
           <h1>隐私说明</h1>
-          <p>MacPulse 是本地优先的开源 macOS 应用。默认没有账号、产品分析、广告追踪或自动崩溃上报；只有主动使用 Google 登录后，才会加入社区排行榜并同步必要的每日汇总。</p>
+          <p>TokenMini（原名 MacPulse）是本地优先的开源 macOS 应用。默认没有账号、产品分析、广告追踪或自动崩溃上报；只有主动使用 Google 登录后，才会加入社区排行榜并同步必要的每日汇总。</p>
         </header>
 
         <section>
@@ -63,7 +65,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2>你的控制权</h2>
-          <p>通知和 Claude 额度均默认关闭。排行榜可以随时退出；卸载 MacPulse 不会删除本机 Claude Code、Codex 或用户会话文件。</p>
+          <p>通知和 Claude 额度均默认关闭。排行榜可以随时退出；卸载 TokenMini 不会删除本机 Claude Code、Codex 或用户会话文件。</p>
           <p>隐私与安全问题可通过 <a href="https://github.com/ai798-Lab/MacPulse/issues">GitHub Issues</a> 反馈；包含凭证或漏洞的信息请按 <a href="https://github.com/ai798-Lab/MacPulse/blob/main/SECURITY.md">安全政策</a> 私密提交。</p>
         </section>
       </article>

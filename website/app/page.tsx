@@ -16,9 +16,9 @@ export default function Home() {
   return (
     <main>
       <nav className="nav shell" aria-label="主导航">
-        <a className="brand" href="#top" aria-label="MacPulse 首页">
+        <a className="brand" href="#top" aria-label="TokenMini 首页">
           <Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized />
-          <span>MACPULSE</span>
+          <span>TokenMini</span>
         </a>
         <div className="nav-links">
           <a href="#features">功能</a>
@@ -31,23 +31,23 @@ export default function Home() {
 
       <section className="hero shell" id="top">
         <div className="hero-copy">
-          <p className="eyebrow"><span className="status-dot" /> PUBLIC BETA · 0.10.0</p>
-          <h1>看懂你的 Mac，<br /><span>也看懂 AI 花费。</span></h1>
-          <p className="lede">MacPulse 是一款面向 Apple Silicon 的开源菜单栏监控器，把系统状态、Claude Code 与 Codex 用量放进同一个清晰的仪表盘。</p>
+          <p className="eyebrow"><span className="status-dot" /> FREE AI USAGE MONITOR FOR MAC</p>
+          <h1>每一枚 Token，<br /><span>心中有数。</span></h1>
+          <p className="lede">免费、开源的 Mac AI 用量监控工具。在菜单栏看清 Claude Code 与 Codex 的 Token 用量、API 等价费用和额度，也随时掌握 Mac 状态。</p>
           <div className="actions">
-            <a className="button primary" href={releaseUrl}>查看公开版本 <span>↗</span></a>
+            <a className="button primary" href={releaseUrl}>免费下载 <span>↗</span></a>
             <a className="button secondary" href={sourceUrl}>查看源码</a>
           </div>
           <div className="requirements" aria-label="系统要求">
             <span>Apple Silicon</span><span>macOS 14+</span><span>MIT 开源</span><span>中文界面</span>
           </div>
-          <p className="release-note">公开安装包通过 Developer ID 签名与 Apple 公证，并支持 Sparkle 应用内更新。</p>
+          <p className="release-note">TokenMini 原名 MacPulse。当前公开安装包为 MacPulse 0.10.0，经过 Developer ID 签名与 Apple 公证，支持应用内更新。</p>
         </div>
 
-        <div className="console" aria-label="MacPulse HUD 界面示意">
+        <div className="console" aria-label="TokenMini HUD 界面示意">
           <div className="console-top">
-            <div><b>MACPULSE</b><small>SYS.MONITOR // 监控器</small></div>
-            <span className="live">● LIVE</span>
+            <div><b>TokenMini</b><small>AI USAGE · MAC STATUS</small></div>
+            <span className="live">界面示意</span>
           </div>
           <div className="metric-grid">
             <article><small>CPU // LOAD</small><strong>18<span>%</span></strong><div className="bars"><i /><i /><i /><i /><i /></div></article>
@@ -76,7 +76,7 @@ export default function Home() {
         <div className="privacy-copy">
           <p className="eyebrow">02 / PRIVACY BY DEFAULT</p>
           <h2>你的会话数据，留在你的 Mac。</h2>
-          <p>MacPulse 在本地读取 Claude Code 与 Codex 会话。只有用户主动使用 Google 登录加入排行榜后，才同步每日 Token 总量、API 等价费用和应用版本；会话正文、项目和路径始终留在本机。</p>
+          <p>TokenMini 在本地读取 Claude Code 与 Codex 会话。只有用户主动使用 Google 登录加入排行榜后，才同步每日 Token 总量、API 等价费用和应用版本；会话正文、项目和路径始终留在本机。</p>
           <a href="/privacy">阅读完整隐私说明 →</a>
         </div>
         <div className="privacy-list">
@@ -89,7 +89,7 @@ export default function Home() {
       <section className="section shell" id="install">
         <div className="section-heading"><p>03 / INSTALLATION</p><h2>三步安装，不需要终端。</h2></div>
         <ol className="steps">
-          <li><span>1</span><div><b>下载 DMG</b><p>从 GitHub Release 获取签名并经过 Apple 公证的安装包。</p></div></li>
+          <li><span>1</span><div><b>下载 DMG</b><p>从 GitHub Releases 下载 MacPulse 0.10.0 的 DMG；品牌更名期间，安装包暂时保留原名。</p></div></li>
           <li><span>2</span><div><b>拖入 Applications</b><p>打开 DMG，把 MacPulse 拖到“应用程序”，不要直接在磁盘镜像里运行。</p></div></li>
           <li><span>3</span><div><b>从菜单栏开始</b><p>启动后点击菜单栏的 C / M / ¥ 状态，即可打开监控面板。</p></div></li>
         </ol>
@@ -97,13 +97,13 @@ export default function Home() {
       </section>
 
       <section className="cta shell">
-        <div><p className="eyebrow">OPEN SOURCE · MIT</p><h2>一台 Mac，一个更清楚的状态面板。</h2></div>
-        <a className="button primary" href={releaseUrl}>前往 GitHub Releases <span>↗</span></a>
+        <div><p className="eyebrow">OPEN SOURCE · MIT</p><h2>用 AI 尽兴，用量心里有数。</h2></div>
+        <a className="button primary" href={releaseUrl}>免费下载 Mac 版 <span>↗</span></a>
       </section>
 
       <footer className="footer shell">
-        <div className="brand"><Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized /><span>MACPULSE</span></div>
-        <p>系统监控与 AI 用量，全部从本地开始。</p>
+        <div className="brand"><Image className="brand-icon" src="/icon.png" width={26} height={26} alt="" unoptimized /><span>TokenMini</span></div>
+        <p>AI 用量 · Mac 状态 · tokenmini.cc</p>
         <div><a href="/rankings">排行</a><a href={sourceUrl}>源码</a><a href={`${sourceUrl}/issues`}>反馈</a><a href="/privacy">隐私</a></div>
       </footer>
     </main>
