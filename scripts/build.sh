@@ -10,16 +10,17 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 PROJ_DIR="$(pwd)"
 
-APP_NAME="MacPulse"
-DISPLAY_NAME="Mac监控器"
+APP_NAME="TokenMini"
+EXECUTABLE_NAME="MacPulse"
+DISPLAY_NAME="TokenMini"
 BUNDLE_ID="com.liangheping.macpulse"
 BUILD_DIR=".build/release"
 APP_DIR="dist/${APP_NAME}.app"
-VERSION="${1:-0.10.0}"
-BUILD_NUMBER="${2:-3}"
-SITE_URL="${MACPULSE_SITE_URL:-https://macpulse-monitor.peaceaii.chatgpt.site}"
+VERSION="${1:-0.11.0}"
+BUILD_NUMBER="${2:-5}"
+SITE_URL="${MACPULSE_SITE_URL:-https://tokenmini.cc}"
 UPDATE_FEED_URL="${MACPULSE_UPDATE_FEED_URL:-${SITE_URL}/appcast.xml}"
-SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/ai798-Lab/MacPulse}"
+SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/ai798-Lab/TokenMini}"
 SPARKLE_KEY_FILE="Config/SparklePublicKey.txt"
 SPARKLE_FRAMEWORK_SOURCE=".build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 
@@ -67,7 +68,7 @@ swift build -c release "${EXTRA_FLAGS[@]}"
 echo "==> 组装 ${APP_DIR}"
 rm -rf "${APP_DIR}"
 mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources" "${APP_DIR}/Contents/Frameworks"
-cp "${BUILD_DIR}/${APP_NAME}" "${APP_DIR}/Contents/MacOS/${APP_NAME}"
+cp "${BUILD_DIR}/${EXECUTABLE_NAME}" "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}"
 
 if [ ! -d "${SPARKLE_FRAMEWORK_SOURCE}" ]; then
     echo "错误:未找到 Sparkle.framework,请先运行 swift package resolve" >&2
@@ -81,7 +82,7 @@ cat > "${APP_DIR}/Contents/Info.plist" << PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleExecutable</key><string>${APP_NAME}</string>
+    <key>CFBundleExecutable</key><string>${EXECUTABLE_NAME}</string>
     <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleName</key><string>${APP_NAME}</string>
     <key>CFBundleDisplayName</key><string>${DISPLAY_NAME}</string>
@@ -102,7 +103,7 @@ cat > "${APP_DIR}/Contents/Info.plist" << PLIST
     <key>CFBundleURLTypes</key>
     <array><dict>
         <key>CFBundleURLName</key><string>${BUNDLE_ID}</string>
-        <key>CFBundleURLSchemes</key><array><string>macpulse</string></array>
+        <key>CFBundleURLSchemes</key><array><string>macpulse</string><string>tokenmini</string></array>
     </dict></array>
 </dict>
 </plist>
@@ -128,6 +129,8 @@ fi
 if [ -f "THIRD_PARTY_NOTICES.txt" ]; then
     cp "THIRD_PARTY_NOTICES.txt" "${APP_DIR}/Contents/Resources/"
 fi
+
+cp "Resources/Brand/MenuBarMark.png" "Resources/Brand/MenuBarMark@2x.png" "${APP_DIR}/Contents/Resources/"
 
 echo "==> ad-hoc 签名"
 codesign --force -s - "${APP_DIR}"

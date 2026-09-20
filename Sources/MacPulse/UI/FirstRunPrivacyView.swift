@@ -8,19 +8,19 @@ struct FirstRunPrivacyView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 HUDStatusDot(color: HUD.cyan, size: 7)
-                Text("MACPULSE // FIRST RUN")
+                Text("TOKENMINI // FIRST RUN")
                     .font(HUD.mono(10, .bold))
                     .kerning(1.4)
                     .foregroundStyle(HUD.cyan)
                 Spacer()
-                Text("0.9 BETA").font(HUD.mono(8)).foregroundStyle(HUD.faint)
+                Text(AppInfo.version).font(HUD.mono(8)).foregroundStyle(HUD.faint)
             }
             .padding(.bottom, 17)
 
             Text("数据先留在你的 Mac。")
                 .font(.system(size: 27, weight: .bold, design: .rounded))
                 .foregroundStyle(HUD.text)
-            Text("继续前，请先了解 MacPulse 会读取什么、不会做什么。")
+            Text("继续前，请先了解 TokenMini 会读取什么、不会做什么。")
                 .font(.system(size: 12.5))
                 .foregroundStyle(HUD.dim)
                 .lineSpacing(4)

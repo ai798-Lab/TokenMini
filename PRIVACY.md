@@ -1,8 +1,8 @@
-# MacPulse 隐私说明
+# TokenMini 隐私说明
 
 更新日期：2026-07-17
 
-MacPulse 是本地优先的开源 macOS 菜单栏应用。默认状态下没有用户账号，不发送产品分析、广告数据或自动崩溃报告。只有用户主动使用 Google 登录加入社区排行榜后，才会启用下文说明的排行榜账号与汇总同步。
+TokenMini 是本地优先的开源 macOS 菜单栏应用。默认状态下没有用户账号，不发送产品分析、广告数据或自动崩溃报告。只有用户主动使用 Google 登录加入社区排行榜后，才会启用下文说明的排行榜账号与汇总同步。
 
 ## 本地读取的数据
 
@@ -14,36 +14,36 @@ MacPulse 是本地优先的开源 macOS 菜单栏应用。默认状态下没有�
 
 ## Google 登录与社区排行榜（可选）
 
-不登录时，系统监控、AI 用量、费用预估、清理、Skills、通知和更新等本地功能都可正常使用，MacPulse 不会向排行榜服务上传用量。
+不登录时，系统监控、AI 用量、费用预估、清理、Skills、通知和更新等本地功能都可正常使用，TokenMini 不会向排行榜服务上传用量。
 
 用户点击“使用 Google 登录并加入”后，会自动加入 Token 消耗榜和 API 等价费用榜。服务会保存：
 
 - Google 提供的稳定账号标识、邮箱和昵称；邮箱只用于身份识别和管理员后台，不会公开显示。
 - 昵称显示方式（默认打码，只保留最后一个字符；用户可主动改为公开完整昵称）。
-- 上海时区每日 Token 总量、API 等价费用汇总、价格表版本和 MacPulse 版本。
+- 上海时区每日 Token 总量、API 等价费用汇总、价格表版本和 TokenMini 版本。
 - 加入时间、退出时间、最后同步时间和必要的安全审计记录。
 
 排行榜绝不会接收会话正文、提示词、回复内容、项目名、项目路径、模型明细、session ID、Claude/Codex 凭证、API Key、系统进程、文件名或设备序列号。
 
-Google ID token 会发送到 MacPulse 服务端验签；MacPulse 的访问令牌和刷新令牌只保存在本机 macOS Keychain，不写入 UserDefaults、普通文件或日志。退出排行榜后会立即停止同步、删除每日排行汇总和服务端刷新会话，并清除本机排行榜凭证。用于识别退出状态和再次加入的最小账号记录会保留；如需删除完整账号记录，可通过仓库的私密安全报告渠道提出。
+Google ID token 会发送到 TokenMini 服务端验签；TokenMini 的访问令牌和刷新令牌只保存在本机 macOS Keychain，不写入 UserDefaults、普通文件或日志。退出排行榜后会立即停止同步、删除每日排行汇总和服务端刷新会话，并清除本机排行榜凭证。用于识别退出状态和再次加入的最小账号记录会保留；如需删除完整账号记录，可通过仓库的私密安全报告渠道提出。
 
 ## Claude 额度（实验功能）
 
-该功能默认关闭。用户主动开启后，MacPulse 才会通过 macOS Security.framework 读取钥匙串中服务名为 `Claude Code-credentials` 的现有凭证，并用 OAuth access token 请求 Anthropic 的用量端点。
+该功能默认关闭。用户主动开启后，TokenMini 才会通过 macOS Security.framework 读取钥匙串中服务名为 `Claude Code-credentials` 的现有凭证，并用 OAuth access token 请求 Anthropic 的用量端点。
 
 - token 只在请求期间存在于内存，不写入文件、UserDefaults 或日志。
-- MacPulse 不保存凭证副本，也不要求用户把 token 粘贴进应用。
+- TokenMini 不保存凭证副本，也不要求用户把 token 粘贴进应用。
 - 该端点并非稳定公开 API；请求失败只会让 Claude 额度显示不可用，不影响其他功能。
 
 ## 会发生的网络请求
 
 - 用户开启 Claude 额度时：请求 `api.anthropic.com`。
 - 用户主动安装 Skill 时：从用户指定的 GitHub 仓库下载内容。
-- 检查或安装 MacPulse 更新时：读取官方 HTTPS appcast，并从 GitHub Releases 下载签名安装包。
-- 用户打开社区排行榜时：读取公开榜单；只有登录加入后才向 MacPulse 排行榜服务同步上述每日汇总。
-- 用户使用 Google 登录时：在系统浏览器打开 Google OAuth，并由 MacPulse 服务端验证 Google 身份。
+- 检查或安装 TokenMini 更新时：读取官方 HTTPS appcast，并从 GitHub Releases 下载签名安装包。
+- 用户打开社区排行榜时：读取公开榜单；只有登录加入后才向 TokenMini 排行榜服务同步上述每日汇总。
+- 用户使用 Google 登录时：在系统浏览器打开 Google OAuth，并由 TokenMini 服务端验证 Google 身份。
 
-除以上用户可感知功能外，MacPulse 不发送设备指纹、会话内容或匿名产品分析。
+除以上用户可感知功能外，TokenMini 不发送设备指纹、会话内容或匿名产品分析。
 
 ## 删除与进程操作
 

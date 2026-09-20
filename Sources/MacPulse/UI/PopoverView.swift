@@ -94,9 +94,9 @@ struct HUDPopoverView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            HUDStatusDot(color: HUD.green, size: 6)
+            BrandMark().foregroundStyle(HUD.green)
             VStack(alignment: .leading, spacing: 1) {
-                Text("MACPULSE")
+                Text("TOKENMINI")
                     .font(HUD.mono(12, .bold))
                     .kerning(2.5)
                     .foregroundStyle(HUD.text)

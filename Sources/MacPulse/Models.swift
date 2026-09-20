@@ -595,7 +595,7 @@ enum CleanupCategory: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .trash: return "废纸篓"
         case .appCaches: return "应用缓存"
-        case .userLogs: return "系统日志"
+        case .userLogs: return "用户日志"
         case .devCaches: return "开发者缓存"
         }
     }
@@ -609,14 +609,30 @@ enum CleanupCategory: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// 默认勾选。全部安全,但应用缓存涉及正在运行的 app,默认不勾让用户确认。
-    var defaultOn: Bool { self != .appCaches }
+    /// 默认只选日志和开发缓存；废纸篓含用户文件，应用缓存可能仍在使用，均需主动勾选。
+    var defaultOn: Bool { self == .userLogs || self == .devCaches }
 }
 
-/// 一个可删顶层项(某类目根目录下的直接子项)
-struct CleanupItem: Sendable {
+/// 扫描保留文件身份，清理前核对，避免删除扫描之后被替换的同名文件。
+struct CleanupIdentity: Sendable, Equatable {
+    let device: Int32
+    let inode: UInt64
+    let modifiedSeconds: Int
+    let modifiedNanoseconds: Int
+}
+
+struct CleanupItem: Identifiable, Sendable {
+    var id: String { path }
     let path: String
     let bytes: Int64
+    var identity: CleanupIdentity? = nil
+}
+
+struct CleanupIssue: Identifiable, Sendable {
+    var id: String { path + message }
+    let path: String
+    let message: String
+    var permissionDenied = false
 }
 
 struct CleanupScanResult: Identifiable, Sendable {
@@ -624,12 +640,25 @@ struct CleanupScanResult: Identifiable, Sendable {
     var id: String { category.rawValue }
     let totalBytes: Int64
     let items: [CleanupItem]
+    var issues: [CleanupIssue] = []
+    var sizeLabel: String {
+        if items.isEmpty && !issues.isEmpty { return "未能读取" }
+        return ByteFormat.memory(UInt64(max(0, totalBytes))) + (issues.isEmpty ? "" : " · 部分")
+    }
 }
 
 struct CleanupReport: Sendable {
+    /// 删除项在操作前的磁盘占用估计；APFS 快照等可能使实际可用空间变化不同。
     var freedBytes: Int64 = 0
     var deletedCount: Int = 0
     var failedCount: Int = 0
+    var missingCount: Int = 0
+    var issues: [CleanupIssue] = []
+    var summary: String {
+        "已删除 \(deletedCount) 项（约 \(ByteFormat.memory(UInt64(max(0, freedBytes)))))" +
+        (failedCount > 0 ? "，失败 \(failedCount) 项" : "") +
+        (missingCount > 0 ? "，\(missingCount) 项已不存在" : "")
+    }
 }
 
 // MARK: - 应用发布信息
@@ -646,15 +675,15 @@ enum AppInfo {
     static var displayVersion: String { "\(version) (\(build))" }
 
     static var homepage: URL {
-        bundleURL("MacPulseHomepageURL") ?? URL(string: "https://macpulse-monitor.peaceaii.chatgpt.site")!
+        bundleURL("MacPulseHomepageURL") ?? URL(string: "https://tokenmini.cc")!
     }
 
     static var privacy: URL {
-        bundleURL("MacPulsePrivacyURL") ?? URL(string: "https://macpulse-monitor.peaceaii.chatgpt.site/privacy")!
+        bundleURL("MacPulsePrivacyURL") ?? URL(string: "https://tokenmini.cc/privacy")!
     }
 
     static var source: URL {
-        bundleURL("MacPulseSourceURL") ?? URL(string: "https://github.com/ai798-Lab/MacPulse")!
+        bundleURL("MacPulseSourceURL") ?? URL(string: "https://github.com/ai798-Lab/TokenMini")!
     }
 
     static var releases: URL { source.appendingPathComponent("releases") }

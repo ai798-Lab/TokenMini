@@ -69,6 +69,11 @@ final class SystemMonitor: ObservableObject {
         slowTimer = slow
     }
 
+    func refresh() {
+        fastTick()
+        slowTick()
+    }
+
     func stop() {
         fastTimer?.invalidate(); fastTimer = nil
         slowTimer?.invalidate(); slowTimer = nil

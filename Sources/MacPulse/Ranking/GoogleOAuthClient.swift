@@ -242,9 +242,9 @@ private final class LoopbackCallbackServer: @unchecked Sendable {
         }
         let html = """
         <!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-        <title>MacPulse 登录完成</title>
+        <title>TokenMini 登录完成</title>
         <style>body{font:16px -apple-system;margin:0;display:grid;place-items:center;min-height:100vh;background:#071014;color:#e8fbff}main{max-width:420px;padding:36px;text-align:center}h1{color:#58e4ef}p{line-height:1.7;color:#a9c4c9}</style>
-        <main><h1>登录已完成</h1><p>可以关闭这个页面，返回 MacPulse。</p></main>
+        <main><h1>登录已完成</h1><p>可以关闭这个页面，返回 TokenMini。</p></main>
         <script>setTimeout(()=>window.close(),900)</script>
         """
         respond(status: "200 OK", body: html, contentType: "text/html; charset=utf-8", connection: connection)

@@ -938,13 +938,13 @@ struct DisplaySettingsMenu: View {
             Button("社区排行榜…") { openWindow(id: "leaderboard") }
             Button("检查更新…") { updates.checkForUpdates() }
                 .disabled(!updates.canCheckForUpdates)
-            Menu("关于 MacPulse") {
+            Menu("关于 TokenMini") {
                 Text("版本 \(AppInfo.displayVersion)")
                 Button("打开官网") { NSWorkspace.shared.open(AppInfo.homepage) }
                 Button("隐私说明") { NSWorkspace.shared.open(AppInfo.privacy) }
                 Button("开源许可与源码") { NSWorkspace.shared.open(AppInfo.source) }
                 Divider()
-                Button("退出 MacPulse") { NSApp.terminate(nil) }
+                Button("退出 TokenMini") { NSApp.terminate(nil) }
             }
         } label: {
             Image(systemName: "slider.horizontal.3")

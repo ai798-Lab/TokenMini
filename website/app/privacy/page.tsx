@@ -66,7 +66,7 @@ export default function PrivacyPage() {
         <section>
           <h2>你的控制权</h2>
           <p>通知和 Claude 额度均默认关闭。排行榜可以随时退出；卸载 TokenMini 不会删除本机 Claude Code、Codex 或用户会话文件。</p>
-          <p>隐私与安全问题可通过 <a href="https://github.com/ai798-Lab/MacPulse/issues">GitHub Issues</a> 反馈；包含凭证或漏洞的信息请按 <a href="https://github.com/ai798-Lab/MacPulse/blob/main/SECURITY.md">安全政策</a> 私密提交。</p>
+          <p>隐私与安全问题可通过 <a href="https://github.com/ai798-Lab/TokenMini/issues">GitHub Issues</a> 反馈；包含凭证或漏洞的信息请按 <a href="https://github.com/ai798-Lab/TokenMini/blob/main/SECURITY.md">安全政策</a> 私密提交。</p>
         </section>
       </article>
     </main>

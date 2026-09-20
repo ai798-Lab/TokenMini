@@ -46,7 +46,7 @@ struct MenuBarLabel: View {
     }
 
     private var accessibilityText: String {
-        var text = "CPU \(cpuPercent)%，内存 \(memoryPercent)%，今日 AI API 等价费用预估 \(costText)，不代表订阅实际扣款"
+        var text = "TokenMini，CPU \(cpuPercent)%，内存 \(memoryPercent)%，今日 AI API 等价费用预估 \(costText)，不代表订阅实际扣款"
         if let remainingQuota {
             text += remainingQuota >= 0 ? "，最紧张额度剩余 \(remainingQuota)%" : "，额度数据加载中"
         }
@@ -63,25 +63,31 @@ struct MenuBarLabel: View {
                                     remainingQuota: Int?) -> NSImage {
         // 菜单栏优先留给系统与其他 app：常驻只显示实时 CPU / 内存，今日费用
         // 放在悬停说明和点击后的首屏。画布仍固定，避免数值变化导致弹窗重锚定。
-        let size = NSSize(width: remainingQuota == nil ? 80 : 134, height: 20)
+        let size = NSSize(width: remainingQuota == nil ? 103 : 157, height: 20)
         let image = NSImage(size: size, flipped: false) { rect in
             // 只让数字等宽，中文、字母和标点继续使用系统比例字形，观感与 macOS
             // 原生菜单栏一致；固定坐标负责稳定布局，不再依赖整串等宽字体。
-            drawSymbol("cpu", x: 0, in: rect)
-            drawText("\(cpu)", x: 16, maxWidth: 19, in: rect)
+            menuBarMark?.draw(in: NSRect(x: 0, y: 2, width: 16, height: 16))
+            drawSymbol("cpu", x: 23, in: rect)
+            drawText("\(cpu)", x: 39, maxWidth: 19, in: rect)
 
-            drawSymbol("memorychip", x: 38, in: rect)
-            drawText("\(memory)", x: 55, maxWidth: 19, in: rect)
+            drawSymbol("memorychip", x: 61, in: rect)
+            drawText("\(memory)", x: 78, maxWidth: 19, in: rect)
 
             if let remainingQuota {
                 let quotaText = remainingQuota >= 0 ? "余\(remainingQuota)%" : "余--%"
-                drawText(quotaText, x: 85, maxWidth: 46, in: rect)
+                drawText(quotaText, x: 108, maxWidth: 46, in: rect)
             }
             return true
         }
         image.isTemplate = true
         return image
     }
+
+    private static let menuBarMark: NSImage? = {
+        guard let url = Bundle.main.url(forResource: "MenuBarMark", withExtension: "png") else { return nil }
+        return NSImage(contentsOf: url)
+    }()
 
     private static func drawSymbol(_ name: String, x: CGFloat, in rect: NSRect) {
         let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)

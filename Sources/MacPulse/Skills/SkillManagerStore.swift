@@ -51,6 +51,7 @@ final class SkillManagerStore: ObservableObject {
     // MARK: - 卸载(移入废纸篓,可恢复)
 
     func uninstall(_ skill: SkillInfo) {
+        guard !busy, pendingInstall == nil else { return }
         guard Self.isSafeInstalledSkillDirectory(skill.directory) else {
             lastMessage = "卸载已取消:skill 路径未通过安全校验"
             return
@@ -76,6 +77,7 @@ final class SkillManagerStore: ObservableObject {
     // MARK: - 跨工具复制(claude ↔ codex 全局)
 
     func copyToOtherTool(_ skill: SkillInfo) {
+        guard !busy, pendingInstall == nil else { return }
         let target = skill.tool == .claude ? SkillScanner.codexGlobalDir : SkillScanner.claudeGlobalDir
         let targetTool: ToolKind = skill.tool == .claude ? .codex : .claude
         busy = true
@@ -95,6 +97,7 @@ final class SkillManagerStore: ObservableObject {
     // MARK: - 本地文件夹安装
 
     func installFromFolder(to tools: [ToolKind]) {
+        guard !busy, pendingInstall == nil else { return }
         guard !tools.isEmpty else { lastMessage = "请至少选择一个安装目标"; return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
@@ -114,6 +117,7 @@ final class SkillManagerStore: ObservableObject {
     // MARK: - GitHub 安装(owner/repo | owner/repo/path | 完整 URL)
 
     func installFromGitHub(_ input: String, to tools: [ToolKind]) {
+        guard !busy, pendingInstall == nil else { return }
         guard !tools.isEmpty else { lastMessage = "请至少选择一个安装目标"; return }
         let spec = Self.parseRepoSpec(input)
         guard let spec else { lastMessage = "无法识别:请输入 owner/repo 或 GitHub 链接"; return }
@@ -126,7 +130,9 @@ final class SkillManagerStore: ObservableObject {
             let git = Process()
             git.executableURL = URL(fileURLWithPath: "/usr/bin/git")
             git.arguments = ["-c", "http.lowSpeedLimit=1000", "-c", "http.lowSpeedTime=30",
-                             "clone", "--depth", "1", cloneURL, tmp]
+                             "clone", "--depth", "1"]
+            if let branch = spec.branch { git.arguments! += ["--branch", branch, "--single-branch"] }
+            git.arguments! += ["--", cloneURL, tmp]
             git.environment = ProcessInfo.processInfo.environment.merging(["GIT_TERMINAL_PROMPT": "0"]) { _, new in new }
             git.standardOutput = FileHandle.nullDevice
             git.standardError = FileHandle.nullDevice
@@ -259,17 +265,22 @@ final class SkillManagerStore: ObservableObject {
     }
 
     /// 解析 "owner/repo"、"owner/repo/sub/path"、完整 GitHub URL
-    nonisolated static func parseRepoSpec(_ raw: String) -> (owner: String, repo: String, subpath: String)? {
+    nonisolated static func parseRepoSpec(_ raw: String) -> (owner: String, repo: String, subpath: String, branch: String?)? {
         var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !s.isEmpty else { return nil }
         for prefix in ["https://github.com/", "http://github.com/", "github.com/", "git@github.com:"] {
             if s.lowercased().hasPrefix(prefix) { s = String(s.dropFirst(prefix.count)); break }
         }
         if s.hasSuffix(".git") { s = String(s.dropLast(4)) }
-        // 去掉 /tree/<branch> 形态
+        var branch: String?
+        // 保留 /tree/<branch>，否则会静默安装默认分支的内容。
         if let r = s.range(of: "/tree/") {
             let after = s[r.upperBound...]
             let parts = after.split(separator: "/", maxSplits: 1)
+            guard let rawBranch = parts.first, let decoded = String(rawBranch).removingPercentEncoding,
+                  !decoded.isEmpty, !decoded.hasPrefix("-"), !decoded.contains(".."),
+                  !decoded.contains(" "), !decoded.contains("\n") else { return nil }
+            branch = decoded
             s = String(s[..<r.lowerBound]) + (parts.count > 1 ? "/" + parts[1] : "")
         }
         let comps = s.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
@@ -283,7 +294,7 @@ final class SkillManagerStore: ObservableObject {
         let pathParts = comps.dropFirst(2)
         guard pathParts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }) else { return nil }
         let sub = comps.count > 2 ? comps[2...].joined(separator: "/") : ""
-        return (comps[0], comps[1], sub)
+        return (comps[0], comps[1], sub, branch)
     }
 
     nonisolated private static func isInside(_ candidate: URL, root: URL) -> Bool {

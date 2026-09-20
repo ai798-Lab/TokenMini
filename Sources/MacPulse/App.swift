@@ -9,6 +9,7 @@ struct MacPulseApp: App {
     @StateObject private var system = SystemMonitor()
     @StateObject private var usage = UsageStore()
     @StateObject private var cleanup = CleanupStore()
+    @StateObject private var processActions = ProcessActionStore()
     @StateObject private var quota = QuotaStore()
     @StateObject private var skillStore = SkillManagerStore()
     @StateObject private var leaderboard = LeaderboardStore()
@@ -19,6 +20,7 @@ struct MacPulseApp: App {
                 .environmentObject(system)
                 .environmentObject(usage)
                 .environmentObject(cleanup)
+                .environmentObject(processActions)
                 .environmentObject(quota)
                 .environmentObject(skillStore)
                 .environmentObject(leaderboard)
@@ -39,7 +41,7 @@ struct MacPulseApp: App {
         .menuBarExtraStyle(.window)
 
         // 独立的 Token 监控台窗口(单实例);从弹窗「打开监控台」按钮开启
-        Window("Token 监控台", id: "dashboard") {
+        Window("TokenMini · Token 监控台", id: "dashboard") {
             DashboardRoot()
                 .environmentObject(usage)
                 .environmentObject(system)
@@ -48,6 +50,15 @@ struct MacPulseApp: App {
         }
         .windowResizability(.contentMinSize)
         .defaultSize(width: 980, height: 660)
+
+        Window("TokenMini · 清理与内存管理", id: "maintenance") {
+            MaintenanceView()
+                .environmentObject(cleanup)
+                .environmentObject(system)
+                .environmentObject(processActions)
+        }
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 700, height: 650)
 
         Window("社区排行", id: "leaderboard") {
             LeaderboardView()
@@ -126,6 +137,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NotificationCenter.default.post(name: Notification.Name("MacPulse.openMaintenance"), object: nil)
+        return true
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         duplicateGuardTimer?.invalidate()
         if let duplicateLaunchObserver {
@@ -161,8 +177,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             let alert = NSAlert()
             alert.alertStyle = .warning
-            alert.messageText = "请先把 MacPulse 拖到“应用程序”"
-            alert.informativeText = "当前正在磁盘镜像中运行，应用内更新无法可靠安装。请退出后把 MacPulse 拖入 Applications，再从那里启动。"
+            alert.messageText = "请先把 TokenMini 拖到“应用程序”"
+            alert.informativeText = "当前正在磁盘镜像中运行，应用内更新无法可靠安装。请退出后把 TokenMini 拖入 Applications，再从那里启动。"
             alert.addButton(withTitle: "打开应用程序文件夹")
             alert.addButton(withTitle: "稍后")
             NSApp.activate(ignoringOtherApps: true)
@@ -207,7 +223,10 @@ private final class SingleInstanceGuard {
 private struct AutoOpenDashboard: ViewModifier {
     @Environment(\.openWindow) private var openWindow
     func body(content: Content) -> some View {
-        content.onAppear {
+        content.onReceive(NotificationCenter.default.publisher(for: Notification.Name("MacPulse.openMaintenance"))) { _ in
+            openWindow(id: "maintenance")
+            NSApp.activate(ignoringOtherApps: true)
+        }.onAppear {
             let environment = ProcessInfo.processInfo.environment
             if environment["MACPULSE_AUTOOPEN"] != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 12) { openWindow(id: "dashboard") }

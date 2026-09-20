@@ -335,7 +335,7 @@ private struct RankingAPIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("MacPulse/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        request.setValue("TokenMini/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
         if let accessToken { request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization") }
         if let body {
             request.httpBody = body

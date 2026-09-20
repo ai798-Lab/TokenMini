@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TokenMini · 每一枚 Token，心中有数",
     description: "系统状态、Claude Code 与 Codex 用量，全部放进一个清晰的菜单栏仪表盘。",
+    images: [{ url: "/brand/hero.png", width: 1944, height: 809, alt: "TokenMini 四片精密机械主视觉" }],
     type: "website",
     url: "https://tokenmini.cc/",
     siteName: "TokenMini",

@@ -82,9 +82,9 @@ struct LEDPopoverView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            LEDBreathDot(color: LED.green, size: 7)
+            BrandMark().foregroundStyle(LED.green)
             VStack(alignment: .leading, spacing: 0) {
-                Text("MACPULSE")
+                Text("TOKENMINI")
                     .font(LED.display(15, .bold))
                     .foregroundStyle(LED.text)
                 Text(proMode ? "专业模式" : "系统监控器")

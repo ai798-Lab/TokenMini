@@ -19,7 +19,7 @@ export default function RankingsPage() {
         </Link>
         <div className="nav-links">
           <Link href="/">首页</Link>
-          <a href="https://github.com/ai798-Lab/MacPulse/releases">下载</a>
+          <a href="https://github.com/ai798-Lab/TokenMini/releases/tag/v0.11.0">下载</a>
         </div>
       </nav>
       <section className="rank-shell shell">
@@ -29,7 +29,7 @@ export default function RankingsPage() {
             <h1>本周社区排行</h1>
             <p>用户自愿登录后参与；只同步 Token 总量与 API 等价费用，不包含会话正文。</p>
           </div>
-          <a className="button secondary" href="https://github.com/ai798-Lab/MacPulse/releases">
+          <a className="button secondary" href="https://github.com/ai798-Lab/TokenMini/releases/tag/v0.11.0">
             下载 TokenMini
           </a>
         </div>

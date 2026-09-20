@@ -1,11 +1,13 @@
 import SwiftUI
 import Charts
 
-/// 系统页签:监控(CPU/内存/网络/磁盘/传感器/电池/进程)+ 清理优化(内存回收/进程结束/垃圾清理)。
+/// 系统页签:监控(CPU/内存/网络/磁盘/传感器/电池/进程)+ 清理优化(内存管理/进程退出/垃圾清理)。
 /// 清理是系统管理的一部分,收在本页而非独立 tab。HUD 模块化面板布局。
 struct HUDSystemPanelView: View {
     @EnvironmentObject var system: SystemMonitor
     @EnvironmentObject var cleanup: CleanupStore
+    @EnvironmentObject var actions: ProcessActionStore
+    @Environment(\.openWindow) private var openWindow
     @State private var procToKill: TopProcess?
 
     var body: some View {
@@ -15,6 +17,9 @@ struct HUDSystemPanelView: View {
             ratesAndDiskSection
             batterySection
             processSection
+            if let message = actions.message {
+                Text(message).font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             junkSection
         }
         .padding(.horizontal, 12)
@@ -28,12 +33,12 @@ struct HUDSystemPanelView: View {
         ) {
             Button("取消", role: .cancel) { procToKill = nil }
             Button("结束", role: .destructive) {
-                if let p = procToKill { ProcessKiller.terminate(pid: p.pid, expectedName: p.name) }
+                if let p = procToKill { actions.terminate(p, system: system) }
                 procToKill = nil
             }
         } message: {
             if let p = procToKill {
-                Text("将向「\(p.name)」发送退出信号(等同 Cmd-Q,应用会先保存)。确定结束吗?")
+                Text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。")
             }
         }
     }
@@ -70,7 +75,7 @@ struct HUDSystemPanelView: View {
         }
     }
 
-    // MARK: 内存(含一键回收)
+    // MARK: 内存(含管理入口)
 
     private var memorySection: some View {
         HUDPanel(padding: 9, accent: memColor) {
@@ -82,24 +87,15 @@ struct HUDSystemPanelView: View {
                                         .foregroundStyle(HUD.text)))
                 HUDGauge(ratio: system.memory.usageRatio, color: memColor)
                 HStack(spacing: 12) {
-                    legend("联动", ByteFormat.memory(system.memory.wired), HUD.amber)
+                    legend("系统保留", ByteFormat.memory(system.memory.wired), HUD.amber)
                     legend("已压缩", ByteFormat.memory(system.memory.compressed), HUD.violet)
                     Spacer()
-                    if let freed = cleanup.lastFreedMemory {
-                        Text(freed > 0 ? "已回收 \(ByteFormat.memory(UInt64(freed)))" : "已最优")
-                            .font(HUD.mono(8))
-                            .foregroundStyle(freed > 0 ? HUD.green : HUD.dim)
-                    }
-                    Button {
-                        cleanup.releaseMemory()
-                    } label: {
-                        HStack(spacing: 3) {
-                            if cleanup.releasingMemory { ProgressView().controlSize(.mini) }
-                            Text(cleanup.releasingMemory ? "回收中" : "回收内存")
-                        }
+                    Button("管理内存") {
+                        cleanup.page = .memory
+                        openWindow(id: "maintenance")
+                        NSApp.activate(ignoringOtherApps: true)
                     }
                     .buttonStyle(HUDButtonStyle(size: 9))
-                    .disabled(cleanup.releasingMemory)
                 }
             }
         }
@@ -236,7 +232,8 @@ struct HUDSystemPanelView: View {
                                 .background(CutCorner(cut: 3).fill(Color.white.opacity(0.06)))
                         }
                         .buttonStyle(.plain)
-                        .help("结束该进程")
+                        .help("请求退出该进程，请先保存工作")
+                        .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: p.pid, name: p.name))
                     }
                     .padding(.vertical, 1)
                     .hudRowHover()
@@ -253,6 +250,7 @@ struct HUDSystemPanelView: View {
                 HUDSectionHeader(cn: "垃圾清理", code: "SYS.JUNK", accent: HUD.amber,
                                  trailing: AnyView(junkHeaderTrailing))
 
+                CleanupStatusView()
                 ForEach(cleanup.results) { result in
                     Button {
                         cleanup.toggle(result.category)
@@ -268,7 +266,7 @@ struct HUDSystemPanelView: View {
                                         .font(.system(size: 10, weight: .medium))
                                         .foregroundStyle(HUD.text)
                                     Spacer()
-                                    Text(ByteFormat.memory(UInt64(max(0, result.totalBytes))))
+                                    Text(result.sizeLabel)
                                         .font(HUD.mono(9))
                                         .foregroundStyle(HUD.dim)
                                 }
@@ -285,24 +283,25 @@ struct HUDSystemPanelView: View {
 
                 HStack {
                     if let r = cleanup.lastReport {
-                        Text("已清理 \(ByteFormat.memory(UInt64(max(0, r.freedBytes))))" +
-                             (r.failedCount > 0 ? " · \(r.failedCount) 项占用中跳过" : ""))
+                        Text(r.summary)
                             .font(HUD.mono(8)).foregroundStyle(HUD.green)
                     } else {
-                        Text("已选 \(ByteFormat.memory(UInt64(max(0, cleanup.selectedBytes))))")
+                        Text(cleanup.selectionSummary)
                             .font(HUD.mono(8)).foregroundStyle(HUD.dim)
                     }
                     Spacer()
                     Button {
-                        cleanup.clean()
+                        cleanup.page = .cleanup
+                        openWindow(id: "maintenance")
+                        NSApp.activate(ignoringOtherApps: true)
                     } label: {
                         HStack(spacing: 4) {
                             if cleanup.cleaning { ProgressView().controlSize(.mini) }
-                            Text(cleanup.cleaning ? "清理中…" : "清理选中")
+                            Text(cleanup.cleaning ? "清理中…" : "预览清理")
                         }
                     }
                     .buttonStyle(HUDButtonStyle(accent: HUD.amber, filled: true, size: 10))
-                    .disabled(cleanup.cleaning || cleanup.scanning || cleanup.selected.isEmpty || cleanup.selectedBytes == 0)
+                    .disabled(!cleanup.canClean)
                 }
             }
         }
@@ -313,7 +312,7 @@ struct HUDSystemPanelView: View {
         if cleanup.scanning {
             HStack(spacing: 4) {
                 ProgressView().controlSize(.mini)
-                Text("扫描中…").font(HUD.mono(8)).foregroundStyle(HUD.dim)
+                Text(cleanup.scanStatus).font(HUD.mono(8)).foregroundStyle(HUD.dim)
             }
         } else {
             Button("重新扫描") { cleanup.scan() }

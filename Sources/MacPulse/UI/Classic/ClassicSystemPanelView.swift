@@ -6,6 +6,8 @@ import Charts
 struct ClassicSystemPanelView: View {
     @EnvironmentObject var system: SystemMonitor
     @EnvironmentObject var cleanup: CleanupStore
+    @EnvironmentObject var actions: ProcessActionStore
+    @Environment(\.openWindow) private var openWindow
     @State private var procToKill: TopProcess?
 
     var body: some View {
@@ -17,6 +19,9 @@ struct ClassicSystemPanelView: View {
             sensorSection
             batterySection
             processSection
+            if let message = actions.message {
+                Text(message).font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
 
             Divider().padding(.vertical, 2)
             junkSection
@@ -32,12 +37,12 @@ struct ClassicSystemPanelView: View {
         ) {
             Button("取消", role: .cancel) { procToKill = nil }
             Button("结束", role: .destructive) {
-                if let p = procToKill { ProcessKiller.terminate(pid: p.pid, expectedName: p.name) }
+                if let p = procToKill { actions.terminate(p, system: system) }
                 procToKill = nil
             }
         } message: {
             if let p = procToKill {
-                Text("将向「\(p.name)」发送退出信号(等同 Cmd-Q,应用会先保存)。确定结束吗?")
+                Text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。")
             }
         }
     }
@@ -67,7 +72,7 @@ struct ClassicSystemPanelView: View {
         }
     }
 
-    // MARK: 内存(含一键回收)
+    // MARK: 内存(含管理入口)
 
     private var memorySection: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -87,24 +92,15 @@ struct ClassicSystemPanelView: View {
             }
             .frame(height: 6)
             HStack(spacing: 12) {
-                legend("联动", ByteFormat.memory(system.memory.wired), .orange)
+                legend("系统保留", ByteFormat.memory(system.memory.wired), .orange)
                 legend("已压缩", ByteFormat.memory(system.memory.compressed), .purple)
                 Spacer()
-                if let freed = cleanup.lastFreedMemory {
-                    Text(freed > 0 ? "已回收 \(ByteFormat.memory(UInt64(freed)))" : "已最优")
-                        .font(.caption2)
-                        .foregroundStyle(freed > 0 ? .green : .secondary)
-                }
-                Button {
-                    cleanup.releaseMemory()
-                } label: {
-                    HStack(spacing: 3) {
-                        if cleanup.releasingMemory { ProgressView().controlSize(.mini) }
-                        Text(cleanup.releasingMemory ? "回收中" : "回收内存")
-                    }
+                Button("管理内存") {
+                    cleanup.page = .memory
+                    openWindow(id: "maintenance")
+                    NSApp.activate(ignoringOtherApps: true)
                 }
                 .controlSize(.mini)
-                .disabled(cleanup.releasingMemory)
             }
         }
     }
@@ -231,7 +227,8 @@ struct ClassicSystemPanelView: View {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
-                    .help("结束该进程")
+                    .help("请求退出该进程，请先保存工作")
+                    .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: p.pid, name: p.name))
                 }
             }
         }
@@ -247,7 +244,7 @@ struct ClassicSystemPanelView: View {
                 if cleanup.scanning {
                     HStack(spacing: 4) {
                         ProgressView().controlSize(.mini)
-                        Text("扫描中…").font(.caption2).foregroundStyle(.secondary)
+                        Text(cleanup.scanStatus).font(.caption2).foregroundStyle(.secondary)
                     }
                 } else {
                     Button("重新扫描") { cleanup.scan() }
@@ -256,6 +253,7 @@ struct ClassicSystemPanelView: View {
                 }
             }
 
+            CleanupStatusView()
             ForEach(cleanup.results) { result in
                 Button {
                     cleanup.toggle(result.category)
@@ -268,7 +266,7 @@ struct ClassicSystemPanelView: View {
                             HStack {
                                 Text(result.category.title).font(.caption.weight(.medium))
                                 Spacer()
-                                Text(ByteFormat.memory(UInt64(max(0, result.totalBytes))))
+                                Text(result.sizeLabel)
                                     .font(.system(.caption2, design: .monospaced))
                                     .foregroundStyle(.secondary)
                             }
@@ -284,25 +282,26 @@ struct ClassicSystemPanelView: View {
 
             HStack {
                 if let r = cleanup.lastReport {
-                    Text("已清理 \(ByteFormat.memory(UInt64(max(0, r.freedBytes))))" +
-                         (r.failedCount > 0 ? " · \(r.failedCount) 项占用中跳过" : ""))
+                    Text(r.summary)
                         .font(.caption2).foregroundStyle(.green)
                 } else {
-                    Text("已选 \(ByteFormat.memory(UInt64(max(0, cleanup.selectedBytes))))")
+                    Text(cleanup.selectionSummary)
                         .font(.caption2).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button {
-                    cleanup.clean()
+                    cleanup.page = .cleanup
+                    openWindow(id: "maintenance")
+                    NSApp.activate(ignoringOtherApps: true)
                 } label: {
                     HStack(spacing: 4) {
                         if cleanup.cleaning { ProgressView().controlSize(.mini) }
-                        Text(cleanup.cleaning ? "清理中…" : "清理选中")
+                        Text(cleanup.cleaning ? "清理中…" : "预览清理")
                     }
                 }
                 .controlSize(.small)
                 .buttonStyle(.borderedProminent)
-                .disabled(cleanup.cleaning || cleanup.scanning || cleanup.selected.isEmpty || cleanup.selectedBytes == 0)
+                .disabled(!cleanup.canClean)
             }
         }
     }
