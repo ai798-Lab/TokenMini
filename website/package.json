@@ -1,6 +1,6 @@
 {
-  "name": "macpulse-site",
-  "version": "0.10.0",
+  "name": "tokenmini-site",
+  "version": "0.11.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "jose": "^6.2.3",
+    "lucide-react": "^1.47.0",
     "next": "^16.2.10",
     "react": "19.2.6",
     "react-dom": "19.2.6"

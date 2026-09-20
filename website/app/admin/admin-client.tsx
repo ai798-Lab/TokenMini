@@ -139,7 +139,7 @@ export default function AdminClient() {
     return (
       <section className="admin-login shell">
         <p className="eyebrow">OWNER ACCESS</p>
-        <h1>MacPulse 运营后台</h1>
+        <h1>TokenMini 运营后台</h1>
         <p>仅允许配置在服务端白名单中的 Google 账号访问。</p>
         <div ref={buttonRef} className="google-button" />
         <small>{message}</small>

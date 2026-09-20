@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 failures=0
-EXPECTED_REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/MacPulse}"
+EXPECTED_REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/TokenMini}"
 EXPECTED_PUBLIC_KEY="$(tr -d '[:space:]' < Config/SparklePublicKey.txt)"
 
 pass() { echo "通过: $1"; }

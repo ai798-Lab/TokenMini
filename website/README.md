@@ -1,8 +1,8 @@
-# MacPulse 下载站
+# TokenMini 下载站
 
-MacPulse 公开 Beta 的固定 HTTPS 下载入口，使用 vinext 和 Sites 托管。站点不接入通用遥测或分析脚本；只有用户主动使用 Google 登录加入排行榜后，才会把每日 Token 与 API 等价费用汇总写入 D1。
+TokenMini（原名 TokenMini）公开 Beta 的固定 HTTPS 下载入口，使用 vinext 和 Sites 托管。站点不接入通用遥测或分析脚本；只有用户主动使用 Google 登录加入排行榜后，才会把每日 Token 与 API 等价费用汇总写入 D1。
 
-- 生产站：<https://macpulse-monitor.peaceaii.chatgpt.site>
+- 生产站：<https://tokenmini.cc>
 - 下载页：`app/page.tsx`
 - 公开榜单：`app/rankings/page.tsx`（无需登录）
 - 隐私说明：`app/privacy/page.tsx`
@@ -26,3 +26,7 @@ Google OAuth 与 D1 未配置时，下载页、隐私页和本地 App 功能仍�
 
 正式发布时，先上传已公证的 GitHub Release DMG，再将根目录 `dist/appcast.xml`替换到
 `public/appcast.xml`，重新构建并部署。不要手工编辑已签名 appcast。
+
+## 品牌与兼容（2026-09-20）
+
+品牌已确认为 TokenMini，主域名为 `tokenmini.cc`（Porkbun）。当前公开安装包仍为 TokenMini 0.10.0；网站安装说明明确保留其真实名称。原站点、GitHub 仓库、应用标识、排行榜认证与签名更新源继续兼容旧版。

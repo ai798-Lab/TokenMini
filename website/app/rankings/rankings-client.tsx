@@ -83,7 +83,7 @@ export default function RankingsClient() {
           </div>
         )}
         {status === "ready" && data.entries.length === 0 && (
-          <div className="ranking-state">还没有人上榜。登录 MacPulse 后，你可以成为第一位。</div>
+          <div className="ranking-state">还没有人上榜。登录 TokenMini 后，你可以成为第一位。</div>
         )}
         {status === "ready" && data.entries.map((entry) => (
           <div className={"ranking-row rank-" + entry.rank} role="row" key={entry.rank + "-" + entry.name}>
@@ -93,7 +93,7 @@ export default function RankingsClient() {
           </div>
         ))}
       </div>
-      <p className="ranking-footnote">公开榜单无需登录即可浏览；加入和查看个人名次请在 MacPulse 中完成。</p>
+      <p className="ranking-footnote">公开榜单无需登录即可浏览；加入和查看个人名次请在 TokenMini 中完成。</p>
     </div>
   );
 }

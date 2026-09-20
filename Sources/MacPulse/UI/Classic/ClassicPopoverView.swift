@@ -40,7 +40,8 @@ struct ClassicPopoverView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(proMode ? "专业模式" : "监控器")
+            BrandMark()
+            Text("TokenMini")
                 .font(.headline)
             Spacer()
             DisplaySettingsMenu()

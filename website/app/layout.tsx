@@ -6,15 +6,19 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://macpulse-monitor.peaceaii.chatgpt.site"),
-  title: "MacPulse · Mac 系统与 AI 用量监控器",
-  description: "面向 Apple Silicon 的开源菜单栏监控器：系统状态、Claude Code 与 Codex 用量，一眼看清。",
-  applicationName: "MacPulse",
+  metadataBase: new URL("https://tokenmini.cc"),
+  title: "TokenMini · 免费的 Mac AI 用量监控工具",
+  description: "免费的 Mac AI 用量监控工具：Claude Code 与 Codex Token 用量、API 等价费用、额度和 Mac 状态，一眼看清。",
+  applicationName: "TokenMini",
+  alternates: { canonical: "https://tokenmini.cc/" },
   icons: { icon: "/icon.png", shortcut: "/icon.png", apple: "/icon.png" },
   openGraph: {
-    title: "MacPulse · 看懂你的 Mac，也看懂 AI 花费",
+    title: "TokenMini · 每一枚 Token，心中有数",
     description: "系统状态、Claude Code 与 Codex 用量，全部放进一个清晰的菜单栏仪表盘。",
+    images: [{ url: "/brand/hero.png", width: 1944, height: 809, alt: "TokenMini 四片精密机械主视觉" }],
     type: "website",
+    url: "https://tokenmini.cc/",
+    siteName: "TokenMini",
     locale: "zh_CN",
   },
 };

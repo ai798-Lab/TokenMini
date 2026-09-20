@@ -1,6 +1,6 @@
-# Contributing to MacPulse
+# Contributing to TokenMini
 
-感谢你帮助改进 MacPulse。
+感谢你帮助改进 TokenMini。
 
 ## 开发要求
 

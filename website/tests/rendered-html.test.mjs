@@ -14,19 +14,24 @@ async function render(pathname = "/") {
   );
 }
 
-test("server-renders the MacPulse public beta landing page", async () => {
+test("server-renders the TokenMini public beta landing page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /PUBLIC BETA/);
+  assert.match(html, /FREE AI USAGE MONITOR FOR MAC/);
+  assert.match(html, /TokenMini/);
+  assert.match(html, /https:\/\/tokenmini\.cc/);
+  assert.match(html, /0\.11\.0/);
   assert.match(html, /Apple Silicon/);
   assert.match(html, /macOS 14\+/);
   assert.match(html, /LOCAL BY DEFAULT/);
   assert.match(html, /OPT-IN RANKING/);
-  assert.match(html, /github\.com\/ai798-Lab\/MacPulse/);
-  assert.match(html, /src="\/icon\.png"/);
+  assert.match(html, /大模型的消耗/);
+  assert.doesNotMatch(html, /立即充值|立即付款|Token 购买|SUPPLY/);
+  assert.match(html, /github\.com\/ai798-Lab\/TokenMini/);
+  assert.match(html, /src="\/brand\/logo-horizontal-black\.svg"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);
 });
@@ -69,7 +74,7 @@ test("keeps the operations console out of search results", async () => {
   const response = await render("/admin");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /MacPulse 运营后台/);
+  assert.match(html, /TokenMini 运营后台/);
   assert.match(html, /noindex/i);
   assert.match(html, /src="\/icon\.png"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);

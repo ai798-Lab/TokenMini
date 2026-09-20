@@ -1,15 +1,15 @@
 <div align="center">
-  <img src="website/public/icon.png" width="112" alt="MacPulse 应用图标">
-  <h1>MacPulse</h1>
+  <img src="website/public/icon.png" width="112" alt="TokenMini 应用图标">
+  <h1>TokenMini</h1>
   <p><strong>看懂你的 Mac，也看懂 AI 用量。</strong></p>
   <p>面向 Apple Silicon 的原生菜单栏监控器：系统健康、Claude Code 与 Codex 用量、成本预估、额度和本地优先工具。</p>
 
   <p><a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a></p>
 
   <p>
-    <a href="https://github.com/ai798-Lab/MacPulse/releases"><img src="https://img.shields.io/github/v/release/ai798-Lab/MacPulse?include_prereleases&style=flat-square&label=release" alt="最新版本"></a>
-    <a href="https://github.com/ai798-Lab/MacPulse/actions/workflows/ci.yml"><img src="https://github.com/ai798-Lab/MacPulse/actions/workflows/ci.yml/badge.svg" alt="CI 状态"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/github/license/ai798-Lab/MacPulse?style=flat-square" alt="MIT 许可证"></a>
+    <a href="https://github.com/ai798-Lab/TokenMini/releases"><img src="https://img.shields.io/github/v/release/ai798-Lab/TokenMini?include_prereleases&style=flat-square&label=release" alt="最新版本"></a>
+    <a href="https://github.com/ai798-Lab/TokenMini/actions/workflows/ci.yml"><img src="https://github.com/ai798-Lab/TokenMini/actions/workflows/ci.yml/badge.svg" alt="CI 状态"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/ai798-Lab/TokenMini?style=flat-square" alt="MIT 许可证"></a>
     <img src="https://img.shields.io/badge/status-public%20beta-F0A54A?style=flat-square" alt="公开测试版">
   </p>
   <p>
@@ -20,32 +20,34 @@
   </p>
 
   <p>
-    <a href="https://github.com/ai798-Lab/MacPulse/releases"><strong>下载最新签名 DMG</strong></a>
-    · <a href="https://macpulse-monitor.peaceaii.chatgpt.site">官网</a>
+    <a href="https://github.com/ai798-Lab/TokenMini/releases"><strong>下载最新签名 DMG</strong></a>
+    · <a href="https://tokenmini.cc">官网</a>
     · <a href="#产品图集">产品图集</a>
     · <a href="PRIVACY.md">隐私说明</a>
   </p>
 </div>
 
-![MacPulse 产品总览](docs/assets/github/hero.webp)
+![TokenMini 品牌主视觉](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> 当前正式公开版本与已签名 Sparkle 更新源是 **v0.10.0**。建议 v0.9.0 用户更新：本版修复菜单弹窗抖动、后台钥匙串认证弹窗与 Opus 5 计价缺失。上方语言切换只切换项目文档；应用界面目前仍以中文为主。
+> **TokenMini 0.11.0 公开测试版** 是 MacPulse 更名后的品牌迭代版本，沿用原有设置与本地数据。请从 Releases 下载签名 DMG。当前以免费 Token 监控台为主，未开放 Token 售卖。上方语言切换只切换文档；应用界面目前以中文为主。
 
-## 为什么是 MacPulse
+## 为什么是 TokenMini
 
 | | 你能得到什么 |
 | --- | --- |
 | **系统脉搏** | 在菜单栏查看 CPU、内存、网络、磁盘、电池、温度、风扇和高占用进程。 |
 | **AI 用量** | 本地汇总 Claude Code 与 Codex JSONL，会话 Token 构成、趋势和 API 等价成本一目了然。 |
 | **额度感知** | Claude/Codex 额度窗口、重置倒计时、可选通知与刘海体验。 |
-| **本地优先工具** | 隐私模式、安全缓存清理、有界内存回收、进程结束和可恢复的 Skills 管理。 |
+| **本地优先工具** | 隐私模式、安全缓存清理、内存占用管理、进程结束和可恢复的 Skills 管理。 |
 
-MacPulse 面向高频使用 AI 编程工具、同时又希望看清电脑状态的人。默认“一眼看懂”模式先回答三个实际问题：额度还能撑多久、今天的速度会不会太贵、电脑现在是否吃力；需要时再切换分析模式查看 Token、模型和项目明细。
+TokenMini 面向高频使用 AI 编程工具、同时又希望看清电脑状态的人。默认“一眼看懂”模式先回答三个实际问题：额度还能撑多久、今天的速度会不会太贵、电脑现在是否吃力；需要时再切换分析模式查看 Token、模型和项目明细。
 
 ## 产品图集
 
 ### 三套视觉系统
+
+以下截图展示更名前的主题功能；0.11.0 已统一为 TokenMini 名称和新图标。
 
 | HUD | LED | 经典 |
 | --- | --- | --- |
@@ -57,7 +59,7 @@ MacPulse 面向高频使用 AI 编程工具、同时又希望看清电脑状态�
 
 ### 公开官网
 
-![MacPulse 公开官网](docs/assets/github/website-home.png)
+![TokenMini 公开官网](docs/assets/github/website-home.png)
 
 以上 App 截图均来自实际构建的 macOS 应用，并已开启隐私模式：真实项目名被替换成稳定别名。服务不可用、凭证、管理后台和私人路径等画面不会用于公开展示。
 
@@ -105,8 +107,8 @@ MacPulse 面向高频使用 AI 编程工具、同时又希望看清电脑状态�
 | 分发 | GitHub Releases、Developer ID 签名与 Apple 公证 |
 | App Store | 不提供；沙盒会阻止 SMC 和本机会话读取 |
 
-1. 从 [GitHub Releases](https://github.com/ai798-Lab/MacPulse/releases) 下载最新 `.dmg`。
-2. 将 `MacPulse.app` 拖入 `/Applications`。
+1. 从 [GitHub Releases](https://github.com/ai798-Lab/TokenMini/releases) 下载最新 `.dmg`。
+2. 将 `TokenMini.app` 拖入 `/Applications`。
 3. 打开应用，先阅读首次启动隐私说明，再决定是否开启可选功能。
 
 > [!NOTE]
@@ -114,7 +116,7 @@ MacPulse 面向高频使用 AI 编程工具、同时又希望看清电脑状态�
 
 ## 隐私模型
 
-MacPulse 以本地处理为默认，不上传会话正文、提示词、回复、真实项目路径或 AI 凭证，也不启用产品分析、广告遥测或自动崩溃上报。
+TokenMini 以本地处理为默认，不上传会话正文、提示词、回复、真实项目路径或 AI 凭证，也不启用产品分析、广告遥测或自动崩溃上报。
 
 只有用户可感知功能会联网，例如检查更新、可选 Claude 额度、从用户指定 GitHub 仓库安装 Skill，以及可选社区排行。详细边界见 [隐私说明](PRIVACY.md) 与 [安全策略](SECURITY.md)。
 
@@ -124,11 +126,11 @@ MacPulse 以本地处理为默认，不上传会话正文、提示词、回复�
 
 ```bash
 ./scripts/test.sh
-./scripts/build.sh 0.10.0 3
-open dist/MacPulse.app
+./scripts/build.sh 0.11.0 5
+open dist/TokenMini.app
 ```
 
-项目采用 Swift 5 语言模式、目标 macOS 14+，使用 Swift Package Manager。构建脚本会编译、组装 `dist/MacPulse.app`、按需生成图标，并为本地测试执行 ad-hoc 签名。
+项目采用 Swift 5 语言模式、目标 macOS 14+，使用 Swift Package Manager。构建脚本会编译、组装 `dist/TokenMini.app`、按需生成图标，并为本地测试执行 ad-hoc 签名。
 
 公开发布产物必须经过 Developer ID 签名、Apple 公证，并通过已签名的 Sparkle appcast 分发。维护者凭证与内部发布手册刻意保留在公开仓库之外；`SKIP_NOTARIZE=1` 生成的产物不得公开分发。
 
@@ -143,13 +145,13 @@ open dist/MacPulse.app
 ## 贡献与反馈
 
 - 提交 Pull Request 前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
-- 使用结构化[错误报告](https://github.com/ai798-Lab/MacPulse/issues/new?template=bug_report.yml)，并移除 token、会话正文、用户名和真实项目路径。
+- 使用结构化[错误报告](https://github.com/ai798-Lab/TokenMini/issues/new?template=bug_report.yml)，并移除 token、会话正文、用户名和真实项目路径。
 - 安全问题请使用 GitHub 私密漏洞报告，不要在公开 Issue 中粘贴凭证。
 - 版本历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 致谢
 
-MacPulse 的灵感来自 SystemPal，并参考了 [exelban/stats](https://github.com/exelban/stats) 与 [ccusage](https://github.com/ryoppippi/ccusage)。第三方许可见 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)。
+TokenMini 的灵感来自 SystemPal，并参考了 [exelban/stats](https://github.com/exelban/stats) 与 [ccusage](https://github.com/ryoppippi/ccusage)。第三方许可见 [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)。
 
 ## 许可证
 

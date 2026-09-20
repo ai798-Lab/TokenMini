@@ -6,9 +6,9 @@ cd "$(dirname "$0")/.."
 
 VERSION="${1:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.10.0> <递增构建号,如 3>}"
 BUILD_NUMBER="${2:?用法: ./scripts/publish-github-prerelease.sh <版本,如 0.10.0> <递增构建号,如 3>}"
-REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/MacPulse}"
+REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/TokenMini}"
 TAG="v${VERSION}"
-DMG="dist/MacPulse-${VERSION}.dmg"
+DMG="dist/TokenMini-${VERSION}.dmg"
 CHECKSUM="${DMG}.sha256"
 NOTES="release-notes/${VERSION}.md"
 
@@ -32,7 +32,7 @@ if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
         exit 1
     fi
 else
-    git tag -a "${TAG}" -m "MacPulse ${VERSION} public beta"
+    git tag -a "${TAG}" -m "TokenMini ${VERSION} public beta"
 fi
 
 REMOTE_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
@@ -58,11 +58,11 @@ fi
 if gh release view "${TAG}" --repo "${REPOSITORY}" >/dev/null 2>&1; then
     gh release upload "${TAG}" "${DMG}" "${CHECKSUM}" --repo "${REPOSITORY}" --clobber
     gh release edit "${TAG}" --repo "${REPOSITORY}" --prerelease \
-        --title "MacPulse ${VERSION} Public Beta" --notes-file "${NOTES}"
+        --title "TokenMini ${VERSION} Public Beta" --notes-file "${NOTES}"
 else
     gh release create "${TAG}" "${DMG}" "${CHECKSUM}" \
         --repo "${REPOSITORY}" --verify-tag --prerelease \
-        --title "MacPulse ${VERSION} Public Beta" --notes-file "${NOTES}"
+        --title "TokenMini ${VERSION} Public Beta" --notes-file "${NOTES}"
 fi
 
 echo "==> GitHub Pre-release 已准备: https://github.com/${REPOSITORY}/releases/tag/${TAG}"

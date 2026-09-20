@@ -7,6 +7,8 @@ import SwiftUI
 struct LEDSystemPanelView: View {
     @EnvironmentObject var system: SystemMonitor
     @EnvironmentObject var cleanup: CleanupStore
+    @EnvironmentObject var actions: ProcessActionStore
+    @Environment(\.openWindow) private var openWindow
     @State private var procToKill: TopProcess?
 
     var body: some View {
@@ -17,6 +19,9 @@ struct LEDSystemPanelView: View {
             diskSpaceSection
             batterySection
             processSection
+            if let message = actions.message {
+                Text(message).font(.caption2).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             junkSection
         }
         .padding(.horizontal, 12)
@@ -30,12 +35,12 @@ struct LEDSystemPanelView: View {
         ) {
             Button("取消", role: .cancel) { procToKill = nil }
             Button("结束", role: .destructive) {
-                if let p = procToKill { ProcessKiller.terminate(pid: p.pid, expectedName: p.name) }
+                if let p = procToKill { actions.terminate(p, system: system) }
                 procToKill = nil
             }
         } message: {
             if let p = procToKill {
-                Text("将向「\(p.name)」发送退出信号(等同 Cmd-Q,应用会先保存)。确定结束吗?")
+                Text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。")
             }
         }
     }
@@ -99,24 +104,15 @@ struct LEDSystemPanelView: View {
                 }
                 LEDGauge(ratio: system.memory.usageRatio, color: memColor)
                 HStack(spacing: 12) {
-                    legend("联动", ByteFormat.memory(system.memory.wired), LED.amber)
+                    legend("系统保留", ByteFormat.memory(system.memory.wired), LED.amber)
                     legend("已压缩", ByteFormat.memory(system.memory.compressed), LED.green)
                     Spacer()
-                    if let freed = cleanup.lastFreedMemory {
-                        Text(freed > 0 ? "已回收 \(ByteFormat.memory(UInt64(freed)))" : "已最优")
-                            .font(LED.mono(8))
-                            .foregroundStyle(freed > 0 ? LED.green : LED.dim)
-                    }
-                    Button {
-                        cleanup.releaseMemory()
-                    } label: {
-                        HStack(spacing: 3) {
-                            if cleanup.releasingMemory { ProgressView().controlSize(.mini) }
-                            Text(cleanup.releasingMemory ? "回收中" : "回收内存")
-                        }
+                    Button("管理内存") {
+                        cleanup.page = .memory
+                        openWindow(id: "maintenance")
+                        NSApp.activate(ignoringOtherApps: true)
                     }
                     .buttonStyle(LEDGhostButtonStyle(size: 9))
-                    .disabled(cleanup.releasingMemory)
                 }
             }
         }
@@ -264,7 +260,8 @@ struct LEDSystemPanelView: View {
                                 .background(Circle().fill(Color.white.opacity(0.07)))
                         }
                         .buttonStyle(.plain)
-                        .help("结束该进程")
+                        .help("请求退出该进程，请先保存工作")
+                        .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: p.pid, name: p.name))
                     }
                     .padding(.vertical, 1)
                     .ledRowHover()
@@ -280,6 +277,7 @@ struct LEDSystemPanelView: View {
             VStack(alignment: .leading, spacing: 6) {
                 sectionHeader("JUNK CLEANUP", cn: "垃圾清理", tint: LED.amber) { junkHeaderTrailing }
 
+                CleanupStatusView()
                 ForEach(cleanup.results) { result in
                     Button {
                         cleanup.toggle(result.category)
@@ -296,7 +294,7 @@ struct LEDSystemPanelView: View {
                                         .font(.system(size: 10, weight: .medium))
                                         .foregroundStyle(LED.text)
                                     Spacer()
-                                    Text(ByteFormat.memory(UInt64(max(0, result.totalBytes))))
+                                    Text(result.sizeLabel)
                                         .font(LED.mono(9))
                                         .foregroundStyle(LED.dim)
                                 }
@@ -313,24 +311,25 @@ struct LEDSystemPanelView: View {
 
                 HStack {
                     if let r = cleanup.lastReport {
-                        Text("已清理 \(ByteFormat.memory(UInt64(max(0, r.freedBytes))))" +
-                             (r.failedCount > 0 ? " · \(r.failedCount) 项占用中跳过" : ""))
+                        Text(r.summary)
                             .font(LED.mono(8)).foregroundStyle(LED.green)
                     } else {
-                        Text("已选 \(ByteFormat.memory(UInt64(max(0, cleanup.selectedBytes))))")
+                        Text(cleanup.selectionSummary)
                             .font(LED.mono(8)).foregroundStyle(LED.dim)
                     }
                     Spacer()
                     Button {
-                        cleanup.clean()
+                        cleanup.page = .cleanup
+                        openWindow(id: "maintenance")
+                        NSApp.activate(ignoringOtherApps: true)
                     } label: {
                         HStack(spacing: 4) {
                             if cleanup.cleaning { ProgressView().controlSize(.mini) }
-                            Text(cleanup.cleaning ? "清理中…" : "清理选中")
+                            Text(cleanup.cleaning ? "清理中…" : "预览清理")
                         }
                     }
                     .buttonStyle(LEDGhostButtonStyle(size: 10, prominent: true))
-                    .disabled(cleanup.cleaning || cleanup.scanning || cleanup.selected.isEmpty || cleanup.selectedBytes == 0)
+                    .disabled(!cleanup.canClean)
                 }
             }
         }
@@ -341,7 +340,7 @@ struct LEDSystemPanelView: View {
         if cleanup.scanning {
             HStack(spacing: 4) {
                 ProgressView().controlSize(.mini)
-                Text("扫描中…").font(LED.mono(8)).foregroundStyle(LED.dim)
+                Text(cleanup.scanStatus).font(LED.mono(8)).foregroundStyle(LED.dim)
             }
         } else {
             Button("重新扫描") { cleanup.scan() }

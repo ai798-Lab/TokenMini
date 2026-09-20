@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.0 — 2026-09-20
+
+- Rebrand MacPulse as TokenMini; keep application identity, settings, callback and update-key compatibility.
+- Adopt the selected four-slice logo across app icons, menu bar, native headers, website and repository.
+- Rebuild tokenmini.cc around the approved editorial layout, layered mechanical hero and optional motion.
+- Carry forward locally accepted 0.10.1 maintenance safety and usability fixes; include their regression tests.
+
+
 本项目采用语义化版本号；构建号单独递增，用于 Sparkle 比较更新。
 
 ## [0.10.0] - 2026-08-29

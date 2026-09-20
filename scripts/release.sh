@@ -10,13 +10,14 @@ cd "$(dirname "$0")/.."
 
 VERSION="${1:?用法: ./scripts/release.sh <版本,如 0.10.0> <递增构建号,如 3>}"
 BUILD_NUMBER="${2:?用法: ./scripts/release.sh <版本,如 0.10.0> <递增构建号,如 3>}"
-APP_NAME="MacPulse"
+APP_NAME="TokenMini"
+EXECUTABLE_NAME="MacPulse"
 APP_DIR="dist/${APP_NAME}.app"
 NOTARY_PROFILE="${NOTARY_PROFILE:-macpulse-notary}"
 SKIP_NOTARIZE="${SKIP_NOTARIZE:-0}"
 SKIP_APPCAST="${SKIP_APPCAST:-0}"
-GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/MacPulse}"
-SITE_URL="${MACPULSE_SITE_URL:-https://macpulse-monitor.peaceaii.chatgpt.site}"
+GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-ai798-Lab/TokenMini}"
+SITE_URL="${MACPULSE_SITE_URL:-https://tokenmini.cc}"
 DMG_PATH="dist/${APP_NAME}-${VERSION}.dmg"
 CHECKSUM_PATH="${DMG_PATH}.sha256"
 PRIVATE_DIR="dist/private"
@@ -87,7 +88,7 @@ if codesign -d --entitlements :- "${APP_DIR}" 2>&1 | grep -q 'com.apple.security
     echo "错误:发布包含 get-task-allow entitlement" >&2
     exit 1
 fi
-ARCHS="$(lipo -archs "${APP_DIR}/Contents/MacOS/${APP_NAME}")"
+ARCHS="$(lipo -archs "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}")"
 if [ "${ARCHS}" != "arm64" ]; then
     echo "错误:主程序架构应为 arm64,实际为 ${ARCHS}" >&2
     exit 1
@@ -98,7 +99,7 @@ DSYM_DIR="${PRIVATE_DIR}/${APP_NAME}-${VERSION}.dSYM"
 DSYM_ZIP="${PRIVATE_DIR}/${APP_NAME}-${VERSION}-dSYM.zip"
 rm -rf "${DSYM_DIR}"
 rm -f "${DSYM_ZIP}"
-dsymutil "${APP_DIR}/Contents/MacOS/${APP_NAME}" -o "${DSYM_DIR}"
+dsymutil "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}" -o "${DSYM_DIR}"
 ditto -c -k --keepParent "${DSYM_DIR}" "${DSYM_ZIP}"
 
 if [ "${SKIP_NOTARIZE}" != "1" ]; then

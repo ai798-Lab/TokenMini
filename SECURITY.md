@@ -8,7 +8,7 @@
 
 请使用 GitHub 仓库的 **Security → Report a vulnerability** 私密报告功能。不要在公开 Issue 中提交 token、会话文件、真实项目路径或可复现凭证。
 
-报告建议包含：MacPulse 版本与构建号、macOS 版本、Mac 芯片、影响范围、最小复现步骤，以及已脱敏的日志。我们会先确认收到，再评估影响和修复窗口。
+报告建议包含：TokenMini 版本与构建号、macOS 版本、Mac 芯片、影响范围、最小复现步骤，以及已脱敏的日志。我们会先确认收到，再评估影响和修复窗口。
 
 ## Release integrity
 

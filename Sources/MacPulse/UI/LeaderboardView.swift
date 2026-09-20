@@ -33,7 +33,7 @@ struct LeaderboardView: View {
                 Task { await leaderboard.leave() }
             }
         } message: {
-            Text("退出后会停止同步并删除公开排行榜数据；MacPulse 的全部本地监控功能仍可正常使用。")
+            Text("退出后会停止同步并删除公开排行榜数据；TokenMini 的全部本地监控功能仍可正常使用。")
         }
     }
 
