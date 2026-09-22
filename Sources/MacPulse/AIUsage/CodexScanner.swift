@@ -19,6 +19,8 @@ final class CodexScanner: @unchecked Sendable {
         let inputTokens: Int       // 非缓存输入
         let cacheReadTokens: Int   // 缓存命中输入
         let outputTokens: Int
+        let cacheWriteTokens: Int
+        let speed: String?
     }
 
     private struct FileCache {
@@ -39,26 +41,31 @@ final class CodexScanner: @unchecked Sendable {
             let type: String?
             let cwd: String?
             let model: String?
+            let service_tier: String?
             let info: Info?
         }
 
         struct Info: Decodable {
             let lastTokenUsage: TokenUsage?
+            let totalTokenUsage: TokenUsage?
 
             enum CodingKeys: String, CodingKey {
                 case lastTokenUsage = "last_token_usage"
+                case totalTokenUsage = "total_token_usage"
             }
         }
 
-        struct TokenUsage: Decodable {
+        struct TokenUsage: Decodable, Equatable {
             let inputTokens: Double?
             let cachedInputTokens: Double?
             let outputTokens: Double?
+            let cacheWriteTokens: Double?
 
             enum CodingKeys: String, CodingKey {
                 case inputTokens = "input_tokens"
                 case cachedInputTokens = "cached_input_tokens"
                 case outputTokens = "output_tokens"
+                case cacheWriteTokens = "cache_write_input_tokens"
             }
         }
     }
@@ -66,20 +73,20 @@ final class CodexScanner: @unchecked Sendable {
     private var cache: [String: FileCache] = [:]
     private let decoder = JSONDecoder()
 
+    private let baseDirectories: [URL]
+    init(baseDirectories: [URL]? = nil) {
+        let home = ProcessInfo.processInfo.environment["CODEX_HOME"] ?? NSHomeDirectory() + "/.codex"
+        self.baseDirectories = baseDirectories ?? ["sessions", "archived_sessions"].map { URL(fileURLWithPath: home).appendingPathComponent($0) }
+    }
+
     func scanAll() -> [UsageEvent] {
         let cutoff = Date().addingTimeInterval(-Self.maxEventAge)
-        let base = (NSHomeDirectory() as NSString).appendingPathComponent(".codex/sessions")
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: base, isDirectory: &isDir), isDir.boolValue else {
-            cache = [:]; return []
-        }
-
         var newCache: [String: FileCache] = [:]
-        let baseURL = URL(fileURLWithPath: base, isDirectory: true)
+        for baseURL in baseDirectories {
         guard let en = FileManager.default.enumerator(
             at: baseURL,
             includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey],
-            options: [.skipsHiddenFiles]) else { return [] }
+            options: [.skipsHiddenFiles]) else { continue }
 
         for case let url as URL in en where url.lastPathComponent.hasPrefix("rollout-") && url.pathExtension == "jsonl" {
             let path = url.path
@@ -93,6 +100,7 @@ final class CodexScanner: @unchecked Sendable {
             }
             newCache[path] = parseFile(at: url, cutoff: cutoff)
         }
+        }
         cache = newCache
 
         var events: [UsageEvent] = []
@@ -103,10 +111,10 @@ final class CodexScanner: @unchecked Sendable {
                     model: e.model,
                     inputTokens: e.inputTokens,
                     outputTokens: e.outputTokens,
-                    cacheCreationTokens: 0,
+                    cacheCreationTokens: e.cacheWriteTokens,
                     cacheCreation1hTokens: 0,
                     cacheReadTokens: e.cacheReadTokens,
-                    speed: nil,
+                    speed: e.speed,
                     costUSD: nil,
                     sourceApp: "codex",
                     project: file.project,
@@ -131,8 +139,10 @@ final class CodexScanner: @unchecked Sendable {
         }
 
         var events: [ParsedLine] = []
-        var model = "gpt-5"                 // 默认;首个 turn_context 会覆盖
+        var model = "unknown"                 // 默认;首个 turn_context 会覆盖
         var project = "unknown"
+        var speed: String?
+        var previousTotal: CodexRecord.TokenUsage?
 
         func handleLine(_ data: Data) {
             guard data.count <= Self.maxJSONLineBytes,
@@ -145,20 +155,26 @@ final class CodexScanner: @unchecked Sendable {
                 if let cwd = payload.cwd { project = Self.projectName(cwd) }
             case "turn_context":
                 if let m = payload.model, !m.isEmpty { model = m }
+                speed = ["fast", "priority"].contains(payload.service_tier ?? "") ? "fast" : nil
                 if let cwd = payload.cwd, project == "unknown" { project = Self.projectName(cwd) }
             case "event_msg":
                 guard payload.type == "token_count",
                       let last = payload.info?.lastTokenUsage,
                       let ts = obj.timestamp,
                       let when = self.parseTimestamp(ts) else { return }
+                if let total = payload.info?.totalTokenUsage {
+                    if previousTotal == total { return }
+                    previousTotal = total
+                }
                 let input = UsageValueSanitizer.tokens(last.inputTokens)
                 let cached = min(UsageValueSanitizer.tokens(last.cachedInputTokens), input)
                 let output = UsageValueSanitizer.tokens(last.outputTokens)
-                let nonCached = max(0, input - cached)
-                guard nonCached + cached + output > 0, when >= cutoff else { return }
+                let write = min(UsageValueSanitizer.tokens(last.cacheWriteTokens), input - cached)
+                let nonCached = max(0, input - cached - write)
+                guard nonCached + cached + write + output > 0, when >= cutoff else { return }
                 events.append(ParsedLine(timestamp: when, model: model,
                                          inputTokens: nonCached, cacheReadTokens: cached,
-                                         outputTokens: output))
+                                         outputTokens: output, cacheWriteTokens: write, speed: speed))
             default: break
             }
         }

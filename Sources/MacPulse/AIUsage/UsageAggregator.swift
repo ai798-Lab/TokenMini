@@ -40,7 +40,7 @@ enum UsageAggregator {
             let inWindow = e.timestamp >= start && e.timestamp < end
             if inWindow {
                 facetTools.insert(e.tool); facetProjects.insert(e.project); facetModels.insert(e.model)
-                if PricingTable.pricing(for: e.model) == nil { unknownModels.insert(e.model) }
+                if !e.isPriced && filter.matchesDimensions(e) { unknownModels.insert(e.model) }
             }
             guard filter.matchesDimensions(e) else {
                 // 维度不匹配:仅可能贡献 facet(已在上面收集),跳过计量

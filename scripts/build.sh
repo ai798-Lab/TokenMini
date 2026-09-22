@@ -130,7 +130,12 @@ if [ -f "THIRD_PARTY_NOTICES.txt" ]; then
     cp "THIRD_PARTY_NOTICES.txt" "${APP_DIR}/Contents/Resources/"
 fi
 
-cp "Resources/Brand/MenuBarMark.png" "Resources/Brand/MenuBarMark@2x.png" "${APP_DIR}/Contents/Resources/"
+cp "Resources/Brand/HeaderMark.pdf" "Resources/Brand/MenuBarMark.pdf" "${APP_DIR}/Contents/Resources/"
+
+cp "Resources/Prism/PrismCore.png" "${APP_DIR}/Contents/Resources/"
+
+ditto "${BUILD_DIR}/MacPulse_MacPulse.bundle" "${APP_DIR}/Contents/Resources/MacPulse_MacPulse.bundle"
+ditto "Resources/ThirdParty" "${APP_DIR}/Contents/Resources/ThirdParty"
 
 echo "==> ad-hoc 签名"
 codesign --force -s - "${APP_DIR}"

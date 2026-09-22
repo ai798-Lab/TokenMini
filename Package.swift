@@ -14,11 +14,13 @@ let package = Package(
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources/MacPulse",
+            resources: [.copy("AIUsage/CommunityPrices.json")],
             linkerSettings: [
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("AppKit"),
                 .linkedFramework("IOKit"),
                 .linkedFramework("Charts"),
+                .linkedLibrary("sqlite3"),
                 .linkedFramework("Security"),
                 .linkedFramework("LocalAuthentication"),
                 .linkedFramework("Network"),

@@ -314,7 +314,7 @@ struct LeaderboardView: View {
         if settings.isLED {
             ZStack { LED.bg; LEDDotMatrix(tint: LED.amber, pitch: 6, alpha: 0.04) }
         } else if settings.isHUD {
-            ZStack { HUD.bg; HUDGridBackground() }
+            ZStack { HUD.bg; if !settings.isPrism { HUDGridBackground() } }
         } else {
             Color(nsColor: .windowBackgroundColor)
         }

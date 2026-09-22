@@ -17,7 +17,8 @@ struct GlassCard<Content: View>: View {
     private var hover: Bool { mouse != nil }
 
     var body: some View {
-        if settings.isLED { ledBody }
+        if settings.isPrism { inner.modifier(PrismSurface()) }
+        else if settings.isLED { ledBody }
         else if settings.isHUD { hudBody }
         else { classicBody }
     }
@@ -290,11 +291,11 @@ enum SeriesColor {
     static let classicPalette: [Color] = [
         .blue, .purple, .teal, .orange, .pink, .green, .indigo, .cyan, .mint, .red
     ]
-    static let hudPalette: [Color] = [
+    static var hudPalette: [Color] { [
         HUD.cyan, HUD.violet, HUD.mint, HUD.amber, HUD.pink,
         HUD.green, HUD.ice, Color(red: 1.0, green: 0.55, blue: 0.30),
         Color(red: 0.45, green: 0.62, blue: 1.0), HUD.red
-    ]
+    ] }
     /// LED 单色亮度阶梯(琥珀系)。
     /// **真实的 LED 仪表盘是单色的**——参考图里时间是纯红屏、卡路里是纯琥珀屏,
     /// 多个系列在真机上靠亮度区分,不靠色相。之前用 10 个全饱和高亮色(红/绿/玫红/薄荷…)
@@ -314,7 +315,7 @@ enum SeriesColor {
     static var palette: [Color] {
         switch DisplaySettings.shared.theme {
         case .led: return ledPalette
-        case .hud: return hudPalette
+        case .hud, .prism: return hudPalette
         case .classic: return classicPalette
         }
     }

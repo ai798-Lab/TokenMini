@@ -27,12 +27,14 @@ enum CurrencyMode: String, CaseIterable, Identifiable {
 /// UI 主题:经典(系统原生风)/ HUD(影视包装 FUI 风)/ LED(复古健身器材仪表风)。
 /// 切换必须覆盖所有界面:弹窗及其二三级页面、监控台、灵动岛。
 enum AppTheme: String, CaseIterable, Identifiable {
+    case prism
     case classic
     case hud
     case led
     var id: String { rawValue }
     var label: String {
         switch self {
+        case .prism: return "Prism 光核 · 默认"
         case .classic: return "经典"
         case .hud: return "HUD 科幻"
         case .led: return "LED 仪表"
@@ -62,7 +64,9 @@ final class DisplaySettings: ObservableObject {
     @Published var privacyMode: Bool { didSet { d.set(privacyMode, forKey: kPrivacyMode) } }
 
     /// 便捷判断(视图分支用)
-    var isHUD: Bool { theme == .hud }
+    var isPrism: Bool { theme == .prism }
+    /// Prism 复用 HUD 数据视图，材质和排版由独立皮肤组件提供。
+    var isHUD: Bool { theme == .hud || theme == .prism }
     var isLED: Bool { theme == .led }
     /// 深色系主题(HUD/LED):需要强制暗色 + 自绘滚动条
     var isDarkSkin: Bool { theme != .classic }
@@ -81,7 +85,7 @@ final class DisplaySettings: ObservableObject {
         currency = CurrencyMode(rawValue: d.string(forKey: kCurrency) ?? "") ?? .cny
         usdToCny = d.object(forKey: kRate) != nil ? d.double(forKey: kRate) : 7.2
         showQuotaInMenuBar = d.bool(forKey: kQuotaBar)   // 默认 false
-        theme = AppTheme(rawValue: d.string(forKey: kTheme) ?? "") ?? .hud
+        theme = AppTheme(rawValue: d.string(forKey: kTheme) ?? "") ?? .prism
         dashboardMode = DashboardMode(rawValue: d.string(forKey: kDashboardMode) ?? "") ?? .overview
         privacyMode = d.bool(forKey: kPrivacyMode)
     }

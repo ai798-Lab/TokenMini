@@ -108,7 +108,7 @@ final class CoreRegressionTests: XCTestCase {
         let pricing = try XCTUnwrap(PricingTable.pricing(for: "gpt-5.6-sol"))
         let cost = pricing.cost(input: 273_000, output: 1_000_000,
                                 cacheWrite: 0, cacheWrite1h: 0, cacheRead: 0)
-        XCTAssertEqual(cost, 47.73, accuracy: 0.000_001)
+        XCTAssertEqual(cost, 32.184, accuracy: 0.000_001)
     }
 
     func testModelNameDisplayAndRecentActivityFreshness() {
@@ -525,6 +525,7 @@ final class CoreRegressionTests: XCTestCase {
                         tool: ToolKind = .codex) -> PricedEvent {
         PricedEvent(timestamp: timestamp, tool: tool, model: model, project: project,
                     session: UUID().uuidString, input: 1, output: 0, cacheWrite: 0, cacheRead: 0,
-                    cost: CostBreakdown(input: cost), cacheSavedUSD: 0)
+                    cost: CostBreakdown(input: cost), cacheSavedUSD: 0,
+                    isPriced: PricingTable.pricing(for: model) != nil)
     }
 }

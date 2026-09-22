@@ -28,13 +28,33 @@ enum ProjectName {
     }
 }
 
-enum ToolKind: String, Sendable, CaseIterable, Identifiable {
-    case claude, codex
+enum ToolKind: String, Sendable, CaseIterable, Identifiable, Codable {
+    case claude, codex, kimi, cursor, trae, traeWork, gemini, opencode
+    case windsurf, copilot, cline, rooCode, kiloCode, qoder, workbuddy, antigravity, other
     var id: String { rawValue }
-    var label: String { self == .claude ? "Claude Code" : "Codex CLI" }
-    init?(sourceApp: String) {
-        switch sourceApp { case "claude": self = .claude; case "codex": self = .codex; default: return nil }
+    var label: String {
+        switch self {
+        case .claude: return "Claude Code"
+        case .codex: return "Codex"
+        case .kimi: return "Kimi Code"
+        case .cursor: return "Cursor"
+        case .trae: return "Trae"
+        case .traeWork: return "Trae Work / SOLO"
+        case .gemini: return "Gemini CLI"
+        case .opencode: return "OpenCode"
+        case .windsurf: return "Windsurf"
+        case .copilot: return "GitHub Copilot"
+        case .cline: return "Cline"
+        case .rooCode: return "Roo Code"
+        case .kiloCode: return "Kilo Code"
+        case .qoder: return "Qoder / QoderWork"
+        case .workbuddy: return "WorkBuddy"
+        case .antigravity: return "Antigravity"
+        case .other: return "其他工具"
+        }
     }
+    var localScanner: Bool { [.claude, .codex, .kimi, .gemini, .opencode].contains(self) }
+    init?(sourceApp: String) { self.init(rawValue: sourceApp) }
 }
 
 enum TokenType: String, Sendable, CaseIterable, Identifiable {
@@ -90,6 +110,7 @@ struct PricedEvent: Sendable {
     let cacheRead: Int
     let cost: CostBreakdown
     let cacheSavedUSD: Double
+    var isPriced: Bool = true
 
     var totalTokens: Int { input + output + cacheWrite + cacheRead }
 
@@ -130,7 +151,7 @@ struct PricedEvent: Sendable {
         }
         return PricedEvent(
             timestamp: e.timestamp,
-            tool: ToolKind(sourceApp: e.sourceApp) ?? .claude,
+            tool: ToolKind(sourceApp: e.sourceApp) ?? .other,
             model: e.model,
             project: e.project,
             session: e.sessionID,
@@ -139,7 +160,8 @@ struct PricedEvent: Sendable {
             cacheWrite: e.cacheCreationTokens,
             cacheRead: e.cacheReadTokens,
             cost: cb,
-            cacheSavedUSD: pricing?.cacheSaved(cacheRead: e.cacheReadTokens) ?? 0)
+            cacheSavedUSD: pricing?.cacheSaved(cacheRead: e.cacheReadTokens) ?? 0,
+            isPriced: pricing != nil || e.costUSD != nil)
     }
 }
 

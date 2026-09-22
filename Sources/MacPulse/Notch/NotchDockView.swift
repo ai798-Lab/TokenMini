@@ -78,7 +78,7 @@ struct NotchDockView: View {
         return ZStack(alignment: .top) {
             HUDBlurView(material: .hudWindow)
             panelTint
-            if hud { HUDGridBackground(spacing: 22).opacity(0.6) }
+            if hud && !settings.isPrism { HUDGridBackground(spacing: 22).opacity(0.6) }
             if led {
                 // 屏底的常驻余晖:很淡的一层,只用来让"屏"看着是通电的。
                 // 真正的底光是下面那盏跟着指针走的——固定钉一盏在中间,鼠标走到哪它都不动,
@@ -215,7 +215,7 @@ struct NotchDockView: View {
                     Text(activity.statusLabel(now: now))
                         .font(led ? LED.mono(8) : (hud ? HUD.mono(8) : .system(size: 9)))
                         .foregroundStyle(.white.opacity(0.48))
-                    Text("\(activity.tool == .claude ? "Claude" : "Codex") · \(ModelName.display(activity.model))")
+                    Text("\(activity.tool == .claude ? "Claude" : activity.tool.label) · \(ModelName.display(activity.model))")
                         .font(led ? LED.display(14, .bold)
                                   : (hud ? .system(size: 14, weight: .bold, design: .monospaced)
                                          : .system(size: 15, weight: .semibold, design: .rounded)))

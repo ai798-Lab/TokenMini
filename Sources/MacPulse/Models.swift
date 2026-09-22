@@ -227,7 +227,7 @@ enum VibeCopy {
         let hour = calendar.component(.hour, from: date)
         let identity: String
         if let activity {
-            let tool = activity.tool == .claude ? "Claude" : "Codex"
+            let tool = activity.tool == .claude ? "Claude" : activity.tool.label
             identity = "\(tool) · \(ModelName.display(activity.model))"
         } else {
             identity = "AI 搭档"
