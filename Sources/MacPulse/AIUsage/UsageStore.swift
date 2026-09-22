@@ -19,6 +19,7 @@ final class UsageStore: ObservableObject {
     @Published var monthProjectionUSD: Double = 0     // 按本月日均外推整月
     @Published var lastScan: Date?
     @Published var scanning = false
+    @Published private(set) var sourceStatuses: [ToolSourceStatus] = []
     @Published private(set) var recentActivity: RecentAIActivity?
 
     // 监控台窗口:多维筛选 + 即时重聚合
@@ -41,6 +42,7 @@ final class UsageStore: ObservableObject {
     static let refreshInterval: TimeInterval = 60
 
     private let scanner = UsageScanner()      // Claude Code
+    private let additionalScanner = AdditionalUsageScanner()
     private let codexScanner = CodexScanner()  // Codex CLI
     private var timer: Timer?
     private let scanQueue = DispatchQueue(label: "macpulse.aiusage", qos: .utility)
@@ -102,6 +104,7 @@ final class UsageStore: ObservableObject {
         scanning = true
         let scanner = self.scanner
         let codexScanner = self.codexScanner
+        let additionalScanner = self.additionalScanner
         let filter = self.filter
         let filterGeneration = reaggGen
         scanQueue.async { [weak self] in
@@ -111,23 +114,31 @@ final class UsageStore: ObservableObject {
             let scanResult = autoreleasepool { () -> (
                 priced: [PricedEvent], summary: AggregateResult,
                 dashboard: DashboardData, alertDashboard: DashboardData,
-                recentActivity: RecentAIActivity?
+                recentActivity: RecentAIActivity?, statuses: [ToolSourceStatus]
             ) in
                 // 合并多数据源:Claude Code + Codex CLI(各自内部已防重,来源不重叠可直接拼)
                 var events = scanner.scanAll()
                 events.append(contentsOf: codexScanner.scanAll())
+                let additional = additionalScanner.scanAll()
+                let statuses = [ToolKind.claude, .codex].map { tool in
+                    let count = events.filter { $0.sourceApp == tool.rawValue }.count
+                    return ToolSourceStatus(tool: tool, count: count, detail: count > 0 ? "本地记录 · 自动更新" : "近 90 天未发现可读取用量")
+                } + additional.statuses
+                events.append(contentsOf: additional.events)
+                PricingTable.reloadCustomPrices()
                 let now = Date()
                 let priced = events.map { PricedEvent.from($0) }        // 一次计价定型
                 let result = Self.aggregate(events: events, now: now)   // 今日一瞥固定桶
                 let dash = UsageAggregator.run(priced, filter: filter, now: now, calendar: .current)
                 let alertDash = UsageAggregator.run(
                     priced, filter: UsageFilter(time: .today), now: now, calendar: .current)
-                return (priced, result, dash, alertDash, Self.latestActivity(in: priced))
+                return (priced, result, dash, alertDash, Self.latestActivity(in: priced), statuses)
             }
             malloc_zone_pressure_relief(nil, 0)
             Task { @MainActor in
                 guard let self else { return }
                 self.priced = scanResult.priced
+                self.sourceStatuses = scanResult.statuses
                 self.recentActivity = scanResult.recentActivity
                 self.today = scanResult.summary.today
                 self.thisMonth = scanResult.summary.thisMonth

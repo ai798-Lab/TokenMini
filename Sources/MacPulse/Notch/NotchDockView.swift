@@ -215,7 +215,7 @@ struct NotchDockView: View {
                     Text(activity.statusLabel(now: now))
                         .font(led ? LED.mono(8) : (hud ? HUD.mono(8) : .system(size: 9)))
                         .foregroundStyle(.white.opacity(0.48))
-                    Text("\(activity.tool == .claude ? "Claude" : "Codex") · \(ModelName.display(activity.model))")
+                    Text("\(activity.tool == .claude ? "Claude" : activity.tool.label) · \(ModelName.display(activity.model))")
                         .font(led ? LED.display(14, .bold)
                                   : (hud ? .system(size: 14, weight: .bold, design: .monospaced)
                                          : .system(size: 15, weight: .semibold, design: .rounded)))

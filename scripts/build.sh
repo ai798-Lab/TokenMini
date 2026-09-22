@@ -134,6 +134,9 @@ cp "Resources/Brand/HeaderMark.pdf" "Resources/Brand/MenuBarMark.pdf" "${APP_DIR
 
 cp "Resources/Prism/PrismCore.png" "${APP_DIR}/Contents/Resources/"
 
+ditto "${BUILD_DIR}/MacPulse_MacPulse.bundle" "${APP_DIR}/Contents/Resources/MacPulse_MacPulse.bundle"
+ditto "Resources/ThirdParty" "${APP_DIR}/Contents/Resources/ThirdParty"
+
 echo "==> ad-hoc 签名"
 codesign --force -s - "${APP_DIR}"
 codesign --verify --strict --deep "${APP_DIR}"

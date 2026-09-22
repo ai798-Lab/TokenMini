@@ -152,6 +152,7 @@ struct DashboardRoot: View {
 // MARK: - 筛选栏
 
 private struct FilterBar: View {
+    @State private var showSources = false
     @EnvironmentObject var usage: UsageStore
     @Environment(\.openWindow) private var openWindow
     private let presets: [UsageFilter.TimeRange] = [.last24h, .today, .last7Days, .last30Days]
@@ -174,6 +175,10 @@ private struct FilterBar: View {
                 .buttonStyle(ThemedToolbarButtonStyle())
                 .foregroundStyle(settings.isDarkSkin ? themeAccent() : Color.accentColor)
                 .help("社区排行榜")
+                Button { showSources = true } label: {
+                    Label("数据源", systemImage: "externaldrive.badge.plus")
+                }.buttonStyle(.plain)
+                .sheet(isPresented: $showSources) { UsageSourcesView().environmentObject(usage) }
                 DisplaySettingsMenu()
                     .foregroundStyle(settings.isLED ? LED.dim
                                      : (settings.isHUD ? HUD.dim : Color.secondary))
@@ -289,7 +294,7 @@ private struct DataStatusBar: View {
         Label(refreshText, systemImage: usage.scanning ? "arrow.triangle.2.circlepath" : "clock")
         Label(sourceText, systemImage: "externaldrive.connected.to.line.below")
         if !usage.dashboard.quality.unknownModels.isEmpty {
-            Label("\(usage.dashboard.quality.unknownModels.count) 个未知模型未能完整估价",
+            Label("\(usage.dashboard.quality.unknownModels.count) 个模型待定价（用量已计入）",
                   systemImage: "exclamationmark.triangle")
                 .foregroundStyle(warningColor)
                 .help(usage.dashboard.quality.unknownModels.joined(separator: "\n"))
@@ -313,7 +318,7 @@ private struct DataStatusBar: View {
 
     private var sourceText: String {
         let sources = usage.dashboard.quality.sources.map(\.label)
-        return sources.isEmpty ? "暂无数据源" : "来源 " + sources.joined(separator: " + ")
+        return sources.isEmpty ? "暂无数据源" : sources.count > 2 ? "已接入 \(sources.count) 个用量来源" : "来源 " + sources.joined(separator: " + ")
     }
 
     private var mutedColor: Color {
