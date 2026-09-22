@@ -6,13 +6,17 @@ import AppKit
 // 所有界面共用这里的色板/字体/容器,不要在各视图里散落硬编码颜色。
 
 enum HUD {
+    // AppKit/SwiftUI helpers share this palette; defaults are cached by UserDefaults.
+    private static var prism: Bool {
+        (AppTheme(rawValue: UserDefaults.standard.string(forKey: "macpulse.theme") ?? "") ?? .prism) == .prism
+    }
     // 底色
-    static let bg      = Color(red: 0.027, green: 0.039, blue: 0.063)   // 深空底 #070A10
-    static let panel   = Color(red: 0.055, green: 0.078, blue: 0.118)   // 面板底
-    static let panelHi = Color(red: 0.078, green: 0.110, blue: 0.161)   // hover 面板底
+    static var bg: Color { prism ? Prism.bg : Color(red: 0.027, green: 0.039, blue: 0.063) }   // 深空底 #070A10
+    static var panel: Color { prism ? Prism.panel : Color(red: 0.055, green: 0.078, blue: 0.118) }   // 面板底
+    static var panelHi: Color { prism ? Prism.panelHi : Color(red: 0.078, green: 0.110, blue: 0.161) }   // hover 面板底
 
     // 信号色
-    static let cyan    = Color(red: 0.32, green: 0.89, blue: 1.00)      // 主色:示波青
+    static var cyan: Color { prism ? Prism.mint : Color(red: 0.32, green: 0.89, blue: 1.00) }      // 主色:示波青
     static let green   = Color(red: 0.25, green: 0.98, blue: 0.60)
     static let amber   = Color(red: 1.00, green: 0.72, blue: 0.18)
     static let red     = Color(red: 1.00, green: 0.30, blue: 0.34)
@@ -23,16 +27,16 @@ enum HUD {
 
     // 文字层级。对比度按最差情形 panelHi(hover 面板底)算:text 14.4:1 / dim 8.1:1 / faint 5.1:1。
     // 旧的 faint 只有 2.8:1,小字读不出来;调亮时保持原来的冷蓝灰色相,只提亮度。
-    static let text    = Color(red: 0.87, green: 0.93, blue: 1.00)
-    static let dim     = Color(red: 0.62, green: 0.71, blue: 0.82)
-    static let faint   = Color(red: 0.47, green: 0.56, blue: 0.67)
+    static var text: Color { prism ? Prism.silver : Color(red: 0.87, green: 0.93, blue: 1.00) }
+    static var dim: Color { prism ? Prism.secondary : Color(red: 0.62, green: 0.71, blue: 0.82) }
+    static var faint: Color { prism ? Prism.faint : Color(red: 0.47, green: 0.56, blue: 0.67) }
 
     // 线
-    static let hairline = cyan.opacity(0.16)
-    static let gridline = Color.white.opacity(0.05)
+    static var hairline: Color { cyan.opacity(0.16) }
+    static var gridline: Color { prism ? Prism.line.opacity(0.55) : Color.white.opacity(0.05) }
 
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight, design: .monospaced)
+        .system(size: prism ? max(10, size) : size, weight: weight, design: prism ? .default : .monospaced)
     }
 
     /// 负载语义色:低=青,中=琥珀,高=红(阈值与旧版红黄绿一致)
@@ -125,7 +129,15 @@ struct HUDPanel<Content: View>: View {
     @State private var mouse: CGPoint?
     private var hover: Bool { mouse != nil }
 
+    @ObservedObject private var settings = DisplaySettings.shared
     var body: some View {
+        if settings.isPrism {
+            content().padding(padding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .modifier(PrismSurface(accent: accent))
+        } else { hudBody }
+    }
+    private var hudBody: some View {
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -185,7 +197,22 @@ struct HUDGauge: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var powered = false
 
+    @ObservedObject private var settings = DisplaySettings.shared
     var body: some View {
+        if settings.isPrism {
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2).fill(Prism.line.opacity(0.6))
+                    RoundedRectangle(cornerRadius: 2).fill(color)
+                        .frame(width: proxy.size.width * max(0, min(1, ratio)))
+                }
+            }
+            .frame(height: height)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: ratio)
+        } else { hudGauge }
+    }
+
+    private var hudGauge: some View {
         HStack(spacing: 2) {
             ForEach(0..<segments, id: \.self) { i in
                 Rectangle()
@@ -218,6 +245,7 @@ struct HUDStatusDot: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dimmed = false
 
+    @ObservedObject private var settings = DisplaySettings.shared
     var body: some View {
         Rectangle()
             .fill(color)
@@ -225,7 +253,7 @@ struct HUDStatusDot: View {
             .shadow(color: color.opacity(0.85), radius: 3)
             .opacity(dimmed ? 0.3 : 1)
             .onAppear {
-                guard pulses && !reduceMotion else { return }
+                guard pulses && !reduceMotion && !settings.isPrism else { return }
                 withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
                     dimmed = true
                 }
@@ -238,16 +266,21 @@ struct HUDStatusDot: View {
 struct HUDChip: View {
     let text: String
     var color: Color = HUD.cyan
+    @ObservedObject private var settings = DisplaySettings.shared
     var body: some View {
         Text(text)
-            .font(HUD.mono(8, .bold))
-            .kerning(0.6)
+            .font(HUD.mono(settings.isPrism ? 10 : 8, .semibold))
             .foregroundStyle(color)
-            .padding(.horizontal, 5).padding(.vertical, 1.5)
+            .padding(.horizontal, settings.isPrism ? 6 : 5)
+            .padding(.vertical, settings.isPrism ? 3 : 1.5)
             .background {
-                ZStack {
+                if settings.isPrism {
+                    RoundedRectangle(cornerRadius: Prism.controlRadius).fill(color.opacity(0.10))
+                        .overlay(RoundedRectangle(cornerRadius: Prism.controlRadius)
+                            .strokeBorder(color.opacity(0.3), lineWidth: 1))
+                } else {
                     CutCorner(cut: 3).fill(color.opacity(0.12))
-                    CutCorner(cut: 3).stroke(color.opacity(0.45), lineWidth: 1)
+                        .overlay(CutCorner(cut: 3).stroke(color.opacity(0.45), lineWidth: 1))
                 }
             }
             .lineLimit(1)
@@ -274,9 +307,17 @@ struct HUDButtonStyle: ButtonStyle {
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var hover = false
 
+        @ObservedObject private var settings = DisplaySettings.shared
         var body: some View {
+            if settings.isPrism {
+                configuration.label.modifier(PrismControlChrome(active: filled, accent: accent,
+                    pressed: configuration.isPressed, size: size))
+            } else { hudBody }
+        }
+
+        private var hudBody: some View {
             let pressed = configuration.isPressed
-            configuration.label
+            return configuration.label
                 .font(HUD.mono(size, .semibold))
                 .foregroundStyle(filled ? HUD.bg : (hover ? accent : accent.opacity(0.92)))
                 .padding(.horizontal, 9).padding(.vertical, 4)

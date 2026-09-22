@@ -14,6 +14,7 @@ struct PopoverView: View {
         Group {
             if onboardingCompleted {
                 switch settings.theme {
+                case .prism: PrismPopoverView()
                 case .hud: HUDPopoverView()
                 case .led: LEDPopoverView()
                 case .classic: ClassicPopoverView()
@@ -27,7 +28,7 @@ struct PopoverView: View {
                 }
             }
         }
-        .background(HUDWindowShaper(active: settings.isHUD))
+        .background(HUDWindowShaper(active: settings.theme == .hud))
         .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
     }
 }

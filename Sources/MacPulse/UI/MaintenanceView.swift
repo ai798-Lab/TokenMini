@@ -6,17 +6,28 @@ struct MaintenanceView: View {
     @EnvironmentObject var cleanup: CleanupStore
     @EnvironmentObject var system: SystemMonitor
     @EnvironmentObject var actions: ProcessActionStore
+    @ObservedObject private var settings = DisplaySettings.shared
     @State private var processToQuit: TopProcess?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Picker("管理项目", selection: $cleanup.page) {
-                ForEach(CleanupStore.Page.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            if settings.isPrism {
+                HStack {
+                    ThemedSegmented(items: CleanupStore.Page.allCases.map { ($0, $0.rawValue) }, selection: $cleanup.page)
+                    Spacer()
+                    Text("TOKENMINI").font(.system(size: 13, weight: .black)).foregroundStyle(Prism.secondary)
+                }
+            } else {
+                Picker("管理项目", selection: $cleanup.page) {
+                    ForEach(CleanupStore.Page.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }.pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
             if cleanup.page == .cleanup { cleanupContent } else { memoryContent }
         }
         .padding(20)
+        .background(settings.isPrism ? Prism.bg : Color(nsColor: .windowBackgroundColor))
+        .preferredColorScheme(settings.isDarkSkin ? .dark : nil)
+        .tint(settings.isPrism ? Prism.mint : .accentColor)
         .frame(minWidth: 600, minHeight: 500)
         .onAppear { if !cleanup.hasScanned { cleanup.scan() }; system.refresh() }
         .alert("永久删除所选文件？", isPresented: Binding(

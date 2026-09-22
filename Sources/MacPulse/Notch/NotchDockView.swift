@@ -78,7 +78,7 @@ struct NotchDockView: View {
         return ZStack(alignment: .top) {
             HUDBlurView(material: .hudWindow)
             panelTint
-            if hud { HUDGridBackground(spacing: 22).opacity(0.6) }
+            if hud && !settings.isPrism { HUDGridBackground(spacing: 22).opacity(0.6) }
             if led {
                 // 屏底的常驻余晖:很淡的一层,只用来让"屏"看着是通电的。
                 // 真正的底光是下面那盏跟着指针走的——固定钉一盏在中间,鼠标走到哪它都不动,

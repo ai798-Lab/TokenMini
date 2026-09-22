@@ -1,0 +1,92 @@
+[
+  {
+    "id": "cursor",
+    "name": "Cursor",
+    "group": "空间与切面",
+    "kind": "正式 Logo / 应用图标",
+    "url": "https://cursor.com/brand",
+    "image": "https://ptht05hbb1ssoooe.public.blob.vercel-storage.com/assets/brand/brand-logo-7.svg",
+    "image2": "https://cursor.com/marketing-static/_next/image?url=https%3A%2F%2Fptht05hbb1ssoooe.public.blob.vercel-storage.com%2Fassets%2Fbrand%2Fbrand-logo-6.png&w=1920&q=70",
+    "fact": "官方规范区分 2D、2.5D 和 3D，并规定不同尺寸与用途。",
+    "judgment": "观察立体空间怎样被压缩成少量平面，形成有方向的整体。TokenMini 可以研究自己的截面与开口，不再预设圆形外壳。",
+    "boundary": "借鉴平面与空间的一致性；不采用 Cursor 的立方体或箭头轮廓。",
+    "verified": "官方文字、页面与品牌图片来源已核对。"
+  },
+  {
+    "id": "deimos",
+    "name": "Deimos",
+    "group": "字形与比例",
+    "kind": "概念项目 / 配色与数字字形",
+    "url": "https://www.behance.net/gallery/240357275/Deimos-Futuristic-Brand-Identity-Concept-(Year-4000)",
+    "pin": "https://www.pinterest.com/pin/48835977206232185/",
+    "image": "https://i.pinimg.com/474x/77/0c/bc/770cbcfae0dccb2526e1d599463aebe7.jpg",
+    "fact": "Pinterest 原 Pin 指向 Behance 的 Deimos 概念项目；当前图展示配色和数字字形，不是独立 Logo。",
+    "judgment": "宽扁比例、局部断开和端点处理，让文字自身具有辨识度。可把这种研究方法用于 TokenMini 的字标，放开藏 T 的要求。",
+    "boundary": "强烈的太空题材会把产品带向游戏或航天。只讨论字形结构，不照搬科幻字体或色板。",
+    "verified": "已在 Pinterest 打开原 Pin，核对跳转目标；Behance 完整项目未能打开。"
+  },
+  {
+    "id": "parostec",
+    "name": "PAROSTEC / busybuilding",
+    "group": "字形与比例",
+    "kind": "辅助符号系统",
+    "url": "https://busybuilding.com/projects/parostec",
+    "pin": "https://www.pinterest.com/pin/422281211771199/",
+    "image": "https://i.pinimg.com/474x/d9/f2/1c/d9f21c4ca3ff1a6c2d3a76170a416897.jpg",
+    "fact": "原作者以建筑与工程符号构建辅助图形；正式名称另有 PAROSTEC / P.TEC 的使用方式。",
+    "judgment": "值得看的是直线、圆弧、厚薄和空白的精确关系。上一轮所有部分都同样厚、同样软，这里提供了更有节奏的对照。",
+    "boundary": "图中是一套辅助符号，不应当作一枚 Logo 抄取；建筑语义也不是产品主题。",
+    "verified": "Pinterest 图像已目视核对，原作者项目说明已读取。"
+  },
+  {
+    "id": "fuser",
+    "name": "Fuser / HEX",
+    "group": "信号与变化",
+    "kind": "品牌系统 / 动态形态",
+    "url": "https://www.hex.inc/work/fuser",
+    "image": "https://cdn.prod.website-files.com/63e9c5790a97483ad02740af/69085c0cb14ac845c5fcdb44_image%20assets-p-500.png",
+    "fact": "作者围绕 emboss（压印）构建视觉，并让标志及图形在不同状态间转换。",
+    "judgment": "变化的起点和终点都可以成为完整图形。适合研究采样、累积、压缩的状态，而不是再画一枚分瓣圆饼。",
+    "boundary": "柔软形态本身不自动等于新鲜；不采用它的连珠状轮廓。",
+    "verified": "官方文字和首页动态画面已查看；未逐帧验收整片。",
+    "image2": "https://cdn.prod.website-files.com/63e9c5790a97483ad02740af/69085d0c69747d13e8367f13_fuser%20vibes-p-500.png"
+  },
+  {
+    "id": "sequence",
+    "name": "Sequence / HEX",
+    "group": "信号与变化",
+    "kind": "视觉系统 / 网格与版式",
+    "url": "https://www.hex.inc/work/sequence",
+    "image": "https://cdn.prod.website-files.com/63e9c5790a97483ad02740af/691a32055f58000c0bb70361_Slide%2016_9%20-%2092-p-500.avif",
+    "image2": "https://cdn.prod.website-files.com/63e9c5790a97483ad02740af/691a2c9b270d41db659e098c_15-p-800.avif",
+    "fact": "作者从 Excel 网格推导品牌系统，后续用程序化动态与颜色表达拓展。",
+    "judgment": "主题可以通过秩序、密度和局部变化出现。对 TokenMini，精密的采样或计量关系比把仪表盘直接画进 Logo 更值得探索。",
+    "boundary": "网格是视觉语言，不意味着把密集细节缩进菜单栏标志。",
+    "verified": "官方案例说明已读取，页面与应用图已打开检查。"
+  },
+  {
+    "id": "composio",
+    "name": "Composio / HEX + Primary Studio",
+    "group": "信号与变化",
+    "kind": "视觉系统 / 能量与连接",
+    "url": "https://www.hex.inc/work/composio",
+    "image": "https://cdn.prod.website-files.com/63e9c5790a97483ad02740af/69f81d14a1e5f26c1a8766b3_15-p-500.png",
+    "fact": "HEX 的案例以电与连接组织视觉；页面明确标注独立标志由 Primary Studio 设计。",
+    "judgment": "看方向、穿透和局部能量如何成为视觉焦点。绿色可以像关键状态或光学信号出现，不必成为圆环上固定的一小瓣。",
+    "boundary": "大面积强光与高频动效只适合品牌表达，不作为常驻菜单栏效果。",
+    "verified": "作者说明和署名已核对，图像由原作者公开页面提供。"
+  },
+  {
+    "id": "alphabet",
+    "name": "Experimental Alphabet / Mart Biemans",
+    "group": "字形与比例",
+    "kind": "2018 年字形练习 / 方法对照",
+    "url": "https://www.behance.net/gallery/63997903/Experimental-Alphabet",
+    "pin": "https://www.pinterest.com/pin/7881368092023607/",
+    "image": "https://i.pinimg.com/474x/68/67/77/68677747deb009722a315b2c94a1e1a4.jpg",
+    "fact": "作者为每个字母探索三个符号；Behance 标注发布日期为 2018-04-11。",
+    "judgment": "保留它只为说明探索方式：同一个字母应尝试不同骨架、开口与重心，而不是把一个基本图形换三次切口。",
+    "boundary": "这不是最新趋势样本，也不列为下一稿的造型目标。",
+    "verified": "Pinterest 图墙已查看，并追溯到 Behance 原项目与作者信息。"
+  }
+]

@@ -1,0 +1,395 @@
+{
+  "fileCountExcludingManifest": 78,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4510,
+      "sha256": "4664c8ed3d5398f397daae14ff0b676d601bcbe6f5101a73ea89696a586273ae"
+    },
+    {
+      "path": "build_assets.py",
+      "bytes": 10585,
+      "sha256": "57e2e7bf5deb12740e056db81510d811c442447d6dbadea0b500f8dc1c96c823"
+    },
+    {
+      "path": "edit-prompt.md",
+      "bytes": 2210,
+      "sha256": "96d2f1554331420a0ce08beea4bd8023b7d7ef34514fec6dc4e5dd00b19480e3"
+    },
+    {
+      "path": "index.html",
+      "bytes": 8586,
+      "sha256": "c4dbbffe4a937522258ba7f29ca0425d3d26e0088ff9b2242ba9fdaaf31d09e8"
+    },
+    {
+      "path": "pdf/brand-preview.pdf",
+      "bytes": 26328,
+      "sha256": "f2380554cf403d2a4027d23b4c06bbd0f861f76e89c4cd9f3aed96d6fc173ec8"
+    },
+    {
+      "path": "pdf/logo-horizontal-black.pdf",
+      "bytes": 2387,
+      "sha256": "5263f8ef2c001e9bf30802f3faa83db6647f9c28b76e1de67661be2f4b62066e"
+    },
+    {
+      "path": "pdf/logo-horizontal-color-reverse.pdf",
+      "bytes": 2392,
+      "sha256": "70ad0874936bd8be39a62538bb091acb3781341e1578459b0c8caaf415a22579"
+    },
+    {
+      "path": "pdf/logo-horizontal-color.pdf",
+      "bytes": 2405,
+      "sha256": "89aad445476dc2d0c3ffcef9caec01f96bc47c484104e546091b8cd1e2fec0b2"
+    },
+    {
+      "path": "pdf/logo-horizontal-white.pdf",
+      "bytes": 2373,
+      "sha256": "6dddc2df879db25f83e731169399e50be974eaca0c5d43a3df8f3fea6d70c2df"
+    },
+    {
+      "path": "pdf/logo-stacked-black.pdf",
+      "bytes": 2419,
+      "sha256": "fe44e59da0fcf2ffdeb717e3f86c75b5b6a8a8334d03beb8d021bc0625cb9056"
+    },
+    {
+      "path": "pdf/logo-stacked-white.pdf",
+      "bytes": 2408,
+      "sha256": "8e24bb46c262cd84a9f8280b3640d29f4fc4a163296ef4a04d5da96a341fa3cd"
+    },
+    {
+      "path": "pdf/mark-black.pdf",
+      "bytes": 1687,
+      "sha256": "678a4680569c2e585278502d8df176721a52db2cde10a1cad9fd4e23f076c914"
+    },
+    {
+      "path": "pdf/mark-color.pdf",
+      "bytes": 1707,
+      "sha256": "bdb73ca93faaecb96de1746745785a8c856c9f5138ed247ba6356f7291b12bd1"
+    },
+    {
+      "path": "pdf/wordmark-black.pdf",
+      "bytes": 1660,
+      "sha256": "7ae1683834322729ba20acd34c046409fc3c3dce10fc3d196777a0333a1c352e"
+    },
+    {
+      "path": "png/brand-preview.png",
+      "bytes": 49832,
+      "sha256": "42a577f02cdff0939eb4dc3ac3383aa8b5044402d6d9618ca2deb5f9bc16696c"
+    },
+    {
+      "path": "png/construction-guide.png",
+      "bytes": 25838,
+      "sha256": "f5a813637c0290f414eab943267f9f15b479e5649d1c8a1ff6af1a308c6d871f"
+    },
+    {
+      "path": "png/logo-horizontal-black.png",
+      "bytes": 31145,
+      "sha256": "041ed90b233626136b3af243271592feb6ef965eead2197215f75d341aedd4f7"
+    },
+    {
+      "path": "png/logo-horizontal-color-reverse.png",
+      "bytes": 25756,
+      "sha256": "c144f4b03498b8d19f7e21e5d11148bd2c2f2ed8fb30b1a84e3bed381a8822ad"
+    },
+    {
+      "path": "png/logo-horizontal-color.png",
+      "bytes": 31375,
+      "sha256": "4f01cdf69b1b43b5afa69971484068e30f54bcbe60776e5cfb19038520d454e0"
+    },
+    {
+      "path": "png/logo-horizontal-white.png",
+      "bytes": 25200,
+      "sha256": "1780bf2ac923d41e6556996e57f46e8a7d355965b204d464f8baa7d6da941249"
+    },
+    {
+      "path": "png/logo-stacked-black.png",
+      "bytes": 49401,
+      "sha256": "7b14b565623cf538e23b6e0f6e2bae97ed2184f0a0dfa76e641d9df7036d0f0e"
+    },
+    {
+      "path": "png/logo-stacked-white.png",
+      "bytes": 40611,
+      "sha256": "6ac4fb2d0131b0ccc0445a41e083f38509c0727ab623ebd5e1ad93759b4bcab9"
+    },
+    {
+      "path": "png/mark-black.png",
+      "bytes": 14302,
+      "sha256": "142e7e9b54886eb07f7adf85b85ceb498c608205a96fb33b407ccad83c9f4eb6"
+    },
+    {
+      "path": "png/mark-color-reverse.png",
+      "bytes": 13291,
+      "sha256": "6dcef8656c99f01527f0e4c6daf11d0fc62e454f0f319993146c4f242dc19702"
+    },
+    {
+      "path": "png/mark-color.png",
+      "bytes": 14841,
+      "sha256": "65fb89c7c90a929832f3d36ae30ca2029d09fbedf45be5aa28db0b4c5b8b0916"
+    },
+    {
+      "path": "png/mark-optical-16-black@1x.png",
+      "bytes": 278,
+      "sha256": "41e695c9e0ec469a06e60d82951c1741acbf2d916061699aee449e5af706681e"
+    },
+    {
+      "path": "png/mark-optical-16-black@2x.png",
+      "bytes": 437,
+      "sha256": "1928560abad588d8c56b7a8e185ea62c75d90fadd2ee766552a861a7e7728e56"
+    },
+    {
+      "path": "png/mark-optical-16-black@3x.png",
+      "bytes": 626,
+      "sha256": "d26a6a9ce238209e88c9bd4729e1d95c731d634229ed347fd30b35121232ed27"
+    },
+    {
+      "path": "png/mark-optical-16-white@1x.png",
+      "bytes": 242,
+      "sha256": "4abef7f7090c00981cc3a56db716ef65108fb6f885cf3aa0e64012f5a3d52ec3"
+    },
+    {
+      "path": "png/mark-optical-16-white@2x.png",
+      "bytes": 359,
+      "sha256": "b993521b818918700b05f02b42a37b4033f79cd59ac08e99730a48377b67c879"
+    },
+    {
+      "path": "png/mark-optical-16-white@3x.png",
+      "bytes": 495,
+      "sha256": "0f9c0a89a8b3b8f75e751b9edba005ce4e73c13ab50c71b28735d9bc917b7d80"
+    },
+    {
+      "path": "png/mark-optical-20-black@1x.png",
+      "bytes": 350,
+      "sha256": "652a3823ad885262e1b54cc86390e9107eccfff8451a7630259c323d7f6a770f"
+    },
+    {
+      "path": "png/mark-optical-20-black@2x.png",
+      "bytes": 562,
+      "sha256": "6faba75b70bf4f4070221dec65a6aea02004168def91c2270ec84d5fb5d0465e"
+    },
+    {
+      "path": "png/mark-optical-20-black@3x.png",
+      "bytes": 838,
+      "sha256": "1a379dc53097134c8ac576a3ee1624f9bfc07b6247ee5f93a7a4c8acabf4016b"
+    },
+    {
+      "path": "png/mark-optical-20-white@1x.png",
+      "bytes": 262,
+      "sha256": "4d5071fa03e3b783df1b8dbaeb7e90f875a2e2ef74fe3d9c744a45526b15fd70"
+    },
+    {
+      "path": "png/mark-optical-20-white@2x.png",
+      "bytes": 426,
+      "sha256": "a84d0c5a47b36c303654eb4861c60f77e2307647faffeadf7301bf077da00073"
+    },
+    {
+      "path": "png/mark-optical-20-white@3x.png",
+      "bytes": 655,
+      "sha256": "4c0dbecac972e771490b10bcc313af78bb993fc505d24b2966d0b8fea2d1dfe6"
+    },
+    {
+      "path": "png/mark-optical-22-black@1x.png",
+      "bytes": 401,
+      "sha256": "23a01e6ccde94268f55c8f11d897428656fb6361bfd7eefe2b5261969b55de9e"
+    },
+    {
+      "path": "png/mark-optical-22-black@2x.png",
+      "bytes": 603,
+      "sha256": "290b5e02b360b0f50ecebe14ed1fbc043377d744d83084106b711de92981c536"
+    },
+    {
+      "path": "png/mark-optical-22-black@3x.png",
+      "bytes": 986,
+      "sha256": "918dd1402c032a589c698413c5f32126ff566cd95826d4d1c146735dd1e93c17"
+    },
+    {
+      "path": "png/mark-optical-22-white@1x.png",
+      "bytes": 318,
+      "sha256": "1a9d89f7f69e66cd9e2d429daf8650aac3268c058d2712ee41e84f0e71380c90"
+    },
+    {
+      "path": "png/mark-optical-22-white@2x.png",
+      "bytes": 464,
+      "sha256": "95fdefcf8991fc6812680ffcc3f6143b2e503baedd3d9f907b262682c1005173"
+    },
+    {
+      "path": "png/mark-optical-22-white@3x.png",
+      "bytes": 759,
+      "sha256": "4bf86dcc2961398e497ac49e87a7659f7c93ad041c88ff218da815cba5b6d39c"
+    },
+    {
+      "path": "png/mark-optical-24-black@1x.png",
+      "bytes": 428,
+      "sha256": "bdfc90b83e6b11107515210e21bba1f4797cfc95b54e46d2d4c96e0632ad2680"
+    },
+    {
+      "path": "png/mark-optical-24-black@2x.png",
+      "bytes": 648,
+      "sha256": "ec5ef40c4aef33a37007d269e8aa4ac47390780edc7ef762e6f007c962ad8361"
+    },
+    {
+      "path": "png/mark-optical-24-black@3x.png",
+      "bytes": 1053,
+      "sha256": "30d9cf6fef48037aca137bbede09f9ffb8cff45bf07496bb4a7bfa443838b798"
+    },
+    {
+      "path": "png/mark-optical-24-white@1x.png",
+      "bytes": 326,
+      "sha256": "762560ba57a23140a84d43f79209bd11c14884eeec362e628247ed98ff9ac8c1"
+    },
+    {
+      "path": "png/mark-optical-24-white@2x.png",
+      "bytes": 520,
+      "sha256": "77d8545af521bd56f2e5ca44c3c419c1854549b189cf666cbceae3e9f7905ec0"
+    },
+    {
+      "path": "png/mark-optical-24-white@3x.png",
+      "bytes": 798,
+      "sha256": "5736781f541998346ac044fb62367d25f7897043065e89c26707341c16991d22"
+    },
+    {
+      "path": "png/mark-white.png",
+      "bytes": 12349,
+      "sha256": "28ec8539729251d2a33fc784955b4dd4aeaa65be460fcba83b858048992d7192"
+    },
+    {
+      "path": "png/wordmark-black.png",
+      "bytes": 14688,
+      "sha256": "c8febd44fd93d046b197f12e4951b7e11312f66abdd117a2e55cc6385295bd7b"
+    },
+    {
+      "path": "png/wordmark-white.png",
+      "bytes": 11368,
+      "sha256": "b38d70ad306cd0d17460f25e2e3b1353ec9f46716df7052fb723266be3ca9dc5"
+    },
+    {
+      "path": "reference/imagegen-cleanup.png",
+      "bytes": 1110886,
+      "sha256": "001617c5eb63875f928dd4f0188a706b4c8de65144fa0610730e7f1276ce0e62"
+    },
+    {
+      "path": "reference/selected-original.png",
+      "bytes": 809707,
+      "sha256": "cdfa556031ca2310aff254dcb0a9e4689f6c0a75bd4723d8abf49155552d513b"
+    },
+    {
+      "path": "specification.json",
+      "bytes": 1180,
+      "sha256": "f21f04cae6c38c6d37e5d1f29fe03a4eff12539a7631a7794d85e36db604f06c"
+    },
+    {
+      "path": "svg/brand-preview.svg",
+      "bytes": 10532,
+      "sha256": "5af1d8a798948f8b3354984d5838deee894e9f2313cf0f4bb2d0269b4ef2377a"
+    },
+    {
+      "path": "svg/construction-guide.svg",
+      "bytes": 1943,
+      "sha256": "c77d87db9d44c4b59247dba9a8133cf2102ac1ccdc59e71caad2f839c217b245"
+    },
+    {
+      "path": "svg/logo-horizontal-black.svg",
+      "bytes": 2657,
+      "sha256": "8409afdb912220ef93690311a6d68b6131045f91966d8c7ad315482adf8409d5"
+    },
+    {
+      "path": "svg/logo-horizontal-color-reverse.svg",
+      "bytes": 2665,
+      "sha256": "11322de23a6d41c32bf02c25e01d901a0175e3f9d61646ae711d818bd3f5482f"
+    },
+    {
+      "path": "svg/logo-horizontal-color.svg",
+      "bytes": 2657,
+      "sha256": "b80486f61e8d1ae430b99cc10a65e386d99a3416a3dd90c0657b9887d985a171"
+    },
+    {
+      "path": "svg/logo-horizontal-white.svg",
+      "bytes": 2657,
+      "sha256": "8ae63c855c605c03237a53e5d3992dc847aa40012313c01548679c9956de05ce"
+    },
+    {
+      "path": "svg/logo-stacked-black.svg",
+      "bytes": 2657,
+      "sha256": "aea6a8ef7106bfe794513e6aded35732a739da8bdb3769cb3d009bdea51b07ab"
+    },
+    {
+      "path": "svg/logo-stacked-white.svg",
+      "bytes": 2657,
+      "sha256": "0a9a9840cc21135102b823b88215c5bee868f00897c128311d43a574a5acf80f"
+    },
+    {
+      "path": "svg/mark-black.svg",
+      "bytes": 1163,
+      "sha256": "730aceb948655cb502e323741cf0fbb786909a36c00d162afdf037307bf7a7de"
+    },
+    {
+      "path": "svg/mark-color-reverse.svg",
+      "bytes": 1171,
+      "sha256": "9f4ebb93aeac557b3bcdfacb8014eef5a6291f80bc1524c5a2be8bed72b9e951"
+    },
+    {
+      "path": "svg/mark-color.svg",
+      "bytes": 1163,
+      "sha256": "8e1240bf8779f0f8ce896cbb7f10d56990b04556d01dab9054b6c21f44f2ea4f"
+    },
+    {
+      "path": "svg/mark-optical-16-black.svg",
+      "bytes": 1035,
+      "sha256": "7bf3211b459c2d6e496592a2e271dd18c7969fd9739115166bdb2b5deacd88d1"
+    },
+    {
+      "path": "svg/mark-optical-16-white.svg",
+      "bytes": 1035,
+      "sha256": "0e3dbf0b5d58079a3d31a47b45528687cf2199d6e2586eeb87bd9a59045c703d"
+    },
+    {
+      "path": "svg/mark-optical-20-black.svg",
+      "bytes": 1052,
+      "sha256": "41c405a47fd0d1240fbe15580c445a87b89fbae919e4be437596dbbb27580414"
+    },
+    {
+      "path": "svg/mark-optical-20-white.svg",
+      "bytes": 1052,
+      "sha256": "18a5fd4e3d127e97f37d0b33b7da8cf6d613536d2aaf90ea34e6784f55d9c88b"
+    },
+    {
+      "path": "svg/mark-optical-22-black.svg",
+      "bytes": 1064,
+      "sha256": "992d1f0da7de98567df1b7ddab79ed4bfb37dea398f49ea0149d039a1ed54167"
+    },
+    {
+      "path": "svg/mark-optical-22-white.svg",
+      "bytes": 1064,
+      "sha256": "b000b7b8877e48f830276d3717bb4abc4bb17da3cb4ed95785c25f2b45db5eb3"
+    },
+    {
+      "path": "svg/mark-optical-24-black.svg",
+      "bytes": 1059,
+      "sha256": "113753b2423f0edec8b661e4f7298010280c3e546928fbf50bc62fd184e04287"
+    },
+    {
+      "path": "svg/mark-optical-24-white.svg",
+      "bytes": 1059,
+      "sha256": "48fe45262bcf7e83b8114f41bc2de5e8e328fedb6beebd288fd3079aa1c1e6b8"
+    },
+    {
+      "path": "svg/mark-white.svg",
+      "bytes": 1163,
+      "sha256": "8a33e71fe547cad8c4d0d350696c76d8f3ff99c1c67262604a2156446e1bddb1"
+    },
+    {
+      "path": "svg/wordmark-black.svg",
+      "bytes": 1621,
+      "sha256": "7979c85ccf0228edd5f80d06fde58b783c587578c5c860f2331f03435218df0b"
+    },
+    {
+      "path": "svg/wordmark-white.svg",
+      "bytes": 1621,
+      "sha256": "803b5b0f13ce656b35106a0efbca98fbc8f6fccbcde26d87e9a839314c20a190"
+    },
+    {
+      "path": "verification.json",
+      "bytes": 4964,
+      "sha256": "6d54362981929a270079862c7788402142cf73f84af581e8e1a10f6cb19367c4"
+    }
+  ]
+}

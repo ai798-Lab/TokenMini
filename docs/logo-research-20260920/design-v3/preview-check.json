@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-09-20",
+  "browser": "Chrome",
+  "url": "http://127.0.0.1:8779/design-v3/index.html",
+  "viewportWidth": 749,
+  "documentScrollWidth": 735,
+  "displayedConcepts": 3,
+  "loadedImages": 3,
+  "allImagesResolution": "1536x1024",
+  "allThreeLightBackgroundPreviewsVisuallyInspected": true,
+  "nameSpellingVisuallyInspected": true,
+  "filter02ThenRestoreAllVerified": true,
+  "openAndCloseModalVerified": true,
+  "productionIconValidation": false
+}

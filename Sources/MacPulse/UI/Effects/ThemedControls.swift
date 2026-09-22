@@ -8,6 +8,7 @@ import SwiftUI
 @MainActor
 func themeAccent() -> Color {
     let s = DisplaySettings.shared
+    if s.isPrism { return Prism.mint }
     if s.isLED { return LED.amber }
     if s.isHUD { return HUD.cyan }
     return .accentColor
@@ -31,7 +32,21 @@ struct ThemedSegmented<T: Hashable>: View {
     private var tint: Color { accent ?? themeAccent() }
 
     var body: some View {
-        if settings.isDarkSkin { skinned } else { native }
+        if settings.isPrism { prism } else if settings.isDarkSkin { skinned } else { native }
+    }
+
+    private var prism: some View {
+        HStack(spacing: 4) {
+            ForEach(items, id: \.value) { item in
+                let selected = selection == item.value
+                Button { selection = item.value } label: {
+                    Text(item.label).lineLimit(1)
+                }
+                .buttonStyle(PrismButtonStyle(prominent: selected, accent: tint, size: size))
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .fixedSize()
     }
 
     private var native: some View {
@@ -72,13 +87,16 @@ struct ThemedSegmented<T: Hashable>: View {
     private func labelColor(_ on: Bool) -> Color {
         if !on { return settings.isLED ? LED.text : HUD.dim }
         // LED 选中是实色灯面,字要压深色才看得清;HUD 选中是半透明填充,字用亮色
-        return settings.isLED ? LED.bg : HUD.text
+        return settings.isPrism ? Prism.bg : (settings.isLED ? LED.bg : HUD.text)
     }
 
     @ViewBuilder
     private func chrome(_ on: Bool) -> some View {
         if on {
-            if settings.isLED {
+            if settings.isPrism {
+                RoundedRectangle(cornerRadius: 6).fill(tint)
+                    .matchedGeometryEffect(id: "seg.chrome", in: ns)
+            } else if settings.isLED {
                 Capsule().fill(tint)
                     .shadow(color: tint.opacity(0.5), radius: 5)
                     .matchedGeometryEffect(id: "seg.chrome", in: ns)
@@ -108,6 +126,16 @@ struct ThemedMenuLabel: View {
     var body: some View {
         let on = count > 0
         let tint = themeAccent()
+        if settings.isPrism {
+            HStack(spacing: 6) {
+                Text(on ? "\(title) · \(count)" : title)
+                    .foregroundColor(on ? Prism.bg : Prism.silver)
+                Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+                    .foregroundColor(on ? Prism.bg : Prism.silver)
+            }
+            .font(Prism.label(11, on ? .bold : .medium))
+            .foregroundStyle(on ? Prism.bg : Prism.secondary)
+        } else {
         HStack(spacing: 4) {
             Text(count == 0 ? title : "\(title) · \(count)")
                 .font(settings.isLED ? LED.display(10, on ? .bold : .medium)
@@ -119,6 +147,7 @@ struct ThemedMenuLabel: View {
         .foregroundStyle(skinnedForeground(on: on, tint: tint))
         .padding(.horizontal, 9).padding(.vertical, 4)
         .background { menuChrome(on: on, tint: tint) }
+        }
     }
 
     private func skinnedForeground(on: Bool, tint: Color) -> Color {
@@ -215,5 +244,34 @@ struct FlowLayout: Layout {
             x += s.width + spacing
             lineH = max(lineH, s.height)
         }
+    }
+}
+
+/// Keep shared toolbar actions in the same control family without altering other themes.
+struct ThemedToolbarButtonStyle: ButtonStyle {
+    @ObservedObject private var settings = DisplaySettings.shared
+    func makeBody(configuration: Configuration) -> some View {
+        if settings.isPrism {
+            configuration.label.modifier(PrismControlChrome(pressed: configuration.isPressed))
+        } else {
+            configuration.label
+        }
+    }
+}
+
+/// AppKit menus flatten label backgrounds. Draw Prism chrome around the Menu itself.
+struct ThemedMenuChrome: ViewModifier {
+    var active = false
+    @ObservedObject private var settings = DisplaySettings.shared
+    func body(content: Content) -> some View {
+        if settings.isPrism {
+            // Native borderless menus can resolve Text as black while keeping the
+            // symbol tint. Use the plain button label path for our custom surface.
+            content
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .tint(active ? Prism.bg : Prism.silver)
+                .modifier(PrismControlChrome(active: active))
+        } else { content }
     }
 }
