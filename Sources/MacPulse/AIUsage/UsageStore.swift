@@ -76,7 +76,8 @@ final class UsageStore: ObservableObject {
         appVersion: String
     ) -> RankingDailyAggregate {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        // 不用 ! 强制解包:时区数据库异常时会直接崩;退回 UTC 只影响榜单日界,不影响本地功能。
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? TimeZone(secondsFromGMT: 8 * 3600) ?? .gmt
         let start = calendar.startOfDay(for: now)
         let end = calendar.date(byAdding: .day, value: 1, to: start)
             ?? start.addingTimeInterval(86_400)

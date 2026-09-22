@@ -22,11 +22,14 @@ final class SensorsReader {
 
     private func loadKeysIfNeeded(smc: SMC) {
         guard !keysLoaded else { return }
-        keysLoaded = true
         // 前缀只收 Tp(M5 的 CPU die 全部是 Tp*)和 Te(M4 代际,M5 上匹配 0 个、无害);
         // 不收 Tf——本机实测 TfC* 是异族传感器(疑似闪存/控制器,比 CPU die 低约 5°C),
         // 混入平均会在高负载时把 CPU 温度低报约 10°C。
         let all = smc.getAllKeys()
+        // 枚举失败(开机/唤醒瞬间 SMC 忙)先别标记已加载,下个慢 tick 重试;
+        // 否则 key 表永远为空,整个进程生命周期都读不到温度、过热提醒也永远不触发。
+        guard !all.isEmpty else { return }
+        keysLoaded = true
         cpuTempKeys = all.filter { $0.hasPrefix("Tp") || $0.hasPrefix("Te") }
         gpuTempKeys = all.filter { $0.hasPrefix("Tg") }
     }

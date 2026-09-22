@@ -63,9 +63,13 @@ struct SMCVal_t {
 }
 
 extension FourCharCode {
-    init(fromString str: String) {
-        precondition(str.count == 4)
-        self = str.utf8.reduce(0) { $0 << 8 | UInt32($1) }
+    /// 4 个 ASCII 字节的 key 才合法。枚举得到的 key 是内核给的任意字节(可能含 \r\n 或 ≥0x80),
+    /// 所以必须可失败:用 precondition 会让一个怪 key 把整个 app 崩掉;
+    /// 非 ASCII 字节在 utf8 里占 2 字节,按字节移位会算出另一个 key,读到别的传感器。
+    init?(fromString str: String) {
+        let bytes = Array(str.utf8)
+        guard bytes.count == 4, bytes.allSatisfy({ $0 < 0x80 }) else { return nil }
+        self = bytes.reduce(0) { $0 << 8 | UInt32($1) }
     }
     func toString() -> String {
         String(UnicodeScalar(UInt8(self >> 24 & 0xff))) +
@@ -157,7 +161,8 @@ final class SMC {
         var input = SMCKeyData_t()
         var output = SMCKeyData_t()
 
-        input.key = FourCharCode(fromString: value.key)
+        guard let code = FourCharCode(fromString: value.key) else { return kIOReturnBadArgument }
+        input.key = code
         input.data8 = SMCSelector.readKeyInfo.rawValue
         var result = call(&input, &output)
         guard result == kIOReturnSuccess, output.result == 0 else {
