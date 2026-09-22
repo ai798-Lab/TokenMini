@@ -48,7 +48,7 @@ final class NotchDock {
     private var estimatedHeight: CGFloat {
         switch DisplaySettings.shared.theme {
         case .classic: return 300
-        case .hud: return 322
+        case .hud, .prism: return 322
         case .led: return 306
         }
     }

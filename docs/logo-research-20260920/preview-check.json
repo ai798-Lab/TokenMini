@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-20",
+  "entry": "http://127.0.0.1:8779/index.html",
+  "browser": "Chrome",
+  "viewport_width": 749,
+  "document_scroll_width": 735,
+  "filter_form_visible_cards": 3,
+  "all_filter_restored_cards": 7,
+  "visually_checked": "Page introduction, reference card layout, and loading indicators",
+  "complete_images": [
+    "Cohere",
+    "Graphcore",
+    "Sonantic",
+    "N3 BTV",
+    "N3 TXC"
+  ],
+  "partially_loaded_remote_images_at_check": [
+    "Modyfi",
+    "Tempo",
+    "Aithyra"
+  ],
+  "limitation": "Three Studio Dumbar images were still loading at the final check. Original source links remain available. No full-film playback verification.",
+  "concept_page": {
+    "entry": "http://127.0.0.1:8779/concepts.html",
+    "all_three_local_images_loaded": true,
+    "natural_image_dimensions": [
+      1254,
+      1254
+    ],
+    "viewport_width": 749,
+    "document_scroll_width": 735,
+    "visual_check": "Transparent PNG correctly displays against ivory in browser; no horizontal overflow."
+  }
+}

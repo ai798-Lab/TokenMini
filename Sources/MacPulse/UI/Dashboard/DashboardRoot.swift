@@ -13,6 +13,7 @@ struct DashboardRoot: View {
         VStack(spacing: 0) {
             FilterBar()
                 .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 12)
+                .frame(maxWidth: .infinity)
                 .background(filterBarBackground)
             themeDivider
             Group {
@@ -25,7 +26,7 @@ struct DashboardRoot: View {
             }
             .background(scrollBackground)
         }
-        .frame(minWidth: 760, minHeight: 560)
+        .frame(minWidth: 760, maxWidth: .infinity, minHeight: 560, maxHeight: .infinity)
         .background(settings.isLED ? LED.bg : (settings.isHUD ? HUD.bg : Color.clear))
         .tint(themeTint)
         .preferredColorScheme(settings.isDarkSkin ? .dark : nil)
@@ -46,7 +47,8 @@ struct DashboardRoot: View {
 
     @ViewBuilder
     private var filterBarBackground: some View {
-        if settings.isLED { Rectangle().fill(LED.bg.opacity(0.96)) }
+        if settings.isPrism { Rectangle().fill(Prism.bg) }
+        else if settings.isLED { Rectangle().fill(LED.bg.opacity(0.96)) }
         else if settings.isHUD { Rectangle().fill(HUD.bg.opacity(0.96)) }
         else { Rectangle().fill(.bar) }
     }
@@ -54,7 +56,10 @@ struct DashboardRoot: View {
     /// 分隔线:深色皮肤都是"暗轨 + 一小段发光",发光色按主题走
     @ViewBuilder
     private var themeDivider: some View {
-        if settings.isDarkSkin {
+        if settings.isPrism {
+            Rectangle().fill(Prism.mint.opacity(0.65))
+                .frame(maxWidth: .infinity).frame(height: 1)
+        } else if settings.isDarkSkin {
             let accent = settings.isLED ? LED.amber : HUD.cyan
             ZStack(alignment: .leading) {
                 Rectangle().fill(settings.isLED ? LED.amber.opacity(0.12) : HUD.gridline).frame(height: 1)
@@ -67,6 +72,28 @@ struct DashboardRoot: View {
     }
 
     private var scrollContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if settings.isPrism { prismHero }
+            dashboardCards.padding(20)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var prismHero: some View {
+        let overview = usage.dashboard.overview
+        let ready = usage.lastScan != nil
+        let filtered = usage.filter != UsageFilter(time: usage.filter.time)
+        return PrismDashboardBanner(
+            total: ready ? settings.tokens(overview.totalTokens) : "—",
+            scope: "\(usage.filter.time.label) · \(filtered ? "当前筛选" : "全部工具")",
+            calls: ready ? "\(overview.eventCount.formatted()) 次调用" : "正在读取本地用量…",
+            input: ready ? settings.tokens(overview.input) : "—",
+            output: ready ? settings.tokens(overview.output) : "—",
+            cacheWrite: ready ? settings.tokens(overview.cacheWrite) : "—",
+            cacheRead: ready ? settings.tokens(overview.cacheRead) : "—")
+    }
+
+    private var dashboardCards: some View {
         VStack(alignment: .leading, spacing: 16) {
             DataStatusBar()
             OverviewCards()
@@ -82,7 +109,6 @@ struct DashboardRoot: View {
                 }
             }
         }
-        .padding(20)
     }
 
     /// 把监控台窗口强制置顶。菜单栏 app(.accessory)开独立窗口时,单靠 openWindow
@@ -110,7 +136,7 @@ struct DashboardRoot: View {
         } else if settings.isHUD {
             ZStack {
                 HUD.bg
-                HUDGridBackground()
+                if !settings.isPrism { HUDGridBackground() }
             }
             .ignoresSafeArea()
         } else {
@@ -145,7 +171,7 @@ private struct FilterBar: View {
                         .font(settings.isLED ? LED.display(9, .medium)
                               : (settings.isHUD ? HUD.mono(9) : .caption))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ThemedToolbarButtonStyle())
                 .foregroundStyle(settings.isDarkSkin ? themeAccent() : Color.accentColor)
                 .help("社区排行榜")
                 DisplaySettingsMenu()
@@ -165,7 +191,7 @@ private struct FilterBar: View {
                 Spacer()
                 if usage.filter != UsageFilter(time: usage.filter.time) {
                     Button("重置筛选") { usage.filter = UsageFilter(time: usage.filter.time) }
-                        .buttonStyle(.plain)
+                        .buttonStyle(ThemedToolbarButtonStyle())
                         .font(settings.isLED ? LED.display(10, .medium)
                               : (settings.isHUD ? HUD.mono(10) : .caption))
                         .foregroundStyle(settings.isLED ? LED.dim
@@ -196,6 +222,7 @@ private struct FilterBar: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)      // 箭头由 ThemedMenuLabel 自己画,不要系统再叠一个
             .fixedSize()
+            .modifier(ThemedMenuChrome(active: n > 0))
             .disabled(options.isEmpty)
             .opacity(options.isEmpty ? 0.4 : 1)
         } else {
@@ -947,9 +974,22 @@ struct DisplaySettingsMenu: View {
                 Button("退出 TokenMini") { NSApp.terminate(nil) }
             }
         } label: {
-            Image(systemName: "slider.horizontal.3")
+            if settings.isPrism {
+                HStack(spacing: 6) {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundColor(Prism.silver)
+                    Text("外观")
+                        .foregroundColor(Prism.silver)
+                }.font(Prism.label(11))
+            } else {
+                Image(systemName: "slider.horizontal.3")
+            }
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .modifier(ThemedMenuChrome())
+        .accessibilityLabel("显示与主题设置")
+        .help("显示与主题设置")
         .fixedSize()
     }
 }

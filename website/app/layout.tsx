@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./kinetic.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "TokenMini · 每一枚 Token，心中有数",
     description: "系统状态、Claude Code 与 Codex 用量，全部放进一个清晰的菜单栏仪表盘。",
-    images: [{ url: "/brand/hero.png", width: 1944, height: 809, alt: "TokenMini 四片精密机械主视觉" }],
+    images: [{ url: "/brand/motion-v2/frame-00.png", width: 1672, height: 941, alt: "TokenMini 圆环拆解与绿色光束主视觉" }],
     type: "website",
     url: "https://tokenmini.cc/",
     siteName: "TokenMini",

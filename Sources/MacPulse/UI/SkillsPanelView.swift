@@ -4,6 +4,7 @@ import SwiftUI
 /// 支持 GitHub(owner/repo)与本地文件夹安装、卸载(进废纸篓)、跨工具复制。
 struct HUDSkillsPanelView: View {
     @EnvironmentObject var store: SkillManagerStore
+    @ObservedObject private var settings = DisplaySettings.shared
     @State private var search = ""
     @State private var toolFilter: ToolFilter = .all
     @State private var expanded: String?          // 展开的 skill id
@@ -86,6 +87,9 @@ struct HUDSkillsPanelView: View {
             TextField("搜索 skill 名字或描述…", text: $search)
                 .textFieldStyle(.roundedBorder)
                 .controlSize(.small)
+            if settings.isPrism {
+                ThemedSegmented(items: ToolFilter.allCases.map { ($0, $0.rawValue) }, selection: $toolFilter)
+            } else {
             HStack(spacing: 4) {
                 ForEach(ToolFilter.allCases) { f in
                     let selected = toolFilter == f
@@ -109,6 +113,7 @@ struct HUDSkillsPanelView: View {
                     }
                     .buttonStyle(.plain)
                 }
+            }
             }
         }
     }
@@ -188,7 +193,10 @@ struct HUDSkillsPanelView: View {
         .padding(.vertical, 4)
         .padding(.horizontal, 6)
         .background {
-            if isOpen {
+            if isOpen && settings.isPrism {
+                RoundedRectangle(cornerRadius: Prism.controlRadius).fill(Prism.panelHi)
+                    .overlay(RoundedRectangle(cornerRadius: Prism.controlRadius).strokeBorder(Prism.line, lineWidth: 1))
+            } else if isOpen {
                 ZStack {
                     Rectangle().fill(Color.white.opacity(0.04))
                     CornerBrackets(length: 5).stroke(HUD.cyan.opacity(0.4), lineWidth: 1)
@@ -231,9 +239,10 @@ struct HUDSkillsPanelView: View {
             Button("装到 Codex") { action([.codex]) }
             Button("两个都装") { action([.claude, .codex]) }
         } label: {
-            Text(label).font(.caption)
+            ThemedMenuLabel(title: label)
         }
-        .menuStyle(.button).buttonStyle(.bordered).controlSize(.small)
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).controlSize(.small)
+        .modifier(ThemedMenuChrome())
         .fixedSize()
     }
 }

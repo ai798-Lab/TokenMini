@@ -17,7 +17,8 @@ struct GlassCard<Content: View>: View {
     private var hover: Bool { mouse != nil }
 
     var body: some View {
-        if settings.isLED { ledBody }
+        if settings.isPrism { inner.modifier(PrismSurface()) }
+        else if settings.isLED { ledBody }
         else if settings.isHUD { hudBody }
         else { classicBody }
     }
@@ -112,7 +113,7 @@ struct MetricTile: View {
 
     var body: some View {
         Group {
-            if settings.isLED { ledBody } else { plainBody }
+            if settings.isPrism { prismBody } else if settings.isLED { ledBody } else { plainBody }
         }
         // LED 数字由 Canvas 绘制，VoiceOver 无法自行读取；整块磁贴统一提供语义值。
         .accessibilityElement(children: .ignore)
@@ -131,6 +132,23 @@ struct MetricTile: View {
         if let deltaContext { parts.append(deltaContext) }
         if let subtitle { parts.append(subtitle) }
         return parts.joined(separator: "，")
+    }
+
+    private var prismBody: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 5) {
+                Text(title).font(Prism.label(11, .semibold)).foregroundStyle(Prism.secondary)
+                Spacer(minLength: 0)
+                if let accent { Rectangle().fill(accent).frame(width: 6, height: 6) }
+            }
+            Text(value)
+                .font(.system(size: 29, weight: .heavy)).tracking(-0.7)
+                .monospacedDigit().foregroundStyle(Prism.silver)
+                .contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.5)
+                .frame(height: 36, alignment: .leading)
+            details(font: Prism.label(10), color: Prism.faint)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
     }
 
     private var ledBody: some View {
@@ -254,7 +272,15 @@ struct SectionHeader: View {
     ]
 
     var body: some View {
-        if settings.isLED {
+        if settings.isPrism {
+            HStack(spacing: 8) {
+                if let icon { Image(systemName: icon).font(.system(size: 12, weight: .semibold)).foregroundStyle(Prism.mint) }
+                Text(title).font(Prism.label(14, .bold)).foregroundStyle(Prism.silver)
+                    .fixedSize()
+                Rectangle().fill(Prism.line).frame(height: 1)
+                if let trailing { trailing }
+            }
+        } else if settings.isLED {
             HStack(spacing: 8) {
                 if let code = Self.ledCodes[title] { LEDCaption(text: code, tint: LED.amber, size: 9) }
                 Text(title).font(LED.display(12, .semibold)).foregroundStyle(LED.text)
@@ -290,11 +316,11 @@ enum SeriesColor {
     static let classicPalette: [Color] = [
         .blue, .purple, .teal, .orange, .pink, .green, .indigo, .cyan, .mint, .red
     ]
-    static let hudPalette: [Color] = [
+    static var hudPalette: [Color] { [
         HUD.cyan, HUD.violet, HUD.mint, HUD.amber, HUD.pink,
         HUD.green, HUD.ice, Color(red: 1.0, green: 0.55, blue: 0.30),
         Color(red: 0.45, green: 0.62, blue: 1.0), HUD.red
-    ]
+    ] }
     /// LED 单色亮度阶梯(琥珀系)。
     /// **真实的 LED 仪表盘是单色的**——参考图里时间是纯红屏、卡路里是纯琥珀屏,
     /// 多个系列在真机上靠亮度区分,不靠色相。之前用 10 个全饱和高亮色(红/绿/玫红/薄荷…)
@@ -315,6 +341,7 @@ enum SeriesColor {
         switch DisplaySettings.shared.theme {
         case .led: return ledPalette
         case .hud: return hudPalette
+        case .prism: return Prism.series
         case .classic: return classicPalette
         }
     }

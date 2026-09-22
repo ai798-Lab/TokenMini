@@ -1,0 +1,245 @@
+{
+  "selectedSourceExactCopy": true,
+  "svgCount": 22,
+  "pngCount": 38,
+  "pdfCount": 10,
+  "allTransparentPNGsHaveZeroCornerAndOpaqueInterior": true,
+  "opticalRasterChecks": [
+    {
+      "file": "mark-optical-16-black@1x.png",
+      "size": [
+        16,
+        16
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 5
+    },
+    {
+      "file": "mark-optical-16-black@2x.png",
+      "size": [
+        32,
+        32
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 20
+    },
+    {
+      "file": "mark-optical-16-black@3x.png",
+      "size": [
+        48,
+        48
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 44
+    },
+    {
+      "file": "mark-optical-16-white@1x.png",
+      "size": [
+        16,
+        16
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 5
+    },
+    {
+      "file": "mark-optical-16-white@2x.png",
+      "size": [
+        32,
+        32
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 20
+    },
+    {
+      "file": "mark-optical-16-white@3x.png",
+      "size": [
+        48,
+        48
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 44
+    },
+    {
+      "file": "mark-optical-20-black@1x.png",
+      "size": [
+        20,
+        20
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 10
+    },
+    {
+      "file": "mark-optical-20-black@2x.png",
+      "size": [
+        40,
+        40
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 24
+    },
+    {
+      "file": "mark-optical-20-black@3x.png",
+      "size": [
+        60,
+        60
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 63
+    },
+    {
+      "file": "mark-optical-20-white@1x.png",
+      "size": [
+        20,
+        20
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 10
+    },
+    {
+      "file": "mark-optical-20-white@2x.png",
+      "size": [
+        40,
+        40
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 24
+    },
+    {
+      "file": "mark-optical-20-white@3x.png",
+      "size": [
+        60,
+        60
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 63
+    },
+    {
+      "file": "mark-optical-22-black@1x.png",
+      "size": [
+        22,
+        22
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 10
+    },
+    {
+      "file": "mark-optical-22-black@2x.png",
+      "size": [
+        44,
+        44
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 28
+    },
+    {
+      "file": "mark-optical-22-black@3x.png",
+      "size": [
+        66,
+        66
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 72
+    },
+    {
+      "file": "mark-optical-22-white@1x.png",
+      "size": [
+        22,
+        22
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 10
+    },
+    {
+      "file": "mark-optical-22-white@2x.png",
+      "size": [
+        44,
+        44
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 28
+    },
+    {
+      "file": "mark-optical-22-white@3x.png",
+      "size": [
+        66,
+        66
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 72
+    },
+    {
+      "file": "mark-optical-24-black@1x.png",
+      "size": [
+        24,
+        24
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 11
+    },
+    {
+      "file": "mark-optical-24-black@2x.png",
+      "size": [
+        48,
+        48
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 38
+    },
+    {
+      "file": "mark-optical-24-black@3x.png",
+      "size": [
+        72,
+        72
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 91
+    },
+    {
+      "file": "mark-optical-24-white@1x.png",
+      "size": [
+        24,
+        24
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 11
+    },
+    {
+      "file": "mark-optical-24-white@2x.png",
+      "size": [
+        48,
+        48
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 38
+    },
+    {
+      "file": "mark-optical-24-white@3x.png",
+      "size": [
+        72,
+        72
+      ],
+      "separateSlicesAtAlpha96": 4,
+      "smallestSlicePixels": 91
+    }
+  ],
+  "browserVisualReview": {
+    "status": "passed-in-local-delivery-page",
+    "browser": "Chrome",
+    "viewportWidth": 749,
+    "documentScrollWidth": 735,
+    "loadedImages": 20,
+    "lightAndDarkSmallSizesInspected": [
+      16,
+      20,
+      22,
+      24,
+      32,
+      48
+    ],
+    "horizontal180CSSPixelsInspected": true,
+    "actualMacOSMenuBarVerified": false,
+    "browserDevicePixelRatio": 2.200000047683716,
+    "note": "CSS display sizes verified; this is browser preview acceptance, not native app installation acceptance."
+  },
+  "installedAppAcceptance": false
+}

@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-09-20",
+  "url": "http://127.0.0.1:8779/reset-v2/index.html",
+  "browser": "Chrome",
+  "referenceCards": 7,
+  "images": 10,
+  "loadedImages": 10,
+  "failedImages": [],
+  "viewportWidth": 749,
+  "documentScrollWidth": 735,
+  "allReferencesFilterVerified": true,
+  "signalFilterVerified": true,
+  "visiblePageScreenshotReviewed": true,
+  "newLogoGenerated": false,
+  "limitations": ["External reference images require network access", "This verifies the research board, not a new logo design"]
+}

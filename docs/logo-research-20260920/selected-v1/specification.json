@@ -1,0 +1,46 @@
+{
+  "selectedSource": "reference/selected-original.png",
+  "selectedSourceOriginalFilename": "exec-814a4e2f-b9f8-48e6-a32e-56ea79a3fffe.png",
+  "selectedSourceSHA256": "cdfa556031ca2310aff254dcb0a9e4689f6c0a75bd4723d8abf49155552d513b",
+  "status": "direction-selected-by-user; normalized-assets-delivered",
+  "selectedDescription": "Four descending upright slices with slanted top and bottom edges",
+  "brandName": "TokenMini",
+  "businessScope": [
+    "Token monitoring",
+    "Token sales"
+  ],
+  "angleDegrees": 25,
+  "sliceWidths": [
+    88,
+    53,
+    32,
+    21
+  ],
+  "sliceHeights": [
+    160,
+    128,
+    64,
+    26
+  ],
+  "gap": 16,
+  "roundingRadiusRule": "width * 0.06, circular tangent fillets",
+  "lowerRightBaseline": 160,
+  "clearSpaceRecommended": 32,
+  "colors": {
+    "ink": "#18211C",
+    "green": "#68B45B",
+    "paper": "#F5F6EF",
+    "white": "#FFFFFF"
+  },
+  "greenSliceIndexOneBased": 2,
+  "wordmarkOutlines": "redrawn geometric paths; no font dependency",
+  "smallOpticalSizes": [
+    16,
+    20,
+    22,
+    24
+  ],
+  "minimumRecommendedSymbolCSSPixels": 16,
+  "minimumRecommendedHorizontalWidthCSSPixels": 180,
+  "productionAppAssetsChanged": false
+}
