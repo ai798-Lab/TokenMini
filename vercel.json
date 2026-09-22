@@ -1,0 +1,40 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": "site",
+  "trailingSlash": true,
+  "redirects": [
+    { "source": "/rankings", "destination": "/", "permanent": false },
+    { "source": "/rankings/:path*", "destination": "/", "permanent": false },
+    { "source": "/admin", "destination": "/", "permanent": false },
+    { "source": "/admin/:path*", "destination": "/", "permanent": false },
+    { "source": "/api/:path*", "destination": "/", "permanent": false }
+  ],
+  "headers": [
+    {
+      "source": "/appcast.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/fonts/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/brand/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
+    },
+    {
+      "source": "/styles.css",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/motion.js",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    }
+  ]
+}
