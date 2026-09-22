@@ -1,10 +1,12 @@
 "use client";
 
+import { useLanguage } from "./language";
 import { Pause, Play } from "lucide-react";
 import { useSiteMotion } from "./kinetic-shell";
 
 // The artwork is deliberately static. Only the surrounding page motion is toggled.
 export default function HeroMotion() {
+  const { t } = useLanguage();
   const { playing, reduced, toggle } = useSiteMotion();
   return <>
     <div className="hero-scene" aria-hidden="true">
@@ -17,7 +19,7 @@ export default function HeroMotion() {
     </div>
     <button className="motion-toggle" disabled={reduced} aria-pressed={playing} onClick={toggle}>
       {playing ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}
-      {reduced ? "已减少动态效果" : playing ? "暂停页面动效" : "开启页面动效"}
+      {reduced ? t("已减少动态效果") : playing ? t("暂停页面动效") : t("开启页面动效")}
     </button>
   </>;
 }

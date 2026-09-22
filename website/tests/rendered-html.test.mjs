@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render(pathname = "/") {
+async function render(pathname = "/", language) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request(`http://localhost${pathname}`, { headers: { accept: "text/html" } }),
+    new Request(`http://localhost${pathname}`, { headers: { accept: "text/html", ...(language ? { cookie: `tokenmini-language=${language}` } : {}) } }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -28,7 +28,7 @@ test("server-renders the TokenMini public beta landing page", async () => {
   assert.match(html, /macOS 14\+/);
   assert.match(html, /LOCAL BY DEFAULT/);
   assert.match(html, /OPT-IN RANKING/);
-  assert.match(html, /大模型的消耗/);
+  assert.match(html, /Out of the dark/);
   assert.doesNotMatch(html, /立即充值|立即付款|Token 购买|SUPPLY/);
   assert.match(html, /github\.com\/ai798-Lab\/TokenMini/);
   assert.match(html, /src="\/brand\/logo-horizontal-black\.svg"/);
@@ -50,10 +50,10 @@ test("server-renders the public leaderboard without a login wall", async () => {
   const response = await render("/rankings");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /本周社区排行/);
-  assert.match(html, /无需登录|无需登录即可浏览/);
-  assert.match(html, /Token 消耗/);
-  assert.match(html, /API 等价费用/);
+  assert.match(html, /This week’s community rankings/);
+  assert.match(html, /without signing in/);
+  assert.match(html, /Token usage/);
+  assert.match(html, /API-equivalent cost/);
   assert.match(html, /src="\/icon\.png"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);
 });
@@ -62,10 +62,10 @@ test("server-renders a dedicated privacy policy for Google OAuth", async () => {
   const response = await render("/privacy");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /隐私说明/);
-  assert.match(html, /Google 登录/);
-  assert.match(html, /默认没有账号/);
-  assert.match(html, /会话正文/);
+  assert.match(html, /Privacy policy/);
+  assert.match(html, /Google sign-in/);
+  assert.match(html, /no accounts/);
+  assert.match(html, /Conversation content/);
   assert.match(html, /src="\/icon\.png"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);
 });
@@ -79,3 +79,19 @@ test("keeps the operations console out of search results", async () => {
   assert.match(html, /src="\/icon\.png"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);
 });
+
+for (const [path, heading] of [["/", "让消耗，"], ["/privacy", "隐私说明"], ["/rankings", "本周社区排行"]]) {
+  test(`renders saved Chinese preference on ${path}`, async () => {
+    const html = await (await render(path, "zh")).text();
+    assert.match(html, /<html[^>]*lang="zh-CN"/);
+    assert.ok(html.includes(heading));
+    assert.match(html, /aria-label="简体中文" aria-pressed="true"/);
+  });
+  test(`defaults to English for absent or invalid preference on ${path}`, async () => {
+    for (const language of [undefined, "invalid"]) {
+      const html = await (await render(path, language)).text();
+      assert.match(html, /<html[^>]*lang="en"/);
+      assert.match(html, /aria-label="English" aria-pressed="true"/);
+    }
+  });
+}
