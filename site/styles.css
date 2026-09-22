@@ -25,3 +25,21 @@
 .language-switch a[aria-current=page]{color:#0b0d0c;background:#b5ff39}
 .language-switch a:focus-visible{outline-offset:3px;outline:2px solid}
 @media(max-width:760px){.language-switch a{min-width:40px;min-height:38px;font-size:11px}}
+
+/* ── 可读性修正（2026-09-23）────────────────────────────────────────
+   根因：--cyan 在 .kinetic-home 作用域里被重定义为亮绿 #b5ff39，
+   而导航悬停与品牌角标都引用了它。#b5ff39 在米白底 #f4f4ef 上对比度仅 1.07，
+   结果是「鼠标放上去链接反而看不见」。这里对浅底场景改用品牌深绿 #326b29
+   （实测对比度 5.88:1，过 WCAG AA），深底场景保留亮绿。
+   颜色写死不走变量，避免再次被作用域覆盖。 */
+
+/* 导航与页脚链接悬停：浅底用深绿 + 下划线，不只靠颜色传达状态 */
+.nav-links a:hover,.footer a:hover{color:#326b29;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+/* 深底区域（首屏、kinetic 页脚、隐私页）仍用亮绿 */
+.brand-hero .nav-links a:hover,.kinetic-footer a:hover,.policy-page .nav-links a:hover{color:#b5ff39;text-decoration:underline;text-underline-offset:4px}
+
+/* 品牌角标：公开测试期间在 logo 右侧标注 Beta。
+   转正式版时删掉本段样式与各页 .brand 里的 <span class="brand-beta"> 即可。 */
+.brand-beta{font:600 10px/1 var(--font-geist-mono),ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#326b29;border:1px solid #326b29;border-radius:3px;padding:3px 5px;align-self:center;flex:none;white-space:nowrap}
+.brand-hero .brand-beta,.kinetic-footer .brand-beta,.footer .brand-beta,.policy-page .brand-beta{color:#b5ff39;border-color:#b5ff39}
+@media(max-width:760px){.brand-beta{font-size:9px;padding:2px 4px}}

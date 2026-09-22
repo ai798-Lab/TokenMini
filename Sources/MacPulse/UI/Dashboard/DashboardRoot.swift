@@ -556,6 +556,13 @@ private struct TrendCard: View {
     }
 
     /// 图例里出现的系列(顺序稳定,颜色与图表同源:都走 SeriesColor)
+    /// 分类轴 domain:标签在聚合层已保证唯一,这里再去一次重——重复的分类 domain 会让
+    /// Swift Charts 把两个不同时段的柱子叠到同一根上,严重时直接 trap。
+    private var xDomain: [String] {
+        var seen = Set<String>()
+        return usage.dashboard.trend.compactMap { seen.insert($0.label).inserted ? $0.label : nil }
+    }
+
     private var series: [String] {
         var seen = Set<String>()
         return bars.compactMap { seen.insert($0.series).inserted ? $0.series : nil }
@@ -576,6 +583,10 @@ private struct TrendCard: View {
                         else if settings.isHUD { hudChart }
                         else { classicChart }
                     }
+                    // 图表不参与任何隐式动画:顶部分段控件是 withAnimation 切换的,那一拍
+                    // Charts 会给旧柱子做退场过渡,而聚合结果换了一套分类轴 domain,
+                    // 退场中的旧柱在新 domain 里找不到位置 → Charts 内部 trap(监控台闪退元凶)。
+                    .transaction { $0.animation = nil }
                     // 自带图例是系统字体+圆点,在 HUD/LED 下很出戏;统一换自绘图例
                     ThemedChartLegend(series: series)
                         .padding(.top, 2)
@@ -606,7 +617,7 @@ private struct TrendCard: View {
     private var ledChart: some View {
         Chart { ledChartBase }
             .chartLegend(.hidden)
-            .chartXScale(domain: usage.dashboard.trend.map(\.label))
+            .chartXScale(domain: xDomain)
             // 灯格罩:把柱子切成一格格灯珠,而不是一根实心色块
             .chartPlotStyle { plot in
                 plot.background(LED.amber.opacity(0.02))
@@ -635,7 +646,7 @@ private struct TrendCard: View {
     private var hudChart: some View {
         Chart { chartBase }
             .chartLegend(.hidden)
-            .chartXScale(domain: usage.dashboard.trend.map(\.label))
+            .chartXScale(domain: xDomain)
             .chartYAxis {
                 AxisMarks(position: .trailing) { v in
                     AxisGridLine().foregroundStyle(HUD.gridline)
@@ -657,7 +668,7 @@ private struct TrendCard: View {
     private var classicChart: some View {
         Chart { chartBase }
             .chartLegend(.hidden)
-            .chartXScale(domain: usage.dashboard.trend.map(\.label))
+            .chartXScale(domain: xDomain)
             .chartYAxis {
                 AxisMarks(position: .trailing) { v in
                     AxisGridLine()

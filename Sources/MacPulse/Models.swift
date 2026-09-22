@@ -672,7 +672,14 @@ enum AppInfo {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
     }
 
-    static var displayVersion: String { "\(version) (\(build))" }
+    /// 发布通道。公开测试期间为 "Beta"，转正式版时改成空字符串即可，
+    /// 不要去动 CFBundleShortVersionString——那里必须保持纯 X.Y.Z，
+    /// 否则 release.sh 的版本号校验和 Sparkle 的版本比较都会出问题。
+    static let channel = "Beta"
+
+    static var displayVersion: String {
+        channel.isEmpty ? "\(version) (\(build))" : "\(version) (\(build)) \(channel)"
+    }
 
     static var homepage: URL {
         bundleURL("MacPulseHomepageURL") ?? URL(string: "https://tokenmini.cc")!

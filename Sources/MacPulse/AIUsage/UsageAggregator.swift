@@ -249,10 +249,15 @@ enum UsageAggregator {
     }
 
     private static func floorToHour(_ d: Date, cal: Calendar) -> Date {
-        cal.date(bySetting: .minute, value: 0, of: d).map {
-            cal.date(bySetting: .second, value: 0, of: $0) ?? $0
-        } ?? d
+        floorToWholeHour(d, cal: cal)
     }
+}
+
+/// 整点向下取整。**不能**用 `Calendar.date(bySetting: .minute, value: 0, of:)`——
+/// 它是向前搜索下一个匹配时刻(14:37 → 15:00),会把 24 小时趋势的首桶起点推迟最多 59 分钟,
+/// 落在其间的事件计入总额却进不了任何柱子;5 小时计费块的起点也会被推到未来。
+private func floorToWholeHour(_ d: Date, cal: Calendar) -> Date {
+    cal.date(from: cal.dateComponents([.year, .month, .day, .hour], from: d)) ?? d
 }
 
 // MARK: - 趋势桶规划
@@ -271,9 +276,12 @@ private struct BucketPlan {
         let fmt = DateFormatter(); fmt.timeZone = cal.timeZone; fmt.locale = Locale(identifier: "en_US_POSIX")
         if span <= 2 * 86400 + 1 {
             unit = .hour
-            self.start = cal.date(bySetting: .minute, value: 0, of: cal.date(bySetting: .second, value: 0, of: start) ?? start) ?? start
+            self.start = floorToWholeHour(start, cal: cal)
             count = max(1, Int(ceil(end.timeIntervalSince(self.start) / 3600)))
-            fmt.dateFormat = "HH:00"
+            // 标签是分类轴的 domain 与"峰值出现在 …"文案,同一规划内**必须唯一**:
+            // 小时桶跨日(24 小时窗从昨天 16:00 排到今天 16:00)要带日期,否则 "16:00" 会出现两次,
+            // 两个不同小时的柱子会叠到同一根上。
+            fmt.dateFormat = cal.isDate(self.start, inSameDayAs: end) ? "HH:00" : "MM-dd HH:00"
         } else if span <= 92 * 86400 {
             unit = .day
             self.start = cal.startOfDay(for: start)
