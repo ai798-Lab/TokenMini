@@ -67,7 +67,7 @@ struct MenuBarLabel: View {
         let image = NSImage(size: size, flipped: false) { rect in
             // 只让数字等宽，中文、字母和标点继续使用系统比例字形，观感与 macOS
             // 原生菜单栏一致；固定坐标负责稳定布局，不再依赖整串等宽字体。
-            menuBarMark?.draw(in: NSRect(x: 0, y: 2, width: 16, height: 16))
+            BrandImages.menuBar?.draw(in: NSRect(x: 0, y: 2, width: 16, height: 16))
             drawSymbol("cpu", x: 23, in: rect)
             drawText("\(cpu)", x: 39, maxWidth: 19, in: rect)
 
@@ -83,11 +83,6 @@ struct MenuBarLabel: View {
         image.isTemplate = true
         return image
     }
-
-    private static let menuBarMark: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "MenuBarMark", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
-    }()
 
     private static func drawSymbol(_ name: String, x: CGFloat, in rect: NSRect) {
         let configuration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)

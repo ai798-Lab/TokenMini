@@ -31,7 +31,7 @@ test("server-renders the TokenMini public beta landing page", async () => {
   assert.match(html, /大模型的消耗/);
   assert.doesNotMatch(html, /立即充值|立即付款|Token 购买|SUPPLY/);
   assert.match(html, /github\.com\/ai798-Lab\/TokenMini/);
-  assert.match(html, /src="\/brand\/logo-horizontal-black\.svg"/);
+  assert.match(html, /src="\/brand\/logo-horizontal-white\.svg"/);
   assert.doesNotMatch(html, /\/_vinext\/image/);
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);
 });

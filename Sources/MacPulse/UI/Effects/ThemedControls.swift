@@ -72,13 +72,16 @@ struct ThemedSegmented<T: Hashable>: View {
     private func labelColor(_ on: Bool) -> Color {
         if !on { return settings.isLED ? LED.text : HUD.dim }
         // LED 选中是实色灯面,字要压深色才看得清;HUD 选中是半透明填充,字用亮色
-        return settings.isLED ? LED.bg : HUD.text
+        return settings.isPrism ? Prism.bg : (settings.isLED ? LED.bg : HUD.text)
     }
 
     @ViewBuilder
     private func chrome(_ on: Bool) -> some View {
         if on {
-            if settings.isLED {
+            if settings.isPrism {
+                RoundedRectangle(cornerRadius: 6).fill(tint)
+                    .matchedGeometryEffect(id: "seg.chrome", in: ns)
+            } else if settings.isLED {
                 Capsule().fill(tint)
                     .shadow(color: tint.opacity(0.5), radius: 5)
                     .matchedGeometryEffect(id: "seg.chrome", in: ns)

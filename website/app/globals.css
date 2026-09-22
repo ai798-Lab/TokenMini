@@ -27,3 +27,14 @@
 @media(max-width:760px){.hero-machine-stage{width:510px;height:320px;right:-85px}.hero-machine{background-size:100% auto}}
 @media(max-width:760px){.hero-machine-stage{width:450px;height:300px;right:-8px}}
 .motion-toggle:disabled{cursor:default;opacity:.8}
+
+/* Prism carries through the public rankings and privacy pages as well as the homepage. */
+:root{--bg:#080c0d;--panel:#131a1b;--panel-2:#202a25;--line:#35413b;--cyan:#c7ff40;--cyan-2:#dcff8a;--text:#f1f5ed;--muted:#a6b8ae;--dim:#9cafa2;--paper:#080c0d;--green:#c7ff40}
+.rank-page,.policy-page,.admin-page{background:var(--bg);color:var(--text)}
+.rank-page .nav,.policy-page .nav,.admin-page .nav{border-bottom:1px solid var(--line)}
+.rank-heading,.policy-heading{background:linear-gradient(90deg,#080c0d 35%,#080c0d99),url('/brand/prism-core.png') right 50%/auto 100% no-repeat}
+.rank-heading h1,.policy-heading h1{font-weight:800;color:var(--text);letter-spacing:-.06em}
+.ranking-notice{color:#ffcf7c;background:#ffbb4510}.admin-message{color:#ffcf7c}
+.ranking-console{border-top:3px solid var(--cyan);border-radius:0}.ranking-row{min-height:70px}.rank-1{background:linear-gradient(90deg,#c7ff4020,transparent)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline-color:var(--cyan)}
+@media(max-width:760px){.rank-heading,.policy-heading{background:linear-gradient(90deg,#080c0d 15%,#080c0dce),url('/brand/prism-core.png') right top/auto 300px no-repeat}.rank-page .nav,.policy-page .nav{gap:12px}.rank-page .nav-links,.policy-page .nav-links{font-size:12px}}

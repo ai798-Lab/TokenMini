@@ -6,6 +6,7 @@ struct MaintenanceView: View {
     @EnvironmentObject var cleanup: CleanupStore
     @EnvironmentObject var system: SystemMonitor
     @EnvironmentObject var actions: ProcessActionStore
+    @ObservedObject private var settings = DisplaySettings.shared
     @State private var processToQuit: TopProcess?
 
     var body: some View {
@@ -17,6 +18,9 @@ struct MaintenanceView: View {
             if cleanup.page == .cleanup { cleanupContent } else { memoryContent }
         }
         .padding(20)
+        .background(settings.isPrism ? Prism.bg : Color(nsColor: .windowBackgroundColor))
+        .preferredColorScheme(settings.isDarkSkin ? .dark : nil)
+        .tint(settings.isPrism ? Prism.mint : .accentColor)
         .frame(minWidth: 600, minHeight: 500)
         .onAppear { if !cleanup.hasScanned { cleanup.scan() }; system.refresh() }
         .alert("永久删除所选文件？", isPresented: Binding(

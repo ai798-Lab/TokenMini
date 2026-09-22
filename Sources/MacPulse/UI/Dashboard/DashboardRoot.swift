@@ -68,6 +68,7 @@ struct DashboardRoot: View {
 
     private var scrollContent: some View {
         VStack(alignment: .leading, spacing: 16) {
+            if settings.isPrism { PrismDashboardBanner() }
             DataStatusBar()
             OverviewCards()
             InsightCard()
@@ -110,7 +111,7 @@ struct DashboardRoot: View {
         } else if settings.isHUD {
             ZStack {
                 HUD.bg
-                HUDGridBackground()
+                if !settings.isPrism { HUDGridBackground() }
             }
             .ignoresSafeArea()
         } else {
