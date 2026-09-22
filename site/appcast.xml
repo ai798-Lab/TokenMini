@@ -2,51 +2,68 @@
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>MacPulse</title>
+        <title>TokenMini</title>
         <item>
-            <title>0.10.0</title>
-            <pubDate>Sat, 29 Aug 2026 20:25:19 +0800</pubDate>
-            <link>https://macpulse-monitor.peaceaii.chatgpt.site</link>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>0.10.0</sparkle:shortVersionString>
+            <title>0.12.0</title>
+            <pubDate>Wed, 23 Sep 2026 00:41:50 +0800</pubDate>
+            <link>https://tokenmini.cc</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>0.12.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"><![CDATA[# MacPulse 0.10.0 Public Beta
+            <description sparkle:format="markdown"><![CDATA[# TokenMini 0.12.0
 
-建议所有 0.9.0 用户更新。这一版重点修复菜单弹窗稳定性、Claude 额度后台认证和 Opus 5 计价问题，并加入完全可选的社区排行榜。
+这一版把用量监控从 Claude Code 与 Codex 扩展到更多 AI 工具，并新增一套 Prism 界面。
 
-## 重要修复
+## 更多工具的用量，汇到同一个监控台
 
-- 菜单栏改为固定尺寸原生模板图，CPU、内存等数值刷新时不再带着弹窗反复移动或偶发裁切
-- 菜单栏额度明确显示“剩余”，不再让裸百分比产生“已用还是剩余”的歧义
-- Claude 额度启动与定时刷新改为静默读取，不会在后台突然弹出钥匙串认证框；只有用户主动开启功能时才允许系统交互
-- 关闭 Claude 额度后，尚未完成的旧请求不会再把额度结果写回界面
-- 补全 Claude Opus 5 的输入、输出、缓存与 fast 模式计价，避免未知模型提示和费用漏算
+| 工具 | 接入方式 |
+|---|---|
+| Claude Code、Codex | 本地会话自动扫描，60 秒更新 |
+| Kimi Code | 本地 wire.jsonl，新旧目录自动去重 |
+| Gemini CLI | 本地 session JSON |
+| OpenCode | 本地 SQLite，只读 |
+| Cursor | 官方 CSV 导入 |
+| Trae Work CN | 可选的官方只读查询，点击同步近 30 天 |
+| Windsurf、Copilot、Cline、Roo Code、Kilo Code、Qoder 等 | 通用 CSV / JSON / JSONL 导入 |
 
-## 新功能
+入口在「AI 用量监控台 → 数据源」。所有来源共用同一套统计、筛选和图表；导入模板只含时间、模型、Token、可选费用、项目和会话，不收录聊天正文。
 
-- Google 登录完全可选；登录后可加入 Token 消耗与 API 等价费用两个本周榜单
-- 默认使用打码昵称，可自愿公开完整昵称，并可随时退出排行榜
-- 游客无需登录即可浏览 App 内与官网公开榜单
-- 新增官网隐私页和仅管理员可见的轻量运营后台
+## 模型与价格
 
-## 隐私与安全
+- 新增 Gemini、DeepSeek、Kimi 等模型的计价，并随应用打包 2,595 条社区价格记录。
+- 模型名没有白名单：任何模型都能统计 Token。未知模型保持「待定价」，用量照常计入，不虚构费用。
+- 价格优先级：你的自定义价格 → 内置核实价格 → 社区目录精确匹配。自定义价格可在数据源窗口补充。
+- 费用是 API 等价估算，不是套餐实际扣款。
 
-- 不登录排行榜时不上传任何使用数据，本地监控功能保持完整可用
-- 排行榜只同步上海时区每日 Token 总量、API 等价费用、价格表版本和 App 版本
-- 不上传会话正文、提示词、回复、项目名、路径、模型明细、AI 凭证或设备信息
-- Google 会话保存在 macOS Keychain；退出排行榜后停止同步并删除排行榜数据和服务端刷新会话
+## 新增 Prism 界面
+
+第四套主题「Prism 光核」，与官网同一套视觉。原有经典、HUD、LED 三套不变。
+
+## 修复
+
+- **修复监控台闪退。** 切换顶部时间范围时监控台会崩溃：分段控件的切换动画会让图表给旧柱子做退场过渡，而聚合结果随即换了一套坐标轴，退场中的旧柱找不到位置从而触发崩溃。现已让趋势图不参与隐式动画，并对坐标轴做去重兜底。实测连续切换 200 次不再崩溃。
+- **修正「近 24 小时」趋势图漏算。** 首桶起点的取整方向写反了（向后搜索下一个整点而非向下取整），导致窗口开头最多 59 分钟的用量计入了总额却进不了任何一根柱子，柱子之和与顶部总额对不上。同时让跨日的小时标签带上日期，避免首尾出现两个同名刻度。
+- **修复温度读取可能永久失效。** 开机或唤醒瞬间 SMC 繁忙、传感器枚举返回空时，程序会误标为「已加载」并不再重试，导致整个运行期间都读不到温度、过热提醒也不会触发。现已改为成功后才标记。
+- **加固传感器键名解析。** 内核返回异常键名时原先会直接让应用崩溃，现已改为跳过该键。
+- **修复一处时区解析崩溃点。**
+
+## 安装与升级
+
+打开 `TokenMini-0.12.0.dmg`，将 `TokenMini.app` 拖入「应用程序」。设置、本地用量数据与登录状态继续沿用。
+
+本版需要 Apple Silicon 与 macOS 14 或更新版本。
 
 ## 已知边界
 
-- 仅支持 Apple Silicon 与 macOS 14+
-- 不同 M 系列芯片的温度和风扇传感器可用性可能不同
-- Claude 额度依赖实验性接口，失效时不会影响其他功能
+- Gemini CLI 与 Cursor 的导入用公开样例和合成记录验证过格式，尚未在有真实数据的账号上完整验收。
+- Seed 系列模型的人民币与缓存时长计价未原生适配，可记录 Token 并手动补充单价。
+- Trae 同步默认关闭，开启后只读取本机登录状态，凭证仅在内存使用，不保存聊天内容。
 ]]></description>
-            <enclosure url="https://github.com/ai798-Lab/MacPulse/releases/download/v0.10.0/MacPulse-0.10.0.dmg" length="4142975" type="application/octet-stream" sparkle:edSignature="CtKopmKG3BEpWmhUVXtkqIPCt4o9PiS3f7mNCh1blXQPMxLCg1w+4NNd4mWh3E/cVKvke8MDEeT+iBfGJjF5Bw=="></enclosure>
+            <enclosure url="https://github.com/ai798-Lab/TokenMini/releases/download/v0.12.0/TokenMini-0.12.0.dmg" length="5890957" type="application/octet-stream" sparkle:edSignature="UZod3VyUGE6Xzbk1dsjLirX8k4mCi13UlHU4QmEG6MQA661kcJt21bIl9GT4asT88qwgF9Zcdx0j+d7LfI73DQ=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: 4ft9F/9T5YSIRysN2pLAOnL4fzGfqgJMmz0XTNBhOtxvrXNBSvwj0UuH2D09iqe8esS77R6UJVmeim9p2lAACg==
-length: 3064
+edSignature: iHwfUkmdFRg8omABGM0Okkwb3KBw0/4Cl6HiNCk8EPT9NArbFRXTN4rPn+V4cDAn0nmQK+Rb1AL9px5Zo1gNDg==
+length: 4449
 -->
