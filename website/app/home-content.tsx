@@ -70,7 +70,7 @@ export default function Home() {
 
     <section className="privacy-editorial shell">
       <div className="privacy-title" data-reveal><p className="eyebrow">{t("03 / 默认本地处理 · 自愿加入排行")}</p><h2>{t("能力放开。")}<br /><span>{t("隐私守住。")}</span></h2><ShieldCheck size={58} strokeWidth={1.2} aria-hidden="true" /></div>
-      <div className="privacy-explanation" data-reveal><p className="privacy-lead">{t("你的会话，")}<br />{t("留在你的 Mac。")}</p><p>{t("本地监控默认不需要账号。TokenMini 读取本机的会话记录，在本地汇总用量；不会上传你的提示词或对话正文。")}</p><p>{t("只有你主动登录并加入社区排行，才会同步每日 Token 总量、API 等价费用等必要信息。你可以随时退出并删除公开排行数据。")}</p><Link className="text-link" href="/privacy">{t("阅读完整隐私说明")} <ArrowRight size={19} aria-hidden="true" /></Link></div>
+      <div className="privacy-explanation" data-reveal><p className="privacy-lead">{t("你的会话，")}<br />{t("留在你的 Mac。")}</p><p>{t("本地监控默认不需要账号。TokenMini 读取本机的会话记录，在本地汇总用量；不会上传你的提示词或对话正文。")}</p><p>{t("TokenMini 默认定期从官网获取签名模型价格目录，不上传会话或用量。软件更新、Claude 额度和 Skill 安装会按功能需要联网；社区排行榜目前未开放。")}</p><Link className="text-link" href="/privacy">{t("阅读完整隐私说明")} <ArrowRight size={19} aria-hidden="true" /></Link></div>
     </section>
 
     <section className="install-section" id="download">

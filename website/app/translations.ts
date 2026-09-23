@@ -1,4 +1,5 @@
 export const english = {
+  "TokenMini 默认定期从官网获取签名模型价格目录，不上传会话或用量。软件更新、Claude 额度和 Skill 安装会按功能需要联网；社区排行榜目前未开放。": "TokenMini periodically downloads a signed model pricing catalog from the official website without uploading conversations or usage. Software updates, Claude quota checks, and Skill installation use the network as needed. Community rankings are currently unavailable.",
   "每一枚，都有迹可循。": "Every token, accounted for.",
   "Claude Code 与 Codex，按工具、模型和项目看清 Token 构成。输入、输出、缓存，以及 API 等价费用，一目了然。": "Understand Claude Code and Codex usage by tool, model, and project. See input, output, cache, and API-equivalent cost at a glance.",
   "尽兴投入，心中有数。": "Stay focused. Know your limits.",

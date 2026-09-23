@@ -144,14 +144,21 @@ if [ "${SKIP_APPCAST}" != "1" ]; then
     cp "${DMG_PATH}" "${UPDATES_DIR}/"
     cp "${RELEASE_NOTES}" "${UPDATES_DIR}/${APP_NAME}-${VERSION}.md"
     DOWNLOAD_PREFIX="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/"
+    # Generate from this exact archive in a fresh directory. Reusing an old feed
+    # can retain another build under the same immutable version download URL.
+    APPCAST_STAGE="$(mktemp -d)"
+    cp "${DMG_PATH}" "${APPCAST_STAGE}/"
+    cp "${RELEASE_NOTES}" "${APPCAST_STAGE}/${APP_NAME}-${VERSION}.md"
     "${SPARKLE_BIN}/generate_appcast" \
         --download-url-prefix "${DOWNLOAD_PREFIX}" \
         --link "${SITE_URL}" \
         --embed-release-notes \
         --maximum-deltas 0 \
-        -o "${UPDATES_DIR}/appcast.xml" \
-        "${UPDATES_DIR}"
-    cp "${UPDATES_DIR}/appcast.xml" "dist/appcast.xml"
+        -o "${APPCAST_STAGE}/appcast.xml" \
+        "${APPCAST_STAGE}"
+    cp "${APPCAST_STAGE}/appcast.xml" "${UPDATES_DIR}/appcast.xml"
+    cp "${APPCAST_STAGE}/appcast.xml" "dist/appcast.xml"
+    rm -rf "${APPCAST_STAGE}"
 
     if ! grep -q "${DOWNLOAD_PREFIX}${APP_NAME}-${VERSION}.dmg" "dist/appcast.xml"; then
         echo "错误:appcast 未指向不可变 GitHub Release 地址" >&2
