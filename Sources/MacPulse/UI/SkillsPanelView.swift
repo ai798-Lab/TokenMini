@@ -210,8 +210,7 @@ struct HUDSkillsPanelView: View {
         VStack(alignment: .leading, spacing: 6) {
             HUDSectionHeader(cn: "安装新 Skill", code: "SKL.INSTALL", accent: HUD.green)
             HStack(spacing: 6) {
-                TextField("owner/repo 或 GitHub 链接", text: $repoInput)
-                    .textFieldStyle(.roundedBorder).controlSize(.small)
+                ThemedSearchField(title: "owner/repo 或 GitHub 链接", text: $repoInput)
                     .disabled(store.busy)
                 installMenu(label: store.busy ? "…" : "安装") { tools in
                     store.installFromGitHub(repoInput, to: tools)
@@ -232,16 +231,12 @@ struct HUDSkillsPanelView: View {
 
     /// 安装目标选择菜单(Claude / Codex / 两者)
     private func installMenu(label: String, action: @escaping ([ToolKind]) -> Void) -> some View {
-        Menu {
-            Button("装到 Claude Code") { action([.claude]) }
-            Button("装到 Codex") { action([.codex]) }
-            Button("两个都装") { action([.claude, .codex]) }
-        } label: {
-            ThemedMenuLabel(title: label)
-        }
-        .menuStyle(.borderlessButton).menuIndicator(.hidden).controlSize(.small)
-        .modifier(ThemedMenuChrome())
-        .fixedSize()
+        ThemedActionMenu(title: label, actions: [
+            ("装到 Claude Code", { action([.claude]) }),
+            ("装到 Codex", { action([.codex]) }),
+            ("两个都装", { action([.claude, .codex]) })
+        ])
+
     }
 }
 

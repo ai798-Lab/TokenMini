@@ -60,3 +60,36 @@ struct ThemedSearchField: View {
             .strokeBorder(focused ? themeAccent().opacity(0.7) : Color.primary.opacity(0.18)))
     }
 }
+
+/// Small action menus share the same Prism panel instead of a blue native selection strip.
+struct ThemedActionMenu: View {
+    let title: String
+    let actions: [(String, () -> Void)]
+    @State private var presented = false
+    @ObservedObject private var settings = DisplaySettings.shared
+    var body: some View {
+        if settings.isPrism {
+            Button { presented.toggle() } label: { ThemedMenuLabel(title: title) }
+                .buttonStyle(.plain).modifier(ThemedMenuChrome())
+                .popover(isPresented: $presented, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(title).font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Prism.secondary).padding(8)
+                        ForEach(actions.indices, id: \.self) { index in
+                            Button { presented = false; actions[index].1() } label: {
+                                Text(actions[index].0).frame(maxWidth: .infinity, alignment: .leading)
+                            }.buttonStyle(PrismButtonStyle())
+                        }
+                    }.padding(10).frame(width: 210).background(Prism.panel)
+                        .tint(Prism.mint).preferredColorScheme(.dark)
+                }
+        } else {
+            Menu {
+                ForEach(actions.indices, id: \.self) { index in
+                    Button(actions[index].0, action: actions[index].1)
+                }
+            } label: { ThemedMenuLabel(title: title) }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).controlSize(.small)
+        }
+    }
+}

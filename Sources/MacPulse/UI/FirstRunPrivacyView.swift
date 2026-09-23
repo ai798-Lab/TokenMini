@@ -51,7 +51,7 @@ struct FirstRunPrivacyView: View {
                             .foregroundStyle(HUD.faint)
                     }
                 }
-                .toggleStyle(.switch)
+                .toggleStyle(ThemedCheckToggleStyle())
                 Text("通知默认关闭，可稍后在设置中主动开启。")
                     .font(HUD.mono(8))
                     .foregroundStyle(HUD.faint)
@@ -77,7 +77,7 @@ struct FirstRunPrivacyView: View {
         .padding(20)
         .frame(width: 340, height: 560)
         .background(HUD.bg)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.dark).tint(themeAccent())
     }
 
     private func notice(_ icon: String, _ title: String, _ body: String) -> some View {
