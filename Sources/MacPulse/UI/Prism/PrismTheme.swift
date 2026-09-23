@@ -137,7 +137,7 @@ struct PrismPopoverView: View {
                         tokenHero
                         HUDSimpleHomeView().padding(.horizontal, Prism.contentInset)
                     case .system: HUDSystemPanelView()
-                    case .ai: HUDAIPanelView()
+                    case .ai: HUDAIPanelView(showsStandaloneControls: false)
                     case .skills: HUDSkillsPanelView()
                     }
                 }
@@ -148,7 +148,7 @@ struct PrismPopoverView: View {
                 Button { openWindow(id: "dashboard") } label: {
                     HStack {
                         Image(systemName: "chart.xyaxis.line")
-                        Text("打开完整监控台")
+                        Text("打开完整的中控台")
                         Spacer()
                         Image(systemName: "arrow.up.right")
                     }

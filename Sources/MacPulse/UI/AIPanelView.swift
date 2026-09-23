@@ -3,6 +3,8 @@ import Charts
 
 /// AI 用量页签(弹窗一瞥):今日花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
 struct HUDAIPanelView: View {
+    /// The Prism shell already owns appearance settings and dashboard navigation.
+    var showsStandaloneControls = true
     @EnvironmentObject var usage: UsageStore
     @ObservedObject private var settings = DisplaySettings.shared
     @Environment(\.openWindow) private var openWindow
@@ -12,7 +14,7 @@ struct HUDAIPanelView: View {
             headline
             trendChart
             modelBreakdown
-            openDashboardButton
+            if showsStandaloneControls { openDashboardButton }
             Text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算")
                 .font(.system(size: 8.5))
                 .foregroundStyle(HUD.faint)
@@ -41,7 +43,7 @@ struct HUDAIPanelView: View {
         HUDPanel(padding: 10) {
             VStack(alignment: .leading, spacing: 8) {
                 HUDSectionHeader(cn: "今日花费", code: "AI.COST // TODAY",
-                                 trailing: AnyView(settingsMenu))
+                                 trailing: showsStandaloneControls ? AnyView(settingsMenu) : nil)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(settings.currencyStr(usage.today.totalCostUSD))
                         .font(HUD.mono(26, .bold))
