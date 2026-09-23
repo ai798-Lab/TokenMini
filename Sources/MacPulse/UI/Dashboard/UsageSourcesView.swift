@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct UsageSourcesView: View {
     @EnvironmentObject var usage: UsageStore
+    @ObservedObject private var settings = DisplaySettings.shared
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTool: ToolKind = .cursor
     @State private var status = ""
@@ -18,83 +19,154 @@ struct UsageSourcesView: View {
     @State private var traeStatus = ""
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: "externaldrive.badge.plus").foregroundStyle(themeAccent())
+                    Text("工具与模型接入").font(.system(size: 20, weight: .bold))
+                    Spacer()
+                    Button("完成") { dismiss() }
+                        .modifier(SourceActionChrome()).keyboardShortcut(.cancelAction)
+                }
+                Text("本地记录每 60 秒自动更新；导入数据截至文件所覆盖时间。以下为近 90 天的记录数。")
+                    .font(.system(size: 11)).foregroundStyle(secondaryColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(24)
+            Rectangle().fill(themeAccent().opacity(0.35)).frame(height: 1)
+            Group {
+                if settings.isDarkSkin {
+                    HUDScrollView(accent: themeAccent()) { sections }
+                } else {
+                    ScrollView { sections }
+                }
+            }
+        }
+        .frame(width: 720, height: 680)
+        .foregroundStyle(primaryColor)
+        .background(backgroundColor)
+        .tint(themeAccent())
+        .preferredColorScheme(settings.isDarkSkin ? .dark : nil)
+    }
+
+    private var sections: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("工具与模型接入").font(.title2.bold())
-                Spacer()
-                Button("完成") { dismiss() }.keyboardShortcut(.cancelAction)
-            }
-            Text("本地记录每 60 秒自动更新；导入数据截至文件所覆盖时间。以下为近 90 天的记录数。").font(.callout).foregroundStyle(.secondary)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(usage.sourceStatuses) { source in
-                        HStack(alignment: .top) {
-                            Image(systemName: source.count > 0 ? "checkmark.circle.fill" : "circle.dashed")
-                                .foregroundStyle(source.count > 0 ? Color.green : Color.secondary)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(source.tool.label).font(.headline)
-                                Text(source.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text("\(source.count) 条").monospacedDigit().foregroundStyle(.secondary)
+            sourceSection("用量来源", icon: "externaldrive") {
+                ForEach(usage.sourceStatuses) { source in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: source.count > 0 ? "checkmark.circle.fill" : "circle.dashed")
+                            .foregroundStyle(source.count > 0 ? themeAccent() : secondaryColor)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(source.tool.label).font(.system(size: 12, weight: .semibold))
+                            Text(source.detail).font(.system(size: 10)).foregroundStyle(secondaryColor)
                         }
-                    }
-                    Divider()
-                    Text("Trae Work 官方同步").font(.headline)
-                    Toggle("允许读取本机 Trae Work CN 登录状态并查询官方用量", isOn: $traeEnabled)
-                    Text("仅向 api.trae.cn 查询近 30 天 Token 用量，凭证不落盘，不传输聊天正文。同步结果只保存在本机；关闭后保留已同步用量。").font(.caption).foregroundStyle(.secondary)
-                    HStack {
-                        Button(syncingTrae ? "正在同步…" : "同步 Trae Work 用量") { syncTrae() }
-                            .disabled(!traeEnabled || syncingTrae)
-                        Text(traeStatus).font(.caption).foregroundStyle(.secondary)
-                    }
-                    Divider()
-                    Text("导入工具用量").font(.headline)
-                    Text("Cursor 可导入官网用量 CSV。其他工具需按模板提供 CSV / JSONL / JSON；仅导入 Token 与费用字段，不保存聊天正文。重复导入会去重。").font(.caption).foregroundStyle(.secondary)
-                    HStack {
-                        Picker("工具", selection: $selectedTool) {
-                            ForEach(ToolKind.allCases.filter { !$0.localScanner }) { Text($0.label).tag($0) }
-                        }.frame(width: 250)
-                        Button(busy ? "正在导入…" : "选择用量文件") { importFile() }.disabled(busy)
-                        Button("保存模板") { saveTemplate() }
-                    }
-                    if selectedTool == .cursor {
-                        Link("打开 Cursor 用量页面", destination: URL(string: "https://cursor.com/dashboard?tab=usage")!)
-                            .font(.caption)
-                    }
-                    Divider()
-                    Text("模型价格").font(.headline)
-                    Text("官方核价 \(PricingTable.table.count) 项 + 社区参考目录 \(PricingTable.communityPrices.count) 项（含渠道与版本，可能重叠），快照 \(PricingTable.snapshotVersion)。优先自定义价格，其次官方，最后社区参考。任何模型都可记录用量；未匹配或未适配的阶梯价格显示“待定价”。").font(.caption).foregroundStyle(.secondary)
-                    Text("金额优先采用导入文件的费用；其余按当前标准 API 价格估算，包含社区参考价格，不代表订阅套餐扣款或历史账单。DeepSeek 采用高峰基准价，未计低谷优惠。").font(.caption).foregroundStyle(.secondary)
-                    if !usage.dashboard.quality.unknownModels.isEmpty {
-                        Text("当前待定价：" + usage.dashboard.quality.unknownModels.joined(separator: "、"))
-                            .font(.caption).foregroundStyle(.orange).textSelection(.enabled)
-                    }
-                    TextField("完整模型 ID（与用量记录一致）", text: $model)
-                    HStack {
-                        rateField("输入", text: $input)
-                        rateField("输出", text: $output)
-                        rateField("缓存读", text: $read)
-                        rateField("缓存写", text: $write)
-                    }
-                    HStack {
-                        Text("单位：美元 / 百万 Token；保存后优先使用自定义价格。")
-                            .font(.caption).foregroundStyle(.secondary)
                         Spacer()
-                        Button("保存价格") { savePrice() }
+                        Text("\(source.count) 条").font(.system(size: 11, weight: .medium))
+                            .monospacedDigit().foregroundStyle(secondaryColor)
                     }
-                    if !status.isEmpty { Text(status).font(.callout).textSelection(.enabled).accessibilityIdentifier("source-result") }
-                }.padding(.trailing, 8)
+                    .padding(.vertical, 3)
+                }
+            }
+            sourceSection("Trae Work 官方同步", icon: "arrow.triangle.2.circlepath") {
+                Toggle("允许读取本机 Trae Work CN 登录状态并查询官方用量", isOn: $traeEnabled)
+                    .toggleStyle(.switch).font(.system(size: 12))
+                description("仅向 api.trae.cn 查询近 30 天 Token 用量，凭证不落盘，不传输聊天正文。同步结果只保存在本机；关闭后保留已同步用量。")
+                HStack {
+                    Button(syncingTrae ? "正在同步…" : "同步 Trae Work 用量") { syncTrae() }
+                        .modifier(SourceActionChrome()).disabled(!traeEnabled || syncingTrae)
+                    Text(traeStatus).font(.caption).foregroundStyle(secondaryColor)
+                }
+            }
+            sourceSection("导入工具用量", icon: "square.and.arrow.down") {
+                description("Cursor 可导入官网用量 CSV。其他工具需按模板提供 CSV / JSONL / JSON；仅导入 Token 与费用字段，不保存聊天正文。重复导入会去重。")
+                HStack(spacing: 10) {
+                    Picker("工具", selection: $selectedTool) {
+                        ForEach(ToolKind.allCases.filter { !$0.localScanner }) { Text($0.label).tag($0) }
+                    }
+                    .modifier(ThemedMenuChrome()).frame(width: 230)
+                    Button(busy ? "正在导入…" : "选择用量文件") { importFile() }
+                        .modifier(SourceActionChrome()).disabled(busy)
+                    Button("保存模板") { saveTemplate() }.modifier(SourceActionChrome())
+                }
+                if selectedTool == .cursor {
+                    Link("打开 Cursor 用量页面", destination: URL(string: "https://cursor.com/dashboard?tab=usage")!)
+                        .font(.system(size: 11)).foregroundStyle(themeAccent())
+                }
+            }
+            sourceSection("模型价格", icon: "dollarsign.circle") {
+                description("官方核价 \(PricingTable.table.count) 项 + 社区参考目录 \(PricingTable.communityPrices.count) 项（含渠道与版本，可能重叠），快照 \(PricingTable.snapshotVersion)。优先自定义价格，其次官方，最后社区参考。任何模型都可记录用量；未匹配或未适配的阶梯价格显示“待定价”。")
+                description("金额优先采用导入文件的费用；其余按当前标准 API 价格估算，包含社区参考价格，不代表订阅套餐扣款或历史账单。DeepSeek 采用高峰基准价，未计低谷优惠。")
+                if !usage.dashboard.quality.unknownModels.isEmpty {
+                    Text("当前待定价：" + usage.dashboard.quality.unknownModels.joined(separator: "、"))
+                        .font(.caption).foregroundStyle(.orange).textSelection(.enabled)
+                }
+                sourceTextField("完整模型 ID（与用量记录一致）", text: $model)
+                HStack(spacing: 12) {
+                    rateField("输入", text: $input)
+                    rateField("输出", text: $output)
+                    rateField("缓存读", text: $read)
+                    rateField("缓存写", text: $write)
+                }
+                HStack {
+                    description("单位：美元 / 百万 Token；保存后优先使用自定义价格。")
+                    Spacer()
+                    Button("保存价格") { savePrice() }.modifier(SourceActionChrome())
+                }
+            }
+            if !status.isEmpty {
+                Text(status).font(.callout).textSelection(.enabled)
+                    .accessibilityIdentifier("source-result")
             }
         }
-        .padding(24).frame(width: 720, height: 680)
+        .padding(24)
     }
-    private func rateField(_ label: String, text: Binding<String>) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            TextField("0.00", text: text)
+
+    private func sourceSection<Content: View>(_ title: String, icon: String,
+                                              @ViewBuilder content: @escaping () -> Content) -> some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Label(title, systemImage: icon)
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(themeAccent())
+                content()
+            }
         }
     }
+
+    private func description(_ text: String) -> some View {
+        Text(text).font(.system(size: 11)).foregroundStyle(secondaryColor)
+            .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var primaryColor: Color {
+        settings.isPrism ? Prism.silver : settings.isHUD ? HUD.text : settings.isLED ? LED.text : .primary
+    }
+    private var secondaryColor: Color {
+        settings.isPrism ? Prism.secondary : settings.isHUD ? HUD.dim : settings.isLED ? LED.dim : .secondary
+    }
+    private var backgroundColor: Color {
+        settings.isPrism ? Prism.bg : settings.isHUD ? HUD.bg : settings.isLED ? LED.bg : Color(nsColor: .windowBackgroundColor)
+    }
+
+    @ViewBuilder
+    private func sourceTextField(_ placeholder: String, text: Binding<String>) -> some View {
+        if settings.isPrism {
+            TextField(placeholder, text: text, prompt: Text(placeholder).foregroundColor(Prism.faint))
+                .textFieldStyle(.plain).font(Prism.label(12)).foregroundStyle(Prism.silver)
+                .padding(9).background(Prism.bg, in: RoundedRectangle(cornerRadius: Prism.controlRadius))
+                .overlay(RoundedRectangle(cornerRadius: Prism.controlRadius).strokeBorder(Prism.line))
+                .accessibilityLabel(placeholder)
+        } else {
+            TextField(placeholder, text: text).textFieldStyle(.roundedBorder)
+        }
+    }
+
+    private func rateField(_ label: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(label).font(.caption).foregroundStyle(secondaryColor)
+            sourceTextField("0.00", text: text).accessibilityLabel(label + "价格")
+        }
+    }
+
     private func importFile() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.commaSeparatedText, .json, .plainText, .data]
@@ -147,5 +219,19 @@ struct UsageSourcesView: View {
             status = "已保存自定义价格，正在重新计算。"
             usage.refresh()
         } catch { status = "价格无效：请填写有限的非负数字。" }
+    }
+}
+
+/// Reuse the same Prism controls as the dashboard; keep native controls in Classic.
+private struct SourceActionChrome: ViewModifier {
+    @ObservedObject private var settings = DisplaySettings.shared
+    func body(content: Content) -> some View {
+        if settings.isPrism {
+            content.buttonStyle(PrismButtonStyle())
+        } else if settings.isHUD {
+            content.buttonStyle(HUDButtonStyle(accent: HUD.cyan, size: 11))
+        } else {
+            content.buttonStyle(.bordered).tint(themeAccent())
+        }
     }
 }

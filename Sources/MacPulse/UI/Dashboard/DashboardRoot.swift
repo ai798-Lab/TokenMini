@@ -161,27 +161,16 @@ private struct FilterBar: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 10) {
-                ThemedSegmented(items: presets.map { ($0, $0.label) },
-                                selection: $usage.filter.time)
-                Spacer()
-                ThemedSegmented(items: DashboardMode.allCases.map { ($0, $0.label) },
-                                selection: $settings.dashboardMode, size: 9)
-                Button { openWindow(id: "leaderboard") } label: {
-                    Label("排行", systemImage: "trophy")
-                        .font(settings.isLED ? LED.display(9, .medium)
-                              : (settings.isHUD ? HUD.mono(9) : .caption))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 16) {
+                    timePresets
+                    Spacer(minLength: 16)
+                    dashboardActions
                 }
-                .buttonStyle(ThemedToolbarButtonStyle())
-                .foregroundStyle(settings.isDarkSkin ? themeAccent() : Color.accentColor)
-                .help("社区排行榜")
-                Button { showSources = true } label: {
-                    Label("数据源", systemImage: "externaldrive.badge.plus")
-                }.buttonStyle(.plain)
-                .sheet(isPresented: $showSources) { UsageSourcesView().environmentObject(usage) }
-                DisplaySettingsMenu()
-                    .foregroundStyle(settings.isLED ? LED.dim
-                                     : (settings.isHUD ? HUD.dim : Color.secondary))
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack { timePresets; Spacer() }
+                    dashboardActions
+                }
             }
             HStack(spacing: 10) {
                 multiMenu("工具", options: usage.dashboard.facets.tools.map { ($0.rawValue, $0.label) },
@@ -204,6 +193,38 @@ private struct FilterBar: View {
                 }
             }
         }
+    }
+
+    private var timePresets: some View {
+        ThemedSegmented(items: presets.map { ($0, $0.label) }, selection: $usage.filter.time)
+    }
+
+    private var dashboardActions: some View {
+        HStack(spacing: 8) {
+            ForEach(DashboardMode.allCases) { mode in
+                let selected = settings.dashboardMode == mode
+                Button { settings.dashboardMode = mode } label: {
+                    DashboardToolbarLabel(title: mode.label,
+                                          icon: mode == .overview ? "square.grid.2x2" : "chart.xyaxis.line",
+                                          selected: selected)
+                }
+                .buttonStyle(DashboardToolbarButtonStyle(selected: selected))
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+            Button { openWindow(id: "leaderboard") } label: {
+                DashboardToolbarLabel(title: "排行", icon: "trophy")
+            }
+            .buttonStyle(DashboardToolbarButtonStyle())
+            .help("社区排行榜")
+            Button { showSources = true } label: {
+                DashboardToolbarLabel(title: "数据源", icon: "externaldrive")
+            }
+            .buttonStyle(DashboardToolbarButtonStyle())
+            .help("工具与模型接入")
+            .sheet(isPresented: $showSources) { UsageSourcesView().environmentObject(usage) }
+            DisplaySettingsMenu(unifiedToolbar: true)
+        }
+        .fixedSize()
     }
 
     // 把 Set<ToolKind>/Set<TokenType> 桥接成 Set<String> 供通用菜单
@@ -535,156 +556,200 @@ private struct TrendCard: View {
     @EnvironmentObject var usage: UsageStore
     @ObservedObject private var settings = DisplaySettings.shared
     @State private var stackByModel = true
+    @State private var plotWidth: CGFloat = 600
+    @State private var selectedBucket: String?
 
-    private struct Bar: Identifiable { let id = UUID(); let bucket: String; let idx: Int; let series: String; let cost: Double }
-
-    private var bars: [Bar] {
-        var out: [Bar] = []
-        for p in usage.dashboard.trend {
-            if stackByModel {
-                for (m, c) in p.byModel where c > 0 {
-                    out.append(Bar(bucket: p.label, idx: p.id, series: shortModel(m), cost: c))
-                }
-            } else {
-                let b = p.byType
-                let pairs: [(String, Double)] = [("输入", b.input), ("输出", b.output),
-                                                 ("缓存写", b.cacheWrite), ("缓存读", b.cacheRead)]
-                for (name, c) in pairs where c > 0 { out.append(Bar(bucket: p.label, idx: p.id, series: name, cost: c)) }
-            }
-        }
-        return out
+    private struct Bar: Identifiable {
+        let bucket: String
+        let series: String
+        let cost: Double
+        var id: String { bucket + "|" + series }
     }
 
-    /// 图例里出现的系列(顺序稳定,颜色与图表同源:都走 SeriesColor)
-    /// 分类轴 domain:标签在聚合层已保证唯一,这里再去一次重——重复的分类 domain 会让
-    /// Swift Charts 把两个不同时段的柱子叠到同一根上,严重时直接 trap。
+    private var hourly: Bool {
+        let points = usage.dashboard.trend
+        if points.count > 1 { return points[1].date.timeIntervalSince(points[0].date) <= 3600 }
+        switch usage.filter.time {
+        case .last24h, .today: return true
+        case .custom(let start, let end): return end.timeIntervalSince(start) <= 2 * 86400 + 1
+        default: return false
+        }
+    }
+    private var axis: TrendAxisLayout { TrendAxisLayout(points: usage.dashboard.trend, hourly: hourly) }
+    private var axisColor: Color {
+        settings.isPrism ? Prism.secondary : (settings.isLED ? LED.dim : (settings.isHUD ? HUD.dim : .secondary))
+    }
+    private var gridColor: Color {
+        settings.isPrism ? Prism.line.opacity(0.5) : (settings.isLED ? LED.amber.opacity(0.07) : (settings.isHUD ? HUD.gridline : Color.secondary.opacity(0.15)))
+    }
+
+    private var bars: [Bar] {
+        usage.dashboard.trend.flatMap { point in
+            let parts: [(String, Double)] = stackByModel
+                ? point.byModel.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+                : [("输入", point.byType.input), ("输出", point.byType.output),
+                   ("缓存写", point.byType.cacheWrite), ("缓存读", point.byType.cacheRead)]
+            return parts.filter { $0.1 > 0 }.map { Bar(bucket: point.label, series: $0.0, cost: $0.1) }
+        }
+    }
+
+    /// Retain the full unique category keys. Short display labels must never merge buckets.
     private var xDomain: [String] {
         var seen = Set<String>()
         return usage.dashboard.trend.compactMap { seen.insert($0.label).inserted ? $0.label : nil }
     }
-
     private var series: [String] {
         var seen = Set<String>()
-        return bars.compactMap { seen.insert($0.series).inserted ? $0.series : nil }
+        return bars.compactMap { seen.insert(shortModel($0.series)).inserted ? shortModel($0.series) : nil }
+    }
+    private var selectedPoint: TrendPoint? {
+        usage.dashboard.trend.first { $0.label == selectedBucket }
+    }
+    private var intervalText: String {
+        let (start, end) = UsageAggregator.timeBounds(usage.filter.time, now: usage.lastScan ?? Date(), cal: .current)
+        let pattern = hourly ? "MM/dd HH:mm" : "MM/dd"
+        return axis.format(start, pattern) + " — " + axis.format(end, pattern)
+            + (hourly ? " · 每小时汇总 · 本地时间" : " · 每天汇总 · 本地时间")
     }
 
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
                 SectionHeader(title: "等价成本趋势", icon: "chart.bar.xaxis",
-                              trailing: AnyView(
-                                ThemedSegmented(items: [(true, "按模型"), (false, "成本构成")],
-                                                selection: $stackByModel, size: 9)))
+                              trailing: AnyView(ThemedSegmented(items: [(true, "按模型"), (false, "成本构成")],
+                                                               selection: $stackByModel, size: 9)))
+                Text(intervalText)
+                    .font(.system(size: 11)).foregroundStyle(axisColor)
                 if usage.dashboard.trend.allSatisfy({ $0.costUSD == 0 }) {
-                    emptyHint
+                    Text("该范围内无数据").font(.caption).foregroundStyle(axisColor)
+                        .frame(maxWidth: .infinity, minHeight: 200)
                 } else {
-                    Group {
-                        if settings.isLED { ledChart }
-                        else if settings.isHUD { hudChart }
-                        else { classicChart }
-                    }
-                    // 图表不参与任何隐式动画:顶部分段控件是 withAnimation 切换的,那一拍
-                    // Charts 会给旧柱子做退场过渡,而聚合结果换了一套分类轴 domain,
-                    // 退场中的旧柱在新 domain 里找不到位置 → Charts 内部 trap(监控台闪退元凶)。
-                    .transaction { $0.animation = nil }
-                    // 自带图例是系统字体+圆点,在 HUD/LED 下很出戏;统一换自绘图例
-                    ThemedChartLegend(series: series)
-                        .padding(.top, 2)
+                    trendChart
+                        // Keep the existing crash safeguard: disappearing categories cannot
+                        // animate into a new categorical domain when the time filter changes.
+                        .transaction { $0.animation = nil }
+                    ThemedChartLegend(series: series).padding(.top, 2)
+                    selectionDetail
                 }
             }
         }
+        .onChange(of: xDomain) { _, _ in selectedBucket = nil }
     }
 
-    /// 共享的柱状图主体(轴样式按主题分开配)。
-    /// 直接给 SeriesColor 的色,不用 foregroundStyle(by:) —— 后者按数据出现顺序自动配色,
-    /// 会和自绘图例对不上;同 x 的柱子仍会自动堆叠,不依赖 by:。
-    private var chartBase: some ChartContent {
-        ForEach(bars) { b in
-            BarMark(x: .value("时间", b.bucket), y: .value("花费", b.cost))
-                .foregroundStyle(SeriesColor.color(for: b.series))
-        }
-    }
-
-    /// LED 版柱子:窄一点、圆角、顶端带一点辉光——读起来像一排 LED 灯柱而不是通用柱状图
-    private var ledChartBase: some ChartContent {
-        ForEach(bars) { b in
-            BarMark(x: .value("时间", b.bucket), y: .value("花费", b.cost), width: .ratio(0.55))
-                .foregroundStyle(SeriesColor.color(for: b.series))
-                .cornerRadius(2)
-        }
-    }
-
-    private var ledChart: some View {
-        Chart { ledChartBase }
-            .chartLegend(.hidden)
-            .chartXScale(domain: xDomain)
-            // 灯格罩:把柱子切成一格格灯珠,而不是一根实心色块
-            .chartPlotStyle { plot in
-                plot.background(LED.amber.opacity(0.02))
-                    .overlay { LEDCellMask() }
+    private var trendChart: some View {
+        Chart {
+            ForEach(bars) { bar in
+                BarMark(x: .value("时间", bar.bucket), y: .value("等价成本", bar.cost),
+                        width: .ratio(settings.isLED ? 0.55 : 0.7))
+                    .foregroundStyle(SeriesColor.color(for: shortModel(bar.series)))
+                    .cornerRadius(settings.isLED ? 2 : 1)
+                    .accessibilityLabel(bar.bucket + " · " + shortModel(bar.series))
+                    .accessibilityValue(settings.currencyStr(bar.cost))
             }
-            .chartYAxis {
-                AxisMarks(position: .trailing) { v in
-                    AxisGridLine().foregroundStyle(LED.amber.opacity(0.07))
-                    AxisValueLabel {
-                        if let d = v.as(Double.self) {
-                            Text(settings.currencyCompact(d)).font(LED.din(10)).foregroundStyle(LED.faint)
+        }
+        .chartLegend(.hidden)
+        .chartXScale(domain: xDomain)
+        .chartPlotStyle { plot in
+            plot.overlay { if settings.isLED { LEDCellMask().allowsHitTesting(false) } }
+        }
+        .chartYAxis {
+            AxisMarks(position: .trailing) { value in
+                AxisGridLine().foregroundStyle(gridColor)
+                AxisValueLabel {
+                    if let cost = value.as(Double.self) {
+                        Text(settings.currencyCompact(cost)).font(.system(size: 11)).foregroundStyle(axisColor)
+                    }
+                }
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: axis.ticks(plotWidth: Double(plotWidth))) { value in
+                AxisValueLabel {
+                    if let key = value.as(String.self) {
+                        Text(axis.shortLabel(for: key)).font(.system(size: 11)).monospacedDigit()
+                            .foregroundStyle(axisColor)
+                    }
+                }
+            }
+        }
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                if let anchor = proxy.plotFrame {
+                    let frame = geometry[anchor]
+                    let band = frame.width / CGFloat(max(1, xDomain.count))
+                    ZStack(alignment: .topLeading) {
+                        ForEach(axis.dateMarkers(plotWidth: frame.width)) { marker in
+                            if let center = proxy.position(forX: marker.key) {
+                                let x = frame.minX + center - band / 2
+                                if marker.index > 0 {
+                                    Path { path in
+                                        path.move(to: CGPoint(x: x, y: frame.minY))
+                                        path.addLine(to: CGPoint(x: x, y: frame.maxY))
+                                    }
+                                    .stroke(axisColor.opacity(0.35), lineWidth: 1)
+                                }
+                                Text(marker.text).font(.system(size: 11, weight: .medium)).monospacedDigit()
+                                    .foregroundStyle(axisColor)
+                                    .frame(width: 56, alignment: .leading)
+                                    .position(x: min(max(x, frame.minX), frame.maxX - 56) + 28,
+                                              y: frame.maxY + 36)
+                            }
+                        }
+                        if let selectedBucket, let x = proxy.position(forX: selectedBucket) {
+                            Path { path in
+                                path.move(to: CGPoint(x: frame.minX + x, y: frame.minY))
+                                path.addLine(to: CGPoint(x: frame.minX + x, y: frame.maxY))
+                            }
+                            .stroke(axisColor.opacity(0.6), lineWidth: 1)
                         }
                     }
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 8)) {
-                    AxisValueLabel().font(LED.din(10)).foregroundStyle(LED.faint)
-                }
-            }
-            // 整块图垫一层琥珀辉光,而不是给每根柱子加阴影(那样会糊成一片)
-            .shadow(color: LED.amber.opacity(0.25), radius: 6)
-            .frame(height: 200)
-    }
-
-    private var hudChart: some View {
-        Chart { chartBase }
-            .chartLegend(.hidden)
-            .chartXScale(domain: xDomain)
-            .chartYAxis {
-                AxisMarks(position: .trailing) { v in
-                    AxisGridLine().foregroundStyle(HUD.gridline)
-                    AxisValueLabel {
-                        if let d = v.as(Double.self) {
-                            Text(settings.currencyCompact(d)).font(HUD.mono(9)).foregroundStyle(HUD.faint)
+                    .allowsHitTesting(false)
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .frame(width: frame.width, height: frame.height)
+                        .position(x: frame.midX, y: frame.midY)
+                        .onContinuousHover { phase in
+                            if case .active(let location) = phase {
+                                selectedBucket = proxy.value(atX: location.x, as: String.self)
+                            }
                         }
-                    }
+                        .onTapGesture { location in
+                            selectedBucket = proxy.value(atX: location.x, as: String.self)
+                        }
+                        .accessibilityHidden(true)
+                    Color.clear
+                        .onAppear { plotWidth = frame.width }
+                        .onChange(of: frame.width) { _, width in plotWidth = width }
+                        .allowsHitTesting(false)
                 }
             }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 8)) {
-                    AxisValueLabel().font(HUD.mono(9)).foregroundStyle(HUD.faint)
-                }
-            }
-            .frame(height: 200)
+        }
+        .frame(height: 218)
+        .padding(.bottom, hourly ? 24 : 0)
     }
 
-    private var classicChart: some View {
-        Chart { chartBase }
-            .chartLegend(.hidden)
-            .chartXScale(domain: xDomain)
-            .chartYAxis {
-                AxisMarks(position: .trailing) { v in
-                    AxisGridLine()
-                    AxisValueLabel { if let d = v.as(Double.self) { Text(settings.currencyCompact(d)).font(.caption2) } }
-                }
+    @ViewBuilder private var selectionDetail: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            if let point = selectedPoint {
+                Text(detailDate(point) + " · 等价成本 " + settings.currencyStr(point.costUSD))
+                    .font(.system(size: 12, weight: .medium)).monospacedDigit()
+                let parts = bars.filter { $0.bucket == point.label }
+                    .map { shortModel($0.series) + " " + settings.currencyStr($0.cost) }
+                Text(parts.joined(separator: "    "))
+                    .font(.system(size: 11)).foregroundStyle(axisColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("移到或点击柱子，查看完整时间与费用明细")
+                    .font(.system(size: 11)).foregroundStyle(axisColor)
             }
-            .chartXAxis { AxisMarks(values: .automatic(desiredCount: 8)) { AxisValueLabel().font(.caption2) } }
-            .frame(height: 200)
+        }
+        .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
     }
 
-    private var emptyHint: some View {
-        Text("该范围内无数据")
-            .font(settings.isLED ? LED.mono(10) : (settings.isHUD ? HUD.mono(10) : .caption))
-            .foregroundStyle(settings.isLED ? LED.faint
-                             : (settings.isHUD ? HUD.faint : Color.secondary.opacity(0.6)))
-            .frame(maxWidth: .infinity, minHeight: 200)
+    private func detailDate(_ point: TrendPoint) -> String {
+        guard hourly else { return axis.format(point.date, "yyyy/MM/dd") }
+        let end = point.date.addingTimeInterval(3600)
+        return axis.format(point.date, "MM/dd HH:mm") + "–" + axis.format(end, "HH:mm")
     }
 }
 
@@ -916,6 +981,7 @@ func shortModel(_ name: String) -> String {
 
 /// 计量单位 / 货币 / 主题 / 提醒设置菜单(弹窗与监控台共用)
 struct DisplaySettingsMenu: View {
+    var unifiedToolbar = false
     @ObservedObject private var settings = DisplaySettings.shared
     @ObservedObject private var alerts = NotificationManager.shared
     @ObservedObject private var updates = UpdateController.shared
@@ -990,7 +1056,9 @@ struct DisplaySettingsMenu: View {
                 Button("退出 TokenMini") { NSApp.terminate(nil) }
             }
         } label: {
-            if settings.isPrism {
+            if unifiedToolbar {
+                DashboardToolbarLabel(title: "外观", icon: "slider.horizontal.3")
+            } else if settings.isPrism {
                 HStack(spacing: 6) {
                     Image(systemName: "slider.horizontal.3")
                         .foregroundColor(Prism.silver)
@@ -1003,7 +1071,7 @@ struct DisplaySettingsMenu: View {
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
-        .modifier(ThemedMenuChrome())
+        .modifier(DashboardAppearanceChrome(unified: unifiedToolbar))
         .accessibilityLabel("显示与主题设置")
         .help("显示与主题设置")
         .fixedSize()

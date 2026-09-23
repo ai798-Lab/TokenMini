@@ -46,7 +46,7 @@ struct FirstRunPrivacyView: View {
                         Text("启用 Claude 额度（实验）")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(HUD.text)
-                        Text("开启后才会访问 Claude Code 钥匙串凭证和 Anthropic 用量端点")
+                        Text("默认关闭；开启前会再次确认读取账号凭证并联网查询额度")
                             .font(.system(size: 9.5))
                             .foregroundStyle(HUD.faint)
                     }

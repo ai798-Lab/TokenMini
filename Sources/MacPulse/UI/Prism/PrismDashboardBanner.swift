@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A full-width data hero. Only the window-stage boundary clips the foreground;
-/// paper and signal bands terminate at that same edge without inset corner gaps.
+/// A full-width data hero. Artwork may break above the card, but the card and
+/// artwork share one bottom edge so the silhouette cannot spill into the next row.
 struct PrismDashboardBanner: View {
     let total: String
     let scope: String
@@ -23,7 +23,7 @@ struct PrismDashboardBanner: View {
                         .padding(.leading, 20).padding(.top, 12)
 
                     backdrop(textWidth: layout.textWidth)
-                        .frame(width: proxy.size.width, height: PrismHeroLayout.panelHeight)
+                        .frame(width: proxy.size.width, height: layout.panelHeight)
                         .offset(y: layout.panelTop)
 
                     PrismBreakoutArtwork(width: layout.artworkWidth)
@@ -97,10 +97,12 @@ struct PrismDashboardBanner: View {
 }
 
 struct PrismHeroLayout {
-    static let panelHeight: CGFloat = 260
+    private static let originalPanelHeight: CGFloat = 260
     let width: CGFloat
     var stageHeight: CGFloat { min(440, max(342, width / 2.8)) }
-    var panelTop: CGFloat { (stageHeight - Self.panelHeight) / 2 }
+    var panelTop: CGFloat { (stageHeight - Self.originalPanelHeight) / 2 }
+    // Keep the existing top breakout; extend the card through the old bottom gutter.
+    var panelHeight: CGFloat { stageHeight - panelTop }
     var textWidth: CGFloat { width * 0.42 - 32 }
     var artworkWidth: CGFloat { stageHeight * 2.32 }
     var artworkHeight: CGFloat { artworkWidth * 941 / 1672 }
@@ -108,7 +110,7 @@ struct PrismHeroLayout {
     var artworkTop: CGFloat { (stageHeight - artworkHeight) / 2 }
 }
 
-/// Reserve the full silhouette height in the scroll layout, including at narrow widths.
+/// Reserve the top breakout and card together, with no separate bottom breakout.
 private struct PrismHeroStageLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? 760
@@ -138,11 +140,11 @@ struct PrismBreakoutArtwork: View {
 struct PrismTokenHero: View {
     let value: String
     private let stageHeight: CGFloat = 178
-    private let panelHeight: CGFloat = 122
+    private let panelTop: CGFloat = 28
+    private var panelHeight: CGFloat { stageHeight - panelTop }
 
     var body: some View {
         GeometryReader { proxy in
-            let panelTop = (stageHeight - panelHeight) / 2
             let artworkWidth: CGFloat = 410
             ZStack(alignment: .topLeading) {
                 ZStack(alignment: .topLeading) {

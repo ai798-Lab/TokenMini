@@ -49,7 +49,9 @@ final class QuotaStore: ObservableObject {
     static let claudeInterval: TimeInterval = 300  // Claude 走网络,5 分钟一次防 429
 
     private let codexReader = CodexQuotaReader()
-    private let claudeReader = ClaudeQuotaReader()
+    private let defaults: UserDefaults
+    private let confirmClaudeAccess: @MainActor () -> Bool
+    private let fetchClaude: @MainActor (ClaudeKeychainAccessMode) async -> ToolQuota?
     private let queue = DispatchQueue(label: "macpulse.quota", qos: .utility)
     private var codexTimer: Timer?
     private var claudeTimer: Timer?
@@ -60,9 +62,23 @@ final class QuotaStore: ObservableObject {
     private var warnedCycles: Set<String> = []     // 本轮已提醒过"快用完"的窗口周期,防重复
 
     private static let claudeAccessKey = "macpulse.claudeQuotaAccessEnabled"
+    private static let claudeConsentKey = "macpulse.claudeQuotaCredentialConsent.v1"
+    private var isConfirmingClaudeAccess = false
 
-    init() {
-        claudeAccessEnabled = UserDefaults.standard.bool(forKey: Self.claudeAccessKey)
+    init(defaults: UserDefaults = .standard,
+         confirmClaudeAccess: @escaping @MainActor () -> Bool = { ClaudeQuotaConsentDialog.confirm() },
+         fetchClaude: @escaping @MainActor (ClaudeKeychainAccessMode) async -> ToolQuota? = {
+             await ClaudeQuotaReader().fetch(accessMode: $0)
+         }) {
+        self.defaults = defaults
+        self.confirmClaudeAccess = confirmClaudeAccess
+        self.fetchClaude = fetchClaude
+        // 新用户默认关闭；旧版仅打开开关不等于同意读取账号凭证。
+        claudeAccessEnabled = defaults.bool(forKey: Self.claudeAccessKey)
+            && defaults.bool(forKey: Self.claudeConsentKey)
+        if !claudeAccessEnabled {
+            defaults.set(false, forKey: Self.claudeAccessKey)
+        }
     }
 
     func start() {
@@ -88,9 +104,16 @@ final class QuotaStore: ObservableObject {
 
     /// Claude 额度依赖用户已有的 Claude Code 凭证与实验性端点，必须由用户主动开启。
     func setClaudeAccessEnabled(_ enabled: Bool) {
-        guard claudeAccessEnabled != enabled else { return }
+        guard claudeAccessEnabled != enabled, !isConfirmingClaudeAccess else { return }
+        if enabled {
+            isConfirmingClaudeAccess = true
+            defer { isConfirmingClaudeAccess = false }
+            // 两个 UI 入口共用此关口：确认前不改开关、不读钥匙串、不发请求。
+            guard confirmClaudeAccess() else { return }
+        }
         claudeAccessEnabled = enabled
-        UserDefaults.standard.set(enabled, forKey: Self.claudeAccessKey)
+        defaults.set(enabled, forKey: Self.claudeConsentKey)
+        defaults.set(enabled, forKey: Self.claudeAccessKey)
         if enabled {
             refreshClaude(accessMode: .userInitiated)
         } else {
@@ -109,9 +132,10 @@ final class QuotaStore: ObservableObject {
 
     private func refreshClaude(accessMode: ClaudeKeychainAccessMode = .background) {
         guard claudeAccessEnabled else { return }
-        let reader = claudeReader
+        let fetch = fetchClaude
         Task { [weak self] in
-            let q = await reader.fetch(accessMode: accessMode)
+            guard self?.claudeAccessEnabled == true else { return }
+            let q = await fetch(accessMode)
             await MainActor.run {
                 guard let self, self.claudeAccessEnabled else { return }
                 self.claudeQuota = q
