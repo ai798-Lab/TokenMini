@@ -6,6 +6,7 @@ struct UsageSourcesView: View {
     @EnvironmentObject var usage: UsageStore
     @ObservedObject private var settings = DisplaySettings.shared
     @Environment(\.dismiss) private var dismiss
+    @State private var showToolPicker = false
     @State private var selectedTool: ToolKind = .cursor
     @State private var status = ""
     @State private var busy = false
@@ -69,7 +70,7 @@ struct UsageSourcesView: View {
             }
             sourceSection("Trae Work 官方同步", icon: "arrow.triangle.2.circlepath") {
                 Toggle("允许读取本机 Trae Work CN 登录状态并查询官方用量", isOn: $traeEnabled)
-                    .toggleStyle(.switch).font(.system(size: 12))
+                    .toggleStyle(PrismSecondaryToggleStyle(isSwitch: true)).font(.system(size: 12))
                 description("仅向 api.trae.cn 查询近 30 天 Token 用量，凭证不落盘，不传输聊天正文。同步结果只保存在本机；关闭后保留已同步用量。")
                 HStack {
                     Button(syncingTrae ? "正在同步…" : "同步 Trae Work 用量") { syncTrae() }
@@ -80,10 +81,7 @@ struct UsageSourcesView: View {
             sourceSection("导入工具用量", icon: "square.and.arrow.down") {
                 description("Cursor 可导入官网用量 CSV。其他工具需按模板提供 CSV / JSONL / JSON；仅导入 Token 与费用字段，不保存聊天正文。重复导入会去重。")
                 HStack(spacing: 10) {
-                    Picker("工具", selection: $selectedTool) {
-                        ForEach(ToolKind.allCases.filter { !$0.localScanner }) { Text($0.label).tag($0) }
-                    }
-                    .modifier(ThemedMenuChrome()).frame(width: 230)
+                    importToolPicker.frame(width: 230)
                     Button(busy ? "正在导入…" : "选择用量文件") { importFile() }
                         .modifier(SourceActionChrome()).disabled(busy)
                     Button("保存模板") { saveTemplate() }.modifier(SourceActionChrome())
@@ -153,13 +151,50 @@ struct UsageSourcesView: View {
     @ViewBuilder
     private func sourceTextField(_ placeholder: String, text: Binding<String>) -> some View {
         if settings.isPrism {
-            TextField(placeholder, text: text, prompt: Text(placeholder).foregroundColor(Prism.faint))
-                .textFieldStyle(.plain).font(Prism.label(12)).foregroundStyle(Prism.silver)
-                .padding(9).background(Prism.bg, in: RoundedRectangle(cornerRadius: Prism.controlRadius))
-                .overlay(RoundedRectangle(cornerRadius: Prism.controlRadius).strokeBorder(Prism.line))
+            PrismSourceTextField(placeholder: placeholder, text: text)
                 .accessibilityLabel(placeholder)
         } else {
             TextField(placeholder, text: text).textFieldStyle(.roundedBorder)
+        }
+    }
+
+    @ViewBuilder private var importToolPicker: some View {
+        if settings.isPrism {
+            Button { showToolPicker.toggle() } label: {
+                HStack(spacing: 8) {
+                    Text(selectedTool.label)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .medium))
+                }
+            }
+            .buttonStyle(PrismButtonStyle())
+            .accessibilityLabel("导入工具：" + selectedTool.label)
+            .popover(isPresented: $showToolPicker, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("选择导入工具").font(Prism.label(12, .semibold)).foregroundStyle(Prism.secondary)
+                    HUDScrollView(accent: Prism.mint) {
+                        VStack(spacing: 4) {
+                            ForEach(ToolKind.allCases.filter { !$0.localScanner }) { tool in
+                                Button { selectedTool = tool; showToolPicker = false } label: {
+                                    HStack {
+                                        Text(tool.label)
+                                        Spacer()
+                                        if selectedTool == tool { Image(systemName: "checkmark") }
+                                    }
+                                }
+                                .buttonStyle(PrismSecondaryChoiceStyle(selected: selectedTool == tool))
+                                .accessibilityAddTraits(selectedTool == tool ? .isSelected : [])
+                            }
+                        }
+                    }.frame(height: 280)
+                }
+                .padding(14).frame(width: 260).background(Prism.bg)
+                .preferredColorScheme(.dark)
+            }
+        } else {
+            Picker("工具", selection: $selectedTool) {
+                ForEach(ToolKind.allCases.filter { !$0.localScanner }) { Text($0.label).tag($0) }
+            }.modifier(ThemedMenuChrome())
         }
     }
 

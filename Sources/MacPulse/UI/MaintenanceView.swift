@@ -25,6 +25,7 @@ struct MaintenanceView: View {
             if cleanup.page == .cleanup { cleanupContent } else { memoryContent }
         }
         .padding(20)
+        .modifier(PrismSecondaryPageChrome())
         .background(settings.isPrism ? Prism.bg : Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(settings.isDarkSkin ? .dark : nil)
         .tint(settings.isPrism ? Prism.mint : .accentColor)
@@ -58,7 +59,7 @@ struct MaintenanceView: View {
                     Text(cleanup.scanStatus).font(.headline)
                     if let time = cleanup.lastScan {
                         Text("上次完成 \(time.formatted(date: .omitted, time: .standard))")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(secondaryColor)
                     }
                 }
                 Spacer()
@@ -73,7 +74,7 @@ struct MaintenanceView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("部分目录未能完整读取，具体原因见各分类。0 字节不代表目录为空。")
                     Text("可在系统设置 → 隐私与安全性 → 完全磁盘访问权限中允许 TokenMini，然后退出并重新打开应用，再扫描。文件本身的权限或锁定也可能阻止清理。")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(secondaryColor)
                     Button("打开完全磁盘访问设置") {
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
                     }
@@ -86,7 +87,7 @@ struct MaintenanceView: View {
                     cleanup.excludedPaths = []
                 }
                 Spacer()
-                Text("展开分类可逐项选择").font(.caption).foregroundStyle(.secondary)
+                Text("展开分类可逐项选择").font(.caption).foregroundStyle(secondaryColor)
             }.disabled(cleanup.scanning || cleanup.cleaning)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 14) {
@@ -101,10 +102,10 @@ struct MaintenanceView: View {
                                 }
                             }
                             .disabled(cleanup.scanning || cleanup.cleaning)
-                            Text(result.category.subtitle).font(.caption).foregroundStyle(.secondary)
+                            Text(result.category.subtitle).font(.caption).foregroundStyle(secondaryColor)
                             DisclosureGroup("查看 \(result.items.count) 项" + (result.issues.isEmpty ? "" : " · \(result.issues.count) 项未能读取")) {
                             if result.items.isEmpty && result.issues.isEmpty {
-                                Text("没有可清理项目").font(.caption).foregroundStyle(.secondary)
+                                Text("没有可清理项目").font(.caption).foregroundStyle(secondaryColor)
                             }
                             ForEach(result.items) { item in
                                 HStack(alignment: .top) {
@@ -115,7 +116,7 @@ struct MaintenanceView: View {
                                         })) {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(URL(fileURLWithPath: item.path).lastPathComponent).lineLimit(1)
-                                            Text(displayPath(item.path)).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                            Text(displayPath(item.path)).font(.caption2).foregroundStyle(secondaryColor).lineLimit(1)
                                         }
                                     }
                                     .disabled(cleanup.scanning || cleanup.cleaning)
@@ -129,7 +130,8 @@ struct MaintenanceView: View {
                             ForEach(result.issues) { issue in issueRow(issue) }
                             }
                         }
-                        Divider()
+                        .modifier(PrismSecondarySection())
+                        if !settings.isPrism { Divider() }
                     }
                     if let report = cleanup.lastReport {
                         Text(report.summary).font(.headline)
@@ -138,13 +140,13 @@ struct MaintenanceView: View {
                 }
             }
             Text("大小是已完整扫描项目的磁盘占用估计；快照、共享数据块或应用重建缓存可能影响实际腾出的空间。")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(secondaryColor)
             HStack {
                 Text(cleanup.selectionSummary).font(.callout)
                 Spacer()
                 if cleanup.cleaning { ProgressView().controlSize(.small) }
                 Button(cleanup.cleaning ? "正在清理…" : "清理选中…") { cleanup.prepareCleanup() }
-                    .buttonStyle(.borderedProminent).disabled(!cleanup.canClean)
+                    .modifier(PrismSecondaryAction(prominent: true)).disabled(!cleanup.canClean)
             }
         }
     }
@@ -160,19 +162,21 @@ struct MaintenanceView: View {
             Text(system.memory.pressure >= 1 ? "内存压力：高" : system.memory.pressure > 0 ? "内存压力：偏高" : "内存压力：正常")
                 .foregroundStyle(system.memory.pressure > 0 ? Color.orange : Color.green)
             Text("macOS 会自动管理缓存。需要腾出内存时，先保存工作，再退出不用的应用。以下按单个进程的常驻内存排序，浏览器等应用可能有多个进程。")
-                .font(.callout).foregroundStyle(.secondary)
+                .font(.callout).foregroundStyle(secondaryColor)
             ScrollView { LazyVStack(spacing: 8) { ForEach(system.topProcessesByMemory) { process in
                 HStack {
                     VStack(alignment: .leading) {
                         Text(process.name)
-                        Text("PID \(process.pid)").font(.caption).foregroundStyle(.secondary)
+                        Text("PID \(process.pid)").font(.caption).foregroundStyle(secondaryColor)
                     }
                     Spacer()
                     Text(ByteFormat.memory(process.memoryBytes)).monospacedDigit()
                     Button(actions.pendingPID == process.pid ? "等待退出…" : "退出…") { processToQuit = process }
                         .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: process.pid, name: process.name))
-                }.padding(.vertical, 5)
-                Divider()
+                }
+                .padding(.vertical, 5)
+                .modifier(PrismSecondarySection())
+                if !settings.isPrism { Divider() }
             } } }
             if let message = actions.message { Text(message).font(.callout).textSelection(.enabled) }
             Button("打开活动监视器，查看全部进程") {
@@ -180,6 +184,8 @@ struct MaintenanceView: View {
             }
         }
     }
+
+    private var secondaryColor: Color { settings.isPrism ? Prism.secondary : .secondary }
 
     private func issueRow(_ issue: CleanupIssue) -> some View {
         Text("\(displayPath(issue.path))：\(issue.message)")

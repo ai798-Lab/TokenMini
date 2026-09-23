@@ -10,15 +10,13 @@ struct LeaderboardView: View {
         VStack(spacing: 0) {
             header
             divider
-            ScrollView {
-                VStack(spacing: 14) {
-                    if let message = leaderboard.message { messageBar(message) }
-                    membershipCard
-                    rankingCard
+            Group {
+                if settings.isPrism {
+                    HUDScrollView(accent: Prism.mint) { pageContent }
+                } else {
+                    ScrollView { pageContent }
                 }
-                .padding(18)
-            }
-            .background(contentBackground)
+            }.background(contentBackground)
         }
         .frame(minWidth: 580, minHeight: 600)
         .background(baseBackground)
@@ -37,6 +35,14 @@ struct LeaderboardView: View {
         }
     }
 
+    private var pageContent: some View {
+        VStack(spacing: 14) {
+            if let message = leaderboard.message { messageBar(message) }
+            membershipCard
+            rankingCard
+        }.padding(18)
+    }
+
     private var header: some View {
         HStack(spacing: 10) {
             Circle().fill(leaderboard.isJoined ? success : muted).frame(width: 7, height: 7)
@@ -49,13 +55,11 @@ struct LeaderboardView: View {
                     .foregroundStyle(muted)
             }
             Spacer()
-            Button("网页榜单") { NSWorkspace.shared.open(AppInfo.rankings) }
-                .buttonStyle(.plain)
-                .font(captionFont)
-                .foregroundStyle(accent)
-            ThemedSegmented(
-                items: RankingMetric.allCases.map { ($0, $0.label) },
-                selection: $leaderboard.metric, size: 9)
+            Button { NSWorkspace.shared.open(AppInfo.rankings) } label: {
+                Label("网页榜单", systemImage: "arrow.up.right")
+            }
+            .modifier(PrismSecondaryAction())
+            .font(captionFont).foregroundStyle(accent)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
@@ -100,7 +104,13 @@ struct LeaderboardView: View {
 
     @ViewBuilder
     private var primaryJoinButton: some View {
-        if settings.isHUD {
+        if settings.isPrism {
+            Button(leaderboard.signingIn ? "正在登录…" : "使用 Google 登录并加入") {
+                Task { await leaderboard.signInAndJoin() }
+            }
+            .buttonStyle(PrismButtonStyle(prominent: true, size: 12))
+            .disabled(leaderboard.signingIn)
+        } else if settings.isHUD {
             Button(leaderboard.signingIn ? "正在登录…" : "使用 Google 登录并加入") {
                 Task { await leaderboard.signInAndJoin() }
             }
@@ -152,13 +162,13 @@ struct LeaderboardView: View {
                         .font(captionFont).foregroundStyle(muted)
                 }
             }
-            .toggleStyle(.switch)
+            .toggleStyle(PrismSecondaryToggleStyle(isSwitch: true))
             HStack {
                 Button("立即同步") { Task { await leaderboard.syncIfNeeded(force: true) } }
-                    .buttonStyle(.plain).font(captionFont).foregroundStyle(accent)
+                    .modifier(PrismSecondaryAction()).font(captionFont).foregroundStyle(accent)
                 Spacer()
                 Button("退出排行榜", role: .destructive) { confirmLeave = true }
-                    .buttonStyle(.plain).font(captionFont).foregroundStyle(danger)
+                    .modifier(PrismSecondaryAction()).font(captionFont).foregroundStyle(danger)
             }
         }
     }
@@ -178,9 +188,10 @@ struct LeaderboardView: View {
         }
         .padding(11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(accent.opacity(0.06))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(accent.opacity(0.18)))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .background(settings.isPrism ? Prism.panelHi : accent.opacity(0.06))
+        .overlay(RoundedRectangle(cornerRadius: settings.isPrism ? Prism.radius : 8)
+            .stroke(settings.isPrism ? Prism.line : accent.opacity(0.18)))
+        .clipShape(RoundedRectangle(cornerRadius: settings.isPrism ? Prism.radius : 8))
     }
 
     private var rankingCard: some View {
@@ -190,7 +201,8 @@ struct LeaderboardView: View {
                     Text(leaderboard.metric.label + " · 本周")
                         .font(sectionFont).foregroundStyle(primary)
                     Spacer()
-                    Text("TOP 100").font(captionFont).foregroundStyle(faint)
+                    ThemedSegmented(items: RankingMetric.allCases.map { ($0, $0.label) },
+                                    selection: $leaderboard.metric, size: 11)
                 }
                 .padding(15)
                 Divider().opacity(settings.isDarkSkin ? 0.2 : 1)
@@ -247,7 +259,7 @@ struct LeaderboardView: View {
         VStack(spacing: 10) {
             Text(text).font(bodyFont).foregroundStyle(muted)
             Button("重新加载") { Task { await leaderboard.load() } }
-                .buttonStyle(.plain).font(captionFont).foregroundStyle(accent)
+                .modifier(PrismSecondaryAction()).font(captionFont).foregroundStyle(accent)
             Text("本地监控不受影响")
                 .font(captionFont).foregroundStyle(faint)
         }
@@ -287,19 +299,19 @@ struct LeaderboardView: View {
         }
     }
 
-    private var accent: Color { settings.isLED ? LED.amber : (settings.isHUD ? HUD.cyan : .accentColor) }
+    private var accent: Color { settings.isPrism ? Prism.mint : settings.isLED ? LED.amber : (settings.isHUD ? HUD.cyan : .accentColor) }
     private var success: Color { settings.isLED ? LED.green : (settings.isHUD ? HUD.green : .green) }
     private var danger: Color { settings.isLED ? LED.red : (settings.isHUD ? HUD.red : .red) }
     private var warning: Color { settings.isLED ? LED.amber : (settings.isHUD ? HUD.amber : .orange) }
-    private var primary: Color { settings.isLED ? LED.text : (settings.isHUD ? HUD.text : .primary) }
-    private var muted: Color { settings.isLED ? LED.dim : (settings.isHUD ? HUD.dim : .secondary) }
-    private var faint: Color { settings.isLED ? LED.faint : (settings.isHUD ? HUD.faint : .secondary.opacity(0.75)) }
-    private var baseBackground: Color { settings.isLED ? LED.bg : (settings.isHUD ? HUD.bg : Color(nsColor: .windowBackgroundColor)) }
-    private var titleFont: Font { settings.isLED ? LED.display(18, .bold) : (settings.isHUD ? HUD.mono(17, .bold) : .title2.bold()) }
-    private var sectionFont: Font { settings.isLED ? LED.display(13, .bold) : (settings.isHUD ? HUD.mono(12, .bold) : .headline) }
-    private var bodyFont: Font { settings.isLED ? LED.display(11, .medium) : (settings.isHUD ? HUD.mono(10) : .body) }
-    private var captionFont: Font { settings.isLED ? LED.mono(9) : (settings.isHUD ? HUD.mono(8.5) : .caption) }
-    private var rankFont: Font { settings.isLED ? LED.mono(12, .bold) : (settings.isHUD ? HUD.mono(11, .bold) : .system(size: 12, weight: .semibold, design: .monospaced)) }
+    private var primary: Color { settings.isPrism ? Prism.silver : settings.isLED ? LED.text : (settings.isHUD ? HUD.text : .primary) }
+    private var muted: Color { settings.isPrism ? Prism.secondary : settings.isLED ? LED.dim : (settings.isHUD ? HUD.dim : .secondary) }
+    private var faint: Color { settings.isPrism ? Prism.faint : settings.isLED ? LED.faint : (settings.isHUD ? HUD.faint : .secondary.opacity(0.75)) }
+    private var baseBackground: Color { settings.isPrism ? Prism.bg : settings.isLED ? LED.bg : (settings.isHUD ? HUD.bg : Color(nsColor: .windowBackgroundColor)) }
+    private var titleFont: Font { settings.isPrism ? Prism.label(18, .bold) : settings.isLED ? LED.display(18, .bold) : (settings.isHUD ? HUD.mono(17, .bold) : .title2.bold()) }
+    private var sectionFont: Font { settings.isPrism ? Prism.label(13, .semibold) : settings.isLED ? LED.display(13, .bold) : (settings.isHUD ? HUD.mono(12, .bold) : .headline) }
+    private var bodyFont: Font { settings.isPrism ? Prism.label(12) : settings.isLED ? LED.display(11, .medium) : (settings.isHUD ? HUD.mono(10) : .body) }
+    private var captionFont: Font { settings.isPrism ? Prism.label(11) : settings.isLED ? LED.mono(9) : (settings.isHUD ? HUD.mono(8.5) : .caption) }
+    private var rankFont: Font { settings.isPrism ? Prism.label(13, .semibold) : settings.isLED ? LED.mono(12, .bold) : (settings.isHUD ? HUD.mono(11, .bold) : .system(size: 12, weight: .semibold, design: .monospaced)) }
 
     @ViewBuilder private var divider: some View {
         if settings.isDarkSkin {
@@ -311,7 +323,8 @@ struct LeaderboardView: View {
     }
 
     @ViewBuilder private var contentBackground: some View {
-        if settings.isLED {
+        if settings.isPrism { Prism.bg }
+        else if settings.isLED {
             ZStack { LED.bg; LEDDotMatrix(tint: LED.amber, pitch: 6, alpha: 0.04) }
         } else if settings.isHUD {
             ZStack { HUD.bg; if !settings.isPrism { HUDGridBackground() } }
