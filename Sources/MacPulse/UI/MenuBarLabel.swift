@@ -9,7 +9,8 @@ struct MenuBarLabel: View {
     @ObservedObject private var settings = DisplaySettings.shared
 
     var body: some View {
-        // Field widths depend only on user preferences, never live values, so the popover stays anchored.
+        // Loading uses a compact placeholder. After the first scan, field widths
+        // stay fixed across live value changes so the popover stays anchored.
         Image(nsImage: Self.renderLabel(fields: fields))
             .accessibilityLabel(Text(accessibilityText)).help(accessibilityText)
     }
@@ -17,7 +18,9 @@ struct MenuBarLabel: View {
     private var fields: [(symbol: String?, text: String, width: CGFloat)] {
         var result: [(String?, String, CGFloat)] = []
         if settings.showTokensInMenuBar {
-            result.append((nil, usage.lastScan == nil ? "—" : MenuBarTokenFormatter.string(usage.today.totalTokens), 54))
+            let loading = usage.lastScan == nil
+            result.append((nil, loading ? "—" : MenuBarTokenFormatter.string(usage.today.totalTokens),
+                           loading ? 16 : 54))
         }
         if settings.showCPUInMenuBar { result.append(("cpu", "\(cpuPercent)", 45)) }
         if settings.showMemoryInMenuBar { result.append(("memorychip", "\(memoryPercent)", 45)) }
@@ -69,9 +72,20 @@ struct MenuBarLabel: View {
 
     private static func renderLabel(fields: [(symbol: String?, text: String, width: CGFloat)]) -> NSImage {
         let size = NSSize(width: 18 + fields.reduce(0) { $0 + $1.width + 5 }, height: 20)
+        // Keep the native canvas stable, but distribute unused trailing field space
+        // equally around the visible logo + values instead of leaving it all on the right.
+        let contentWidth: CGFloat
+        if let last = fields.last {
+            let symbolWidth: CGFloat = last.symbol == nil ? 0 : 17
+            let textWidth = fittedText(last.text, maxWidth: last.width - symbolWidth).size().width
+            contentWidth = size.width - last.width + symbolWidth + textWidth
+        } else {
+            contentWidth = 16
+        }
+        let leadingInset = max(0, (size.width - contentWidth) / 2)
         let image = NSImage(size: size, flipped: false) { rect in
-            BrandImages.menuBar?.draw(in: NSRect(x: 0, y: 2, width: 16, height: 16))
-            var x: CGFloat = 23
+            BrandImages.menuBar?.draw(in: NSRect(x: leadingInset, y: 2, width: 16, height: 16))
+            var x: CGFloat = leadingInset + 23
             for field in fields {
                 if let symbol = field.symbol {
                     drawSymbol(symbol, x: x, in: rect)
@@ -102,19 +116,23 @@ struct MenuBarLabel: View {
                                  x: CGFloat,
                                  maxWidth: CGFloat,
                                  in rect: NSRect) {
+        let attributed = fittedText(text, maxWidth: maxWidth)
+        let textSize = attributed.size()
+        attributed.draw(at: NSPoint(x: x,
+                                    y: rect.minY + max(0, (rect.height - textSize.height) / 2)))
+    }
+
+    private static func fittedText(_ text: String, maxWidth: CGFloat) -> NSAttributedString {
         let baseSize: CGFloat = 13
         let baseFont = NSFont.monospacedDigitSystemFont(ofSize: baseSize, weight: .medium)
         let baseWidth = NSAttributedString(string: text, attributes: [.font: baseFont]).size().width
         let fittedSize = baseWidth > maxWidth
             ? max(10, baseSize * maxWidth / baseWidth)
             : baseSize
-        let attributed = NSAttributedString(string: text, attributes: [
+        return NSAttributedString(string: text, attributes: [
             .font: NSFont.monospacedDigitSystemFont(ofSize: fittedSize, weight: .medium),
             .foregroundColor: NSColor.black
         ])
-        let textSize = attributed.size()
-        attributed.draw(at: NSPoint(x: x,
-                                    y: rect.minY + max(0, (rect.height - textSize.height) / 2)))
     }
 
     /// 人民币 1 万以内直接显示完整整数（¥5700），避免菜单栏里的 K 需要二次换算。

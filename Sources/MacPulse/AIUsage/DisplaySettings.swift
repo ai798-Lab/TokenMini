@@ -95,7 +95,8 @@ final class DisplaySettings: ObservableObject {
         showQuotaInMenuBar = d.bool(forKey: kQuotaBar)   // 默认 false
         theme = AppTheme(rawValue: d.string(forKey: kTheme) ?? "") ?? .prism
         dashboardMode = DashboardMode(rawValue: d.string(forKey: kDashboardMode) ?? "") ?? .overview
-        privacyMode = d.bool(forKey: kPrivacyMode)
+        // Fresh installs show real project names; preserve an existing opt-in to hide them.
+        privacyMode = d.object(forKey: kPrivacyMode) as? Bool ?? false
     }
 
     func projectName(_ raw: String) -> String {

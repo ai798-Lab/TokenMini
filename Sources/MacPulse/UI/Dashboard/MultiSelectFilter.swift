@@ -18,9 +18,10 @@ struct MultiSelectFilter: View {
     var body: some View {
         Button { presented.toggle() } label: {
             ThemedMenuLabel(title: title, count: selection.count)
+                .modifier(ThemedMenuChrome(active: !selection.isEmpty))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .modifier(ThemedMenuChrome(active: !selection.isEmpty))
         .fixedSize()
         .popover(isPresented: $presented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 12) {
