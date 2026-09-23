@@ -130,7 +130,7 @@ if [ -f "THIRD_PARTY_NOTICES.txt" ]; then
     cp "THIRD_PARTY_NOTICES.txt" "${APP_DIR}/Contents/Resources/"
 fi
 
-cp "Resources/Brand/HeaderMark.pdf" "Resources/Brand/MenuBarMark.pdf" "${APP_DIR}/Contents/Resources/"
+cp "Resources/Brand/HeaderMark.pdf" "Resources/Brand/MenuBarMark.pdf" "Resources/Brand/BrandLockup.pdf" "${APP_DIR}/Contents/Resources/"
 
 cp "Resources/Prism/PrismCore.png" "${APP_DIR}/Contents/Resources/"
 

@@ -7,6 +7,16 @@ import AppKit
 enum BrandImages {
     static let menuBar = load("MenuBarMark", pointSize: 16)
     static let header = load("HeaderMark", pointSize: 20)
+    // The approved lockup includes the custom outlined wordmark and its spacing.
+    // Keep its original aspect ratio; never recreate it with a system font.
+    static let horizontal = loadLockup()
+
+    private static func loadLockup() -> NSImage? {
+        guard let url = Bundle.main.url(forResource: "BrandLockup", withExtension: "pdf"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        image.isTemplate = true
+        return image
+    }
 
     private static func load(_ name: String, pointSize: CGFloat) -> NSImage? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "pdf"),
@@ -14,6 +24,31 @@ enum BrandImages {
         image.size = NSSize(width: pointSize, height: pointSize)
         image.isTemplate = true
         return image
+    }
+}
+
+/// Standard horizontal brand artwork, with a separate product status badge.
+struct BrandLockup: View {
+    var width: CGFloat = 180
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let image = BrandImages.horizontal {
+                Image(nsImage: image)
+                    .resizable()
+                    .renderingMode(.template)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: width, height: width * 265.0351 / 1028)
+            }
+            Text("Beta")
+                .font(.system(size: 9, weight: .semibold))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 3)
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(lineWidth: 0.8))
+        }
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("TokenMini Beta")
     }
 }
 

@@ -20,3 +20,7 @@ for size, name in [(16, "MenuBarMark"), (20, "HeaderMark")]:
     # AppKit chooses the actual pixel density when drawing on a screen.
     cairosvg.svg2pdf(url=str(source), write_to=str(destination), dpi=72)
     print(f"{source.name} -> {destination.name} ({size} pt, vector)")
+
+# Preserve the full approved lockup, including wordmark outlines and clear space.
+cairosvg.svg2pdf(url=str(ROOT / "logo-horizontal-black.svg"),
+                write_to=str(ROOT / "BrandLockup.pdf"), dpi=72)

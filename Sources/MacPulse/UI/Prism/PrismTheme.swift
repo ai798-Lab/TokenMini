@@ -105,14 +105,11 @@ struct PrismPopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 9) {
-                BrandMark().foregroundStyle(Prism.bg)
-                Text("TOKENMINI").font(.system(size: 19, weight: .black)).tracking(-0.8).foregroundStyle(Prism.bg)
-                Spacer()
-                Text("PRISM").font(.system(size: 9, weight: .medium, design: .monospaced))
-                    .tracking(2).foregroundStyle(Prism.bg.opacity(0.65))
+                BrandLockup().foregroundStyle(Color(red: 24/255, green: 33/255, blue: 28/255))
+                Spacer(minLength: 0)
                 DisplaySettingsMenu().foregroundStyle(Prism.secondary)
             }
-            .padding(.horizontal, 16).padding(.vertical, 14).background(Prism.silver)
+            .padding(.horizontal, 16).padding(.vertical, 9).background(Prism.silver)
             ThemedSegmented(items: Page.allCases.map { ($0, $0.rawValue) }, selection: $page, size: 11)
                 .padding(.horizontal, 14).padding(.vertical, 12)
             HUDScrollView(accent: Prism.mint) {
