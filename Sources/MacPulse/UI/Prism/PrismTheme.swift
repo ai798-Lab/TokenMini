@@ -38,15 +38,15 @@ struct PrismSurface: ViewModifier {
         content
             .background(hover ? Prism.panelHi : Prism.panel, in: shape)
             .overlay {
-                shape.strokeBorder(hover ? accent.opacity(0.65) : Prism.line, lineWidth: 1)
+                shape.strokeBorder(Prism.line, lineWidth: 1)
                     .allowsHitTesting(false)
             }
             .overlay(alignment: .topLeading) {
-                Rectangle().fill(accent.opacity(hover ? 1 : 0.5)).frame(width: 28, height: 2)
+                Rectangle().fill(accent.opacity(0.5)).frame(width: 28, height: 2)
                     .padding(.leading, 14).allowsHitTesting(false)
             }
             .overlay {
-                SweepBorder(shape: shape, color: accent, lineWidth: 1.5, drive: .follow(mouse))
+                SweepBorder(shape: shape, color: accent, lineWidth: 1.5, radius: 80, drive: .follow(mouse))
             }
             .mouseSpotlight(color: reduceTransparency ? nil : accent, at: mouse,
                             radius: 150, intensity: 0.10, clip: shape)
@@ -75,10 +75,10 @@ struct PrismControlChrome: ViewModifier {
             .foregroundStyle(active ? Prism.bg : (hover ? Prism.silver : Prism.secondary))
             .padding(.horizontal, 10).frame(minHeight: 28)
             .background(active ? accent : (hover ? Prism.panelHi : Prism.panel), in: shape)
-            .overlay(shape.strokeBorder(active ? accent : (hover ? Prism.secondary : Prism.line), lineWidth: 1))
+            .overlay(shape.strokeBorder(active ? accent : Prism.line, lineWidth: 1))
             .overlay {
                 SweepBorder(shape: shape, color: active ? Prism.silver : accent,
-                            lineWidth: 1.5, drive: .follow(isEnabled ? mouse : nil))
+                            lineWidth: 1.5, radius: 28, drive: .follow(isEnabled ? mouse : nil))
             }
             .mouseSpotlight(color: reduceTransparency || !isEnabled ? nil : Prism.silver,
                             at: mouse, radius: 55, intensity: active ? 0.16 : 0.10, clip: shape)

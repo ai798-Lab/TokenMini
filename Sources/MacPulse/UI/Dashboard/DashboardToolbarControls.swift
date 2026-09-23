@@ -52,7 +52,7 @@ struct DashboardToolbarChrome: ViewModifier {
             .overlay {
                 if settings.isDarkSkin {
                     SweepBorder(shape: RoundedRectangle(cornerRadius: 5),
-                                color: selected ? .white : themeAccent(), lineWidth: 1.5,
+                                color: selected ? .white : themeAccent(), lineWidth: 1.5, radius: 32,
                                 drive: .follow(isEnabled ? mouse : nil))
                 }
             }

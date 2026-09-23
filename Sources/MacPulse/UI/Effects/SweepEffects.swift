@@ -51,14 +51,16 @@ extension View {
 
 // MARK: 轮廓光
 
-/// 沿形状轮廓的一段高光。原理:AngularGradient 只在一小段角度里给亮色,
-/// 把整个渐变转到"鼠标所在的方位角"→ 亮点就落在指针那一侧的轮廓上(.auto 则是让它匀速自转)。
+/// 鼠标模式按实际距离照亮附近轮廓，远端描边保持原样。
+/// 自动模式保留沿轮廓旋转的 AngularGradient，仅用于鼠标无法触及的提醒浮层。
 struct SweepBorder<S: Shape>: View {
     var shape: S
     var color: Color = HUD.cyan
     var lineWidth: CGFloat = 1
     /// 高光弧长占整圈的比例(越小越像一道窄光)
     var arc: Double = 0.14
+    /// Pointer light is local, not an angular beam projected across the whole card.
+    var radius: CGFloat = 96
     /// 常驻底描边(高光之外的部分),nil = 不画
     var base: Color? = nil
     var drive: SweepDrive
@@ -72,7 +74,14 @@ struct SweepBorder<S: Shape>: View {
             case .follow(let p):
                 GeometryReader { geo in
                     if let p {
-                        lit(angle: angle(at: p, size: geo.size))
+                        shape.stroke(color.opacity(0.95), lineWidth: lineWidth)
+                            .mask {
+                                RadialGradient(colors: [.white, .clear],
+                                               center: UnitPoint(x: p.x / max(geo.size.width, 1),
+                                                                 y: p.y / max(geo.size.height, 1)),
+                                               startRadius: 0, endRadius: radius)
+                            }
+                            .shadow(color: color.opacity(0.5), radius: lineWidth * 2.5)
                             .transition(.opacity)
                     }
                 }
@@ -96,14 +105,6 @@ struct SweepBorder<S: Shape>: View {
         shape
             .stroke(gradient(angle: angle), lineWidth: lineWidth)
             .shadow(color: color.opacity(0.5), radius: lineWidth * 2.5)
-    }
-
-    /// 指针相对中心的方位角 → 渐变旋转角。
-    /// y 轴向下,atan2 的增长方向正好是视觉上的顺时针,和 AngularGradient 一致;
-    /// 高光钉在 location 0.5(半圈处),所以渐变起点要反推 180°。
-    private func angle(at p: CGPoint, size: CGSize) -> Angle {
-        let a = atan2(p.y - size.height / 2, p.x - size.width / 2)
-        return Angle(radians: a) - .degrees(180)
     }
 
     /// 把"一段亮弧"铺成角度渐变:除高光区外全透明,高光区两端淡入淡出
