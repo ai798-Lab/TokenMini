@@ -30,7 +30,8 @@ struct PrismSurface: ViewModifier {
     var accent: Color = Prism.mint
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @State private var hover = false
+    @State private var mouse: CGPoint?
+    private var hover: Bool { mouse != nil }
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Prism.radius, style: .continuous)
@@ -44,9 +45,14 @@ struct PrismSurface: ViewModifier {
                 Rectangle().fill(accent.opacity(hover ? 1 : 0.5)).frame(width: 28, height: 2)
                     .padding(.leading, 14).allowsHitTesting(false)
             }
+            .overlay {
+                SweepBorder(shape: shape, color: accent, lineWidth: 1.5, drive: .follow(mouse))
+            }
+            .mouseSpotlight(color: reduceTransparency ? nil : accent, at: mouse,
+                            radius: 150, intensity: 0.10, clip: shape)
             .shadow(color: reduceTransparency ? .clear : .black.opacity(0.12), radius: 8, y: 3)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: hover)
-            .onHover { hover = $0 }
+            .trackingMouse($mouse)
     }
 }
 
@@ -58,7 +64,9 @@ struct PrismControlChrome: ViewModifier {
     var size: CGFloat = 11
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var hover = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State private var mouse: CGPoint?
+    private var hover: Bool { isEnabled && mouse != nil }
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Prism.controlRadius)
@@ -68,11 +76,17 @@ struct PrismControlChrome: ViewModifier {
             .padding(.horizontal, 10).frame(minHeight: 28)
             .background(active ? accent : (hover ? Prism.panelHi : Prism.panel), in: shape)
             .overlay(shape.strokeBorder(active ? accent : (hover ? Prism.secondary : Prism.line), lineWidth: 1))
+            .overlay {
+                SweepBorder(shape: shape, color: active ? Prism.silver : accent,
+                            lineWidth: 1.5, drive: .follow(isEnabled ? mouse : nil))
+            }
+            .mouseSpotlight(color: reduceTransparency || !isEnabled ? nil : Prism.silver,
+                            at: mouse, radius: 55, intensity: active ? 0.16 : 0.10, clip: shape)
             .opacity(isEnabled ? (pressed ? 0.75 : 1) : 0.4)
             .scaleEffect(pressed && !reduceMotion ? 0.98 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hover)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: pressed)
-            .onHover { hover = isEnabled && $0 }
+            .trackingMouse($mouse)
     }
 }
 

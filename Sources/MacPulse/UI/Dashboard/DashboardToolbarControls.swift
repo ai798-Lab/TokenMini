@@ -29,7 +29,10 @@ struct DashboardToolbarChrome: ViewModifier {
     var pressed = false
     @ObservedObject private var settings = DisplaySettings.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var hovering = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var mouse: CGPoint?
+    private var hovering: Bool { isEnabled && mouse != nil }
 
     private var fill: Color {
         if selected { return themeAccent() }
@@ -46,8 +49,18 @@ struct DashboardToolbarChrome: ViewModifier {
             .background(fill, in: RoundedRectangle(cornerRadius: 5))
             .overlay(RoundedRectangle(cornerRadius: 5)
                 .strokeBorder(selected ? themeAccent() : (settings.isPrism ? Prism.line : Color.primary.opacity(0.2)), lineWidth: 1))
+            .overlay {
+                if settings.isDarkSkin {
+                    SweepBorder(shape: RoundedRectangle(cornerRadius: 5),
+                                color: selected ? .white : themeAccent(), lineWidth: 1.5,
+                                drive: .follow(isEnabled ? mouse : nil))
+                }
+            }
+            .mouseSpotlight(color: settings.isDarkSkin && isEnabled && !reduceTransparency ? .white : nil,
+                            at: mouse, radius: 60, intensity: selected ? 0.16 : 0.10,
+                            clip: RoundedRectangle(cornerRadius: 5))
             .opacity(pressed ? 0.72 : 1)
-            .onHover { hovering = $0 }
+            .trackingMouse($mouse)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: hovering)
     }
 }
