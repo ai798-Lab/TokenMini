@@ -20,8 +20,6 @@ struct DashboardToolbarLabel: View {
                          : (settings.isPrism ? Prism.silver : (settings.isDarkSkin ? Color.white : Color.primary)))
         .lineLimit(1)
         .fixedSize()
-        .padding(.horizontal, 12)
-        .frame(height: 30)
         .contentShape(Rectangle())
     }
 }
@@ -41,6 +39,10 @@ struct DashboardToolbarChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .font(.system(size: 12, weight: .medium))
+            .padding(.horizontal, 12)
+            .frame(height: 30)
+            .contentShape(Rectangle())
             .background(fill, in: RoundedRectangle(cornerRadius: 5))
             .overlay(RoundedRectangle(cornerRadius: 5)
                 .strokeBorder(selected ? themeAccent() : (settings.isPrism ? Prism.line : Color.primary.opacity(0.2)), lineWidth: 1))
@@ -59,12 +61,15 @@ struct DashboardToolbarButtonStyle: ButtonStyle {
 
 struct DashboardAppearanceChrome: ViewModifier {
     let unified: Bool
+    @ObservedObject private var settings = DisplaySettings.shared
     func body(content: Content) -> some View {
         if unified {
             content.menuStyle(.button).buttonStyle(.plain)
+                .font(.system(size: 12, weight: .medium))
+                .tint(settings.isPrism ? Prism.silver : (settings.isDarkSkin ? .white : .primary))
                 .modifier(DashboardToolbarChrome())
         } else {
-            content.modifier(ThemedMenuChrome())
+            content.menuStyle(.borderlessButton).modifier(ThemedMenuChrome())
         }
     }
 }

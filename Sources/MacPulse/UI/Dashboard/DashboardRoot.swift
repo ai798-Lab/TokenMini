@@ -652,9 +652,12 @@ private struct TrendCard: View {
         }
         .chartXAxis {
             AxisMarks(values: axis.ticks(plotWidth: Double(plotWidth))) { value in
-                AxisValueLabel {
+                let key = value.as(String.self)
+                let anchor: UnitPoint = key == xDomain.first ? .topLeading : (key == xDomain.last ? .topTrailing : .top)
+                AxisValueLabel(anchor: anchor) {
                     if let key = value.as(String.self) {
                         Text(axis.shortLabel(for: key)).font(.system(size: 11)).monospacedDigit()
+                            .fixedSize()
                             .foregroundStyle(axisColor)
                     }
                 }
@@ -1057,7 +1060,6 @@ struct DisplaySettingsMenu: View {
                 Image(systemName: "slider.horizontal.3")
             }
         }
-        .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .modifier(DashboardAppearanceChrome(unified: unifiedToolbar))
         .accessibilityLabel("显示与主题设置")
