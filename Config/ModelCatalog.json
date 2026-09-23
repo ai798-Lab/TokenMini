@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "revision": 2026092301,
+  "publishedAt": "2026-09-23T00:00:00Z",
+  "models": [
+    {
+      "id": "gpt-6-sol",
+      "aliases": [],
+      "validFrom": "2026-09-22T00:00:00Z",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "pricing": {
+        "inputPerMTok": 2,
+        "outputPerMTok": 10,
+        "cacheWritePerMTok": 2.5,
+        "cacheReadPerMTok": 0.2,
+        "fullRequestInputMultiplier": 2,
+        "fullRequestOutputMultiplier": 1.5,
+        "fullRequestThreshold": 272000
+      },
+      "fastMultiplier": 2
+    },
+    {
+      "id": "gpt-6-luna",
+      "aliases": [],
+      "validFrom": "2026-09-22T00:00:00Z",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "pricing": {
+        "inputPerMTok": 0.1,
+        "outputPerMTok": 0.5,
+        "cacheWritePerMTok": 0.125,
+        "cacheReadPerMTok": 0.01,
+        "fullRequestInputMultiplier": 2,
+        "fullRequestOutputMultiplier": 1.5,
+        "fullRequestThreshold": 272000
+      },
+      "fastMultiplier": 2
+    },
+    {
+      "id": "claude-opus-5-5",
+      "aliases": [],
+      "validFrom": "2026-09-22T00:00:00Z",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "pricing": {
+        "inputPerMTok": 4,
+        "outputPerMTok": 20,
+        "cacheWritePerMTok": 5,
+        "cacheReadPerMTok": 0.2,
+        "fullRequestInputMultiplier": 1,
+        "fullRequestOutputMultiplier": 1,
+        "cacheWrite1hPerMTok": 8
+      },
+      "fastMultiplier": 2
+    }
+  ]
+}

@@ -15,3 +15,5 @@ AGENTS.md
 CLAUDE.md
 docs/private/
 release-notes/*.draft.md
+
+.local-secrets/

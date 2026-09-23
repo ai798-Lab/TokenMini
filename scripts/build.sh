@@ -97,6 +97,9 @@ cat > "${APP_DIR}/Contents/Info.plist" << PLIST
     <key>MacPulsePrivacyURL</key><string>${SITE_URL}/privacy</string>
     <key>MacPulseSourceURL</key><string>${SOURCE_URL}</string>
     <key>SUFeedURL</key><string>${UPDATE_FEED_URL}</string>
+    <key>SUEnableAutomaticChecks</key><false/>
+    <key>SUAutomaticallyUpdate</key><false/>
+    <key>SUAllowsAutomaticUpdates</key><false/>
     <key>SUPublicEDKey</key><string>${SPARKLE_PUBLIC_KEY}</string>
     <key>SURequireSignedFeed</key><true/>
     <key>SUVerifyUpdateBeforeExtraction</key><true/>

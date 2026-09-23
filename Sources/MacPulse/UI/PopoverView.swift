@@ -65,7 +65,8 @@ struct HUDPopoverView: View {
             accentDivider
             // 窗口尺寸定死(否则 MenuBarExtra(.window) 随内容重排,切换瞬间圆角闪失),超高内容滚动。
             HUDScrollView {
-                Group {
+                VStack(spacing: 0) {
+                    UpdateNoticeView()
                     if proMode {
                         proContent
                     } else {

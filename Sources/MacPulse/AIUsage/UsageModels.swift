@@ -126,15 +126,17 @@ struct PricedEvent: Sendable {
     }
 
     /// 从原始 UsageEvent 计价成 PricedEvent。JSONL 自带 costUSD 时整体缩放四分量使之和 = 权威值。
-    static func from(_ e: UsageEvent) -> PricedEvent {
-        let pricing = PricingTable.pricing(for: e.model)
+    static func from(_ e: UsageEvent) -> PricedEvent { from(e, snapshot: nil) }
+
+    static func from(_ e: UsageEvent, snapshot: PricingSnapshot?) -> PricedEvent {
+        let pricing = snapshot.map { $0.pricing(for: e.model, at: e.timestamp) } ?? PricingTable.pricing(for: e.model)
         var cb = pricing?.breakdown(
             input: e.inputTokens, output: e.outputTokens,
             cacheWrite: e.cacheCreationTokens, cacheWrite1h: e.cacheCreation1hTokens,
             cacheRead: e.cacheReadTokens) ?? CostBreakdown()
         // fast 模式倍率(仅在按 token 估价时;自带 costUSD 走缩放分支)
         if e.costUSD == nil, e.speed == "fast" {
-            let m = PricingTable.fastMultiplier(for: e.model)
+            let m = snapshot?.fastMultiplier(for: e.model, at: e.timestamp) ?? PricingTable.fastMultiplier(for: e.model)
             cb = CostBreakdown(input: cb.input * m, output: cb.output * m,
                                cacheWrite: cb.cacheWrite * m, cacheRead: cb.cacheRead * m)
         }

@@ -114,6 +114,7 @@ struct PrismPopoverView: View {
                 .padding(.horizontal, 14).padding(.vertical, 12)
             HUDScrollView(accent: Prism.mint) {
                 VStack(spacing: 12) {
+                    UpdateNoticeView()
                     switch page {
                     case .overview:
                         tokenHero

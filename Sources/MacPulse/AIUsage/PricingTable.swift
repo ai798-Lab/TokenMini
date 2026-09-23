@@ -6,7 +6,7 @@ import Foundation
 enum PricingTable {
 
     /// 随排行榜日汇总一起上报，便于后台识别不同版本价格表造成的估值差异。
-    static let snapshotVersion = "2026-09-22"
+    static let snapshotVersion = "2026-09-23"
 
     // 计价热路径:每次 pricing(for:) 都做 normalize(多个正则)+ 前缀匹配,
     // 而 distinct 模型只有几十个。memo 把十几万次调用降到几十次实算。
@@ -27,10 +27,9 @@ enum PricingTable {
     /// 数据来源:Anthropic 官方页 —— Opus 5/4.8 fast $10/$50(2x),Opus 4.7 fast $30/$150(6x,2026-07-24 移除)。
     static func fastMultiplier(for model: String) -> Double {
         let m = normalize(model)
-        if ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"].contains(m) { return 2.0 }
-        if m == "claude-opus-5" { return 2.0 }
-        if m.hasPrefix("claude-opus-4-8") { return 2.0 }
-        if m.hasPrefix("claude-opus-4-7") { return 6.0 }
+        if ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"].contains(m) { return 2.0 }
+        if ["claude-opus-5-5", "claude-opus-5", "claude-opus-4-8"].contains(m) { return 2.0 }
+        if m == "claude-opus-4-7" { return 6.0 }
         return 1.0
     }
 
@@ -47,7 +46,7 @@ enum PricingTable {
         overrides = rates.filter { $0.value.valid }.mapValues(\.pricing)
         memo.removeAll()
     }
-    private static func customPrices() -> [String: ModelPricing] {
+    static func customPrices() -> [String: ModelPricing] {
         memoLock.lock(); defer { memoLock.unlock() }; return overrides
     }
     static func saveCustomPrice(model: String, rate: CustomRate) throws {
@@ -105,6 +104,15 @@ enum PricingTable {
     /// cacheRead = 0.1x 输入。Claude Code 的缓存写入以 1h 为主,两档必须分开计。
     /// OpenAI 常规模型 / Gemini 无 cache 写入费；GPT-5.6 的延长缓存写入按官方倍率单列。
     static let table: [String: ModelPricing] = [
+        // Official standard rates verified 2026-09-23:
+        // https://developers.openai.com/api/docs/pricing
+        // https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5
+        "gpt-6-sol": ModelPricing(inputPerMTok: 2, outputPerMTok: 10, cacheWritePerMTok: 2.5, cacheReadPerMTok: 0.2,
+                                   fullRequestThreshold: 272000, fullRequestInputMultiplier: 2, fullRequestOutputMultiplier: 1.5),
+        "gpt-6-luna": ModelPricing(inputPerMTok: 0.1, outputPerMTok: 0.5, cacheWritePerMTok: 0.125, cacheReadPerMTok: 0.01,
+                                    fullRequestThreshold: 272000, fullRequestInputMultiplier: 2, fullRequestOutputMultiplier: 1.5),
+        "claude-opus-5-5": ModelPricing(inputPerMTok: 4, outputPerMTok: 20, cacheWritePerMTok: 5,
+                                        cacheReadPerMTok: 0.2, cacheWrite1hPerMTok: 8),
         // Official peak baseline. Off-peak discounts and historical tariffs are not estimated.
         "deepseek-v4-flash": ModelPricing(inputPerMTok: 0.3, outputPerMTok: 1.2, cacheWritePerMTok: 0, cacheReadPerMTok: 0.006),
         "deepseek-v4.1-flash": ModelPricing(inputPerMTok: 0.3, outputPerMTok: 1.2, cacheWritePerMTok: 0, cacheReadPerMTok: 0.006),

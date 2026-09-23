@@ -28,6 +28,7 @@ struct MacPulseApp: App {
             MenuBarLabel(system: system, usage: usage, quota: quota)
                 .onAppear {
                     system.start()
+                    UpdateController.shared.start()
                     leaderboard.start(usage: usage)
                     NotchDock.shared.start(system: system, usage: usage, quota: quota)
                     if UserDefaults.standard.bool(forKey: "macpulse.onboardingCompleted") {

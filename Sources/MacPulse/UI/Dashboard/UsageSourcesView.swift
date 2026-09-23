@@ -93,6 +93,9 @@ struct UsageSourcesView: View {
                         .font(.system(size: 11)).foregroundStyle(themeAccent())
                 }
             }
+            sourceSection("模型目录", icon: "arrow.triangle.2.circlepath") {
+                ModelCatalogStatusView()
+            }
             sourceSection("模型价格", icon: "dollarsign.circle") {
                 description("官方核价 \(PricingTable.table.count) 项 + 社区参考目录 \(PricingTable.communityPrices.count) 项（含渠道与版本，可能重叠），快照 \(PricingTable.snapshotVersion)。优先自定义价格，其次官方，最后社区参考。任何模型都可记录用量；未匹配或未适配的阶梯价格显示“待定价”。")
                 description("金额优先采用导入文件的费用；其余按当前标准 API 价格估算，包含社区参考价格，不代表订阅套餐扣款或历史账单。DeepSeek 采用高峰基准价，未计低谷优惠。")

@@ -255,7 +255,7 @@ enum VibeCopy {
 /// fullRequest*:GPT-5.6 等模型在输入越过阈值后,整次请求分别乘输入/输出倍率。
 /// cacheWrite1hPerMTok:1 小时 TTL 缓存写入价(Anthropic = 2x 输入价);
 /// Claude Code 实际以 1h 缓存为主,漏掉会系统性低估约 15%。
-struct ModelPricing: Sendable {
+struct ModelPricing: Sendable, Codable {
     let inputPerMTok: Double
     let outputPerMTok: Double
     let cacheWritePerMTok: Double        // 5 分钟 TTL 写入价(1.25x 输入价)

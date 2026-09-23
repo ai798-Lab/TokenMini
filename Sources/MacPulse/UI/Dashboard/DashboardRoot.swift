@@ -82,10 +82,10 @@ struct DashboardRoot: View {
     private var prismHero: some View {
         let overview = usage.dashboard.overview
         let ready = usage.lastScan != nil
-        let filtered = usage.filter != UsageFilter(time: usage.filter.time)
+        let tools = usage.filter.tools.isEmpty ? "全部工具" : usage.filter.tools.map(\.label).sorted().joined(separator: "、")
         return PrismDashboardBanner(
             total: ready ? settings.tokens(overview.totalTokens) : "—",
-            scope: "\(usage.filter.time.label) · \(filtered ? "当前筛选" : "全部工具")",
+            scope: "\(usage.filter.time.label) · \(tools)",
             calls: ready ? "\(overview.eventCount.formatted()) 次调用" : "正在读取本地用量…",
             input: ready ? settings.tokens(overview.input) : "—",
             output: ready ? settings.tokens(overview.output) : "—",
@@ -192,6 +192,10 @@ private struct FilterBar: View {
                                          : (settings.isHUD ? HUD.dim : Color.secondary))
                 }
             }
+            if usage.filter != UsageFilter(time: usage.filter.time) { selectedFilters }
+            if usage.isReaggregating {
+                HStack { ProgressView().controlSize(.mini); Text("正在按所选条件计算…").font(.caption); Spacer() }
+            }
         }
     }
 
@@ -237,52 +241,36 @@ private struct FilterBar: View {
                 set: { usage.filter.tokenTypes = Set($0.compactMap { TokenType(rawValue: $0) }) })
     }
 
-    @ViewBuilder
     private func multiMenu(_ title: String, options: [(key: String, label: String)],
                            selection: Binding<Set<String>>) -> some View {
-        let n = selection.wrappedValue.count
-        if settings.isDarkSkin {
-            menuBody(title, options: options, selection: selection) {
-                ThemedMenuLabel(title: title, count: n)
+        MultiSelectFilter(title: title, options: options, selection: selection)
+    }
+
+    private var selectedFilters: some View {
+        FilterChipsLayout {
+            ForEach(usage.filter.tools.sorted { $0.label < $1.label }) { tool in
+                chip(tool.label) { usage.filter.tools.remove(tool) }
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)      // 箭头由 ThemedMenuLabel 自己画,不要系统再叠一个
-            .fixedSize()
-            .modifier(ThemedMenuChrome(active: n > 0))
-            .disabled(options.isEmpty)
-            .opacity(options.isEmpty ? 0.4 : 1)
-        } else {
-            // 经典主题就该是纯系统原生:.bordered 的可点击暗示是系统给的,别自己糊一个更差的
-            menuBody(title, options: options, selection: selection) {
-                Text(n == 0 ? title : "\(title) · \(n)")
+            ForEach(usage.filter.models.sorted(), id: \.self) { model in
+                chip(shortModel(model)) { usage.filter.models.remove(model) }
             }
-            .menuStyle(.button)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .fixedSize()
-            .disabled(options.isEmpty)
+            ForEach(usage.filter.projects.sorted(), id: \.self) { project in
+                chip(settings.projectName(project)) { usage.filter.projects.remove(project) }
+            }
+            ForEach(usage.filter.tokenTypes.sorted { $0.rawValue < $1.rawValue }) { type in
+                chip(type.label) { usage.filter.tokenTypes.remove(type) }
+            }
         }
     }
 
-    /// 菜单内容(三主题共用,只有 label 外观不同)
-    private func menuBody<L: View>(_ title: String, options: [(key: String, label: String)],
-                                   selection: Binding<Set<String>>,
-                                   @ViewBuilder label: () -> L) -> some View {
-        Menu {
-            if selection.wrappedValue.isEmpty == false {
-                Button("清除") { selection.wrappedValue = [] }
-                Divider()
-            }
-            ForEach(options, id: \.key) { opt in
-                Toggle(opt.label, isOn: Binding(
-                    get: { selection.wrappedValue.contains(opt.key) },
-                    set: { on in
-                        if on { selection.wrappedValue.insert(opt.key) }
-                        else { selection.wrappedValue.remove(opt.key) }
-                    }))
-            }
-        } label: { label() }
+    private func chip(_ label: String, remove: @escaping () -> Void) -> some View {
+        Button(action: remove) {
+            HStack(spacing: 5) { Text(label).lineLimit(1); Image(systemName: "xmark").font(.system(size: 8)) }
+                .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 5)
+                .foregroundStyle(themeAccent()).background(themeAccent().opacity(0.12), in: Capsule())
+        }.buttonStyle(.plain).help("取消选择：" + label).accessibilityLabel("取消选择：" + label)
     }
+
 }
 
 // MARK: - 数据状态 / 决策洞察

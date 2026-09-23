@@ -39,7 +39,8 @@ enum UsageAggregator {
         for e in events {
             let inWindow = e.timestamp >= start && e.timestamp < end
             if inWindow {
-                facetTools.insert(e.tool); facetProjects.insert(e.project); facetModels.insert(e.model)
+                facetTools.insert(e.tool); facetProjects.insert(e.project)
+                if filter.tools.isEmpty || filter.tools.contains(e.tool) { facetModels.insert(e.model) }
                 if !e.isPriced && filter.matchesDimensions(e) { unknownModels.insert(e.model) }
             }
             guard filter.matchesDimensions(e) else {

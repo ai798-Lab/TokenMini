@@ -19,6 +19,7 @@ final class UsageStore: ObservableObject {
     @Published var monthProjectionUSD: Double = 0     // 按本月日均外推整月
     @Published var lastScan: Date?
     @Published var scanning = false
+    @Published private(set) var isReaggregating = false
     @Published private(set) var sourceStatuses: [ToolSourceStatus] = []
     @Published private(set) var recentActivity: RecentAIActivity?
 
@@ -41,16 +42,30 @@ final class UsageStore: ObservableObject {
 
     static let refreshInterval: TimeInterval = 60
 
+    private let catalogStore: ModelCatalogStore
+    private let scanOverride: (@Sendable () -> [UsageEvent])?
+    init(catalogStore: ModelCatalogStore? = nil, scanOverride: (@Sendable () -> [UsageEvent])? = nil) {
+        self.catalogStore = catalogStore ?? .shared
+        self.scanOverride = scanOverride
+    }
+
     private let scanner = UsageScanner()      // Claude Code
     private let additionalScanner = AdditionalUsageScanner()
     private let codexScanner = CodexScanner()  // Codex CLI
     private var timer: Timer?
     private let scanQueue = DispatchQueue(label: "macpulse.aiusage", qos: .utility)
     private var priced: [PricedEvent] = []    // 计价后常驻,重聚合只做加法不重扫
+    private var pendingCatalogRefresh = false
+    private var pricingRevision = PricingTable.snapshotVersion
     private var reaggGen = 0                   // 去抖代次:只发布最新一次结果
 
     func start() {
         guard timer == nil else { return }
+        catalogStore.onChange = { [weak self] in
+            guard let self else { return }
+            if self.scanning { self.pendingCatalogRefresh = true } else { self.refresh() }
+        }
+        catalogStore.start()
         refresh()
         // .common 模式,理由同 SystemMonitor:default 模式在 event-tracking 期间会暂停
         let t = Timer(timeInterval: Self.refreshInterval, repeats: true) { [weak self] _ in
@@ -67,13 +82,14 @@ final class UsageStore: ObservableObject {
 
     /// 排行榜上传用的上海时区当日总量。只返回汇总值，不暴露模型、项目、路径或会话。
     func rankingDailyAggregate(now: Date = Date()) -> RankingDailyAggregate {
-        Self.rankingDailyAggregate(events: priced, now: now, appVersion: AppInfo.displayVersion)
+        Self.rankingDailyAggregate(events: priced, now: now, appVersion: AppInfo.displayVersion, pricingVersion: pricingRevision)
     }
 
     nonisolated static func rankingDailyAggregate(
         events: [PricedEvent],
         now: Date,
-        appVersion: String
+        appVersion: String,
+        pricingVersion: String = PricingTable.snapshotVersion
     ) -> RankingDailyAggregate {
         var calendar = Calendar(identifier: .gregorian)
         // 不用 ! 强制解包:时区数据库异常时会直接崩;退回 UTC 只影响榜单日界,不影响本地功能。
@@ -96,18 +112,21 @@ final class UsageStore: ObservableObject {
             localDay: formatter.string(from: now),
             totalTokens: max(0, tokens),
             estimatedCostMicroUSD: max(0, Int64((costUSD * 1_000_000).rounded())),
-            pricingVersion: PricingTable.snapshotVersion,
+            pricingVersion: pricingVersion,
             appVersion: appVersion)
     }
 
     func refresh() {
         guard !scanning else { return }
         scanning = true
+        let scanOverride = self.scanOverride
         let scanner = self.scanner
         let codexScanner = self.codexScanner
         let additionalScanner = self.additionalScanner
         let filter = self.filter
         let filterGeneration = reaggGen
+        PricingTable.reloadCustomPrices()
+        let snapshot = PricingSnapshot(catalog: catalogStore.catalog, overrides: PricingTable.customPrices())
         scanQueue.async { [weak self] in
             // 整轮 Foundation 文件遍历/JSON 解码放进一个外层池。只有池先排空，
             // malloc 才能识别并归还扫描时产生的小对象页；仅给逐块解析套池仍会
@@ -118,18 +137,23 @@ final class UsageStore: ObservableObject {
                 recentActivity: RecentAIActivity?, statuses: [ToolSourceStatus]
             ) in
                 // 合并多数据源:Claude Code + Codex CLI(各自内部已防重,来源不重叠可直接拼)
-                var events = scanner.scanAll()
-                events.append(contentsOf: codexScanner.scanAll())
-                let additional = additionalScanner.scanAll()
-                let statuses = [ToolKind.claude, .codex].map { tool in
-                    let count = events.filter { $0.sourceApp == tool.rawValue }.count
-                    return ToolSourceStatus(tool: tool, count: count, detail: count > 0 ? "本地记录 · 自动更新" : "近 90 天未发现可读取用量")
-                } + additional.statuses
-                events.append(contentsOf: additional.events)
-                PricingTable.reloadCustomPrices()
+                var events: [UsageEvent]
+                var statuses: [ToolSourceStatus] = []
+                if let scanOverride {
+                    events = scanOverride()
+                } else {
+                    events = scanner.scanAll()
+                    events.append(contentsOf: codexScanner.scanAll())
+                    let additional = additionalScanner.scanAll()
+                    statuses = [ToolKind.claude, .codex].map { tool in
+                        let count = events.filter { $0.sourceApp == tool.rawValue }.count
+                        return ToolSourceStatus(tool: tool, count: count, detail: count > 0 ? "本地记录 · 自动更新" : "近 90 天未发现可读取用量")
+                    } + additional.statuses
+                    events.append(contentsOf: additional.events)
+                }
                 let now = Date()
-                let priced = events.map { PricedEvent.from($0) }        // 一次计价定型
-                let result = Self.aggregate(events: events, now: now)   // 今日一瞥固定桶
+                let priced = events.map { PricedEvent.from($0, snapshot: snapshot) }        // 一次计价定型
+                let result = Self.aggregate(events: events, now: now, snapshot: snapshot)   // 今日一瞥固定桶
                 let dash = UsageAggregator.run(priced, filter: filter, now: now, calendar: .current)
                 let alertDash = UsageAggregator.run(
                     priced, filter: UsageFilter(time: .today), now: now, calendar: .current)
@@ -139,6 +163,7 @@ final class UsageStore: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 self.priced = scanResult.priced
+                self.pricingRevision = snapshot.revision
                 self.sourceStatuses = scanResult.statuses
                 self.recentActivity = scanResult.recentActivity
                 self.today = scanResult.summary.today
@@ -146,14 +171,19 @@ final class UsageStore: ObservableObject {
                 self.last7Days = scanResult.summary.last7Days
                 self.burnRatePerHourUSD = scanResult.summary.burnRate
                 self.monthProjectionUSD = scanResult.summary.projection
-                if self.reaggGen == filterGeneration {
+                let filterUnchanged = self.reaggGen == filterGeneration
+                // Invalidate delayed aggregations that captured the previous priced array.
+                self.reaggGen &+= 1
+                if filterUnchanged {
                     self.dashboard = scanResult.dashboard
+                    self.isReaggregating = false
                 } else {
                     // 扫描期间筛选被修改:旧筛选结果不能覆盖新筛选;用刚扫到的数据重算。
                     self.reaggregate()
                 }
                 self.lastScan = Date()
                 self.scanning = false
+                if self.pendingCatalogRefresh { self.pendingCatalogRefresh = false; self.refresh() }
                 let topProject = scanResult.alertDashboard.insight.topProject.map {
                     DisplaySettings.shared.projectName($0)
                 }
@@ -172,6 +202,7 @@ final class UsageStore: ObservableObject {
 
     /// 筛选变更:只重聚合内存事件表,不重扫。60ms 去抖 + 代次丢弃过期结果。
     private func reaggregate() {
+        isReaggregating = true
         reaggGen &+= 1
         let gen = reaggGen
         let priced = self.priced
@@ -181,6 +212,7 @@ final class UsageStore: ObservableObject {
             Task { @MainActor in
                 guard let self, self.reaggGen == gen else { return }  // 被更晚筛选取代则丢弃
                 self.dashboard = dash
+                self.isReaggregating = false
             }
         }
     }
@@ -195,7 +227,7 @@ final class UsageStore: ObservableObject {
         var projection: Double = 0
     }
 
-    nonisolated static func aggregate(events: [UsageEvent], now: Date) -> AggregateResult {
+    nonisolated static func aggregate(events: [UsageEvent], now: Date, snapshot: PricingSnapshot? = nil) -> AggregateResult {
         var cal = Calendar.current
         cal.timeZone = .current
         let todayStart = cal.startOfDay(for: now)
@@ -214,13 +246,14 @@ final class UsageStore: ObservableObject {
         dayFmt.timeZone = .current
 
         for e in events {
-            var cost = e.costUSD ?? PricingTable.pricing(for: e.model)?.cost(
+            let rate = snapshot.map { $0.pricing(for: e.model, at: e.timestamp) } ?? PricingTable.pricing(for: e.model)
+            var cost = e.costUSD ?? rate?.cost(
                 input: e.inputTokens, output: e.outputTokens,
                 cacheWrite: e.cacheCreationTokens, cacheWrite1h: e.cacheCreation1hTokens,
                 cacheRead: e.cacheReadTokens) ?? 0
             // fast 模式按倍率加价;JSONL 自带 costUSD 时已含加价,不重复乘
             if e.costUSD == nil, e.speed == "fast" {
-                cost *= PricingTable.fastMultiplier(for: e.model)
+                cost *= snapshot?.fastMultiplier(for: e.model, at: e.timestamp) ?? PricingTable.fastMultiplier(for: e.model)
             }
 
             if e.timestamp >= todayStart {
