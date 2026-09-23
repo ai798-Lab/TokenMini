@@ -978,7 +978,20 @@ struct DisplaySettingsMenu: View {
     @ObservedObject private var updates = UpdateController.shared
     @EnvironmentObject private var quota: QuotaStore
     @Environment(\.openWindow) private var openWindow
+    @State private var presented = false
     var body: some View {
+        if settings.isPrism {
+            Button { presented.toggle() } label: {
+                DashboardToolbarLabel(title: "外观", icon: "slider.horizontal.3")
+            }
+            .buttonStyle(.plain)
+            .modifier(DashboardAppearanceChrome(unified: unifiedToolbar))
+            .accessibilityLabel("显示与主题设置")
+            .popover(isPresented: $presented, arrowEdge: .bottom) { AppearanceSettingsPanel() }
+        } else { nativeMenu }
+    }
+
+    private var nativeMenu: some View {
         Menu {
             // 主题切换:所有界面(弹窗/二级页/监控台/灵动岛)一起换肤
             Picker("主题", selection: $settings.theme) {

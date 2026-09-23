@@ -12,6 +12,7 @@ enum Prism {
     static let secondary = Color(red: 183/255, green: 193/255, blue: 177/255)
     static let faint = Color(red: 154/255, green: 168/255, blue: 142/255)
     static let line = Color(red: 64/255, green: 75/255, blue: 57/255)
+    static let contentInset: CGFloat = 14
     static let radius: CGFloat = 6
     static let controlRadius: CGFloat = 4
     static func label(_ size: CGFloat = 11, _ weight: Font.Weight = .medium) -> Font {
@@ -62,6 +63,7 @@ struct PrismControlChrome: ViewModifier {
     var accent: Color = Prism.mint
     var pressed = false
     var size: CGFloat = 11
+    var subtle = false
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -72,10 +74,10 @@ struct PrismControlChrome: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: Prism.controlRadius)
         content
             .font(Prism.label(max(size, 10), active ? .bold : .medium))
-            .foregroundStyle(active ? Prism.bg : (hover ? Prism.silver : Prism.secondary))
+            .foregroundStyle(active ? (subtle ? accent : Prism.bg) : (hover ? Prism.silver : Prism.secondary))
             .padding(.horizontal, 10).frame(minHeight: 28)
-            .background(active ? accent : (hover ? Prism.panelHi : Prism.panel), in: shape)
-            .overlay(shape.strokeBorder(active ? accent : Prism.line, lineWidth: 1))
+            .background(active ? (subtle ? accent.opacity(0.12) : accent) : (hover ? Prism.panelHi : Prism.panel), in: shape)
+            .overlay(shape.strokeBorder(active ? accent.opacity(subtle ? 0.5 : 1) : Prism.line, lineWidth: 1))
             .overlay {
                 SweepBorder(shape: shape, color: active ? Prism.silver : accent,
                             lineWidth: 1.5, radius: 28, drive: .follow(isEnabled ? mouse : nil))
@@ -94,9 +96,10 @@ struct PrismButtonStyle: ButtonStyle {
     var prominent = false
     var accent: Color = Prism.mint
     var size: CGFloat = 11
+    var subtle = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.modifier(PrismControlChrome(active: prominent, accent: accent,
-                                                       pressed: configuration.isPressed, size: size))
+                                                       pressed: configuration.isPressed, size: size, subtle: subtle))
     }
 }
 
@@ -124,15 +127,15 @@ struct PrismPopoverView: View {
                 DisplaySettingsMenu().foregroundStyle(Prism.secondary)
             }
             .padding(.horizontal, 16).padding(.vertical, 9).background(Prism.silver)
-            ThemedSegmented(items: Page.allCases.map { ($0, $0.rawValue) }, selection: $page, size: 11)
-                .padding(.horizontal, 14).padding(.vertical, 12)
+            ThemedSegmented(items: Page.allCases.map { ($0, $0.rawValue) }, selection: $page, size: 11, level: .primary, fillsWidth: true)
+                .padding(.horizontal, Prism.contentInset).padding(.vertical, 12)
             HUDScrollView(accent: Prism.mint) {
                 VStack(spacing: 12) {
                     UpdateNoticeView()
                     switch page {
                     case .overview:
                         tokenHero
-                        HUDSimpleHomeView().padding(.horizontal, 14)
+                        HUDSimpleHomeView().padding(.horizontal, Prism.contentInset)
                     case .system: HUDSystemPanelView()
                     case .ai: HUDAIPanelView()
                     case .skills: HUDSkillsPanelView()
@@ -158,7 +161,7 @@ struct PrismPopoverView: View {
                     Spacer()
                     Button("退出") { NSApp.terminate(nil) }.buttonStyle(.plain)
                 }.font(.system(size: 10)).foregroundStyle(Prism.secondary)
-            }.padding(14).background(Prism.bg)
+            }.padding(Prism.contentInset).background(Prism.bg)
         }
         .frame(width: 360, height: 620)
         .background(Prism.bg)

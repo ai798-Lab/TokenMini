@@ -44,7 +44,7 @@ struct HUDSkillsPanelView: View {
                     .transition(.opacity)
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, settings.isPrism ? Prism.contentInset : 12)
         .padding(.vertical, 6)
         .onAppear { if store.skills.isEmpty { store.refresh() } }
         .alert("卸载 Skill", isPresented: Binding(
@@ -84,11 +84,9 @@ struct HUDSkillsPanelView: View {
 
     private var controls: some View {
         VStack(spacing: 6) {
-            TextField("搜索 skill 名字或描述…", text: $search)
-                .textFieldStyle(.roundedBorder)
-                .controlSize(.small)
+            ThemedSearchField(title: "搜索 skill 名字或描述…", text: $search)
             if settings.isPrism {
-                ThemedSegmented(items: ToolFilter.allCases.map { ($0, $0.rawValue) }, selection: $toolFilter)
+                ThemedSegmented(items: ToolFilter.allCases.map { ($0, $0.rawValue) }, selection: $toolFilter, fillsWidth: true)
             } else {
             HStack(spacing: 4) {
                 ForEach(ToolFilter.allCases) { f in
@@ -265,17 +263,14 @@ private struct MultiSkillPicker: View {
                         Toggle(c.name, isOn: Binding(
                             get: { selected.contains(c.path) },
                             set: { on in if on { selected.insert(c.path) } else { selected.remove(c.path) } }))
-                            .font(.caption)
+                            .font(.caption).toggleStyle(ThemedCheckToggleStyle())
                     }
                 }
             }
             .frame(maxHeight: 180)
-            Picker("装到", selection: Binding(
+            ThemedSegmented(items: [(0, "Claude"), (1, "Codex"), (2, "两者")], selection: Binding(
                 get: { target.count == 2 ? 2 : (target.first == .claude ? 0 : 1) },
-                set: { v in target = v == 2 ? [.claude, .codex] : (v == 0 ? [.claude] : [.codex]) })) {
-                Text("Claude").tag(0); Text("Codex").tag(1); Text("两者").tag(2)
-            }
-            .pickerStyle(.segmented)
+                set: { v in target = v == 2 ? [.claude, .codex] : (v == 0 ? [.claude] : [.codex]) }), fillsWidth: true)
             HStack {
                 Button("取消") {
                     store.completePendingInstall(pending, selected: [], to: [])
@@ -285,11 +280,12 @@ private struct MultiSkillPicker: View {
                     let chosen = pending.candidates.filter { selected.contains($0.path) }
                     store.completePendingInstall(pending, selected: chosen, to: target)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(HUDButtonStyle(filled: true))
                 .disabled(selected.isEmpty)
             }
         }
         .padding(16)
         .frame(width: 320)
+        .background(HUD.bg).foregroundStyle(HUD.text).tint(HUD.cyan)
     }
 }

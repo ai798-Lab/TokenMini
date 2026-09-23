@@ -165,17 +165,20 @@ struct PrismTokenHero: View {
                             .font(.system(size: 9)).foregroundStyle(Prism.secondary)
                             .lineLimit(1)
                     }
-                    .padding(.leading, 14)
+                    .padding(.leading, Prism.contentInset)
                 }
                 .frame(width: proxy.size.width, height: panelHeight)
                 .overlay(alignment: .bottom) { Rectangle().fill(Prism.line).frame(height: 1) }
                 .offset(y: panelTop)
 
-                PrismBreakoutArtwork(width: artworkWidth)
-                    // Text ends at 14 + 130pt; keep an 8pt gap before the beam.
-                    .offset(x: 152, y: (stageHeight - artworkWidth * 941 / 1672) / 2)
             }
             .frame(width: proxy.size.width, height: stageHeight, alignment: .topLeading)
+            .overlay(alignment: .topLeading) {
+                // Artwork must not contribute its 410pt ideal width to the 360pt scroll content.
+                PrismBreakoutArtwork(width: artworkWidth)
+                    .offset(x: Prism.contentInset + 138,
+                            y: (stageHeight - artworkWidth * 941 / 1672) / 2)
+            }
             .clipped()
         }
         .frame(height: stageHeight)

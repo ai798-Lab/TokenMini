@@ -17,7 +17,7 @@ struct HUDAIPanelView: View {
                 .font(.system(size: 8.5))
                 .foregroundStyle(HUD.faint)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, settings.isPrism ? Prism.contentInset : 12)
         .padding(.vertical, 6)
     }
 
@@ -66,7 +66,11 @@ struct HUDAIPanelView: View {
     }
 
     // 计量单位 / 货币 设置(齿轮菜单)
-    private var settingsMenu: some View {
+    @ViewBuilder private var settingsMenu: some View {
+        if settings.isPrism { DisplaySettingsMenu() } else { nativeSettingsMenu }
+    }
+
+    private var nativeSettingsMenu: some View {
         Menu {
             Picker("Token 单位", selection: $settings.tokenUnit) {
                 ForEach(TokenUnitMode.allCases) { Text($0.label).tag($0) }

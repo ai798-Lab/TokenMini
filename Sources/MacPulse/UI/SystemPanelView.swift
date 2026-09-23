@@ -9,6 +9,7 @@ struct HUDSystemPanelView: View {
     @EnvironmentObject var actions: ProcessActionStore
     @Environment(\.openWindow) private var openWindow
     @State private var procToKill: TopProcess?
+    @ObservedObject private var settings = DisplaySettings.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -22,7 +23,7 @@ struct HUDSystemPanelView: View {
             }
             junkSection
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, settings.isPrism ? Prism.contentInset : 12)
         .padding(.vertical, 6)
         .onAppear {
             if !cleanup.hasScanned && !cleanup.scanning { cleanup.scan() }

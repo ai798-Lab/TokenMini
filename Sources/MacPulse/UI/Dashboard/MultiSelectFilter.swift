@@ -25,30 +25,41 @@ struct MultiSelectFilter: View {
         .popover(isPresented: $presented, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("\(title) · 可多选").font(.headline)
+                    Text(title).font(.system(size: 14, weight: .semibold))
+                    Text("\(options.count) 项").font(.system(size: 10, weight: .medium))
+                        .padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(themeAccent().opacity(0.12), in: RoundedRectangle(cornerRadius: 3))
+                        .foregroundStyle(themeAccent())
                     Spacer()
-                    Button("完成") { presented = false }.keyboardShortcut(.defaultAction)
+                    Button("完成") { presented = false }
+                        .buttonStyle(ThemedToolbarButtonStyle())
+                        .keyboardShortcut(.defaultAction)
                 }
-                TextField("搜索\(title)", text: $query).textFieldStyle(.roundedBorder)
-                Button(selection.isEmpty ? "✓ 全部\(title)" : "恢复全部\(title)") { selection = [] }
-                    .buttonStyle(.plain).foregroundStyle(themeAccent())
+                ThemedSearchField(title: "搜索\(title)", text: $query)
+                ThemedChoiceRow(title: "全部\(title)", selected: selection.isEmpty) { selection = [] }
                 Divider()
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
+                    LazyVStack(alignment: .leading, spacing: 4) {
                         ForEach(visibleOptions, id: \.key) { option in
                             Toggle(isOn: Binding(get: { selection.contains(option.key) }, set: { on in
                                 if on { selection.insert(option.key) } else { selection.remove(option.key) }
                             })) {
-                                Text(option.label).lineLimit(2).help(option.key)
-                            }.toggleStyle(.checkbox).frame(maxWidth: .infinity, alignment: .leading)
+                                Text(option.label).font(.system(size: 12)).lineLimit(2).help(option.key)
+                            }
+                            .toggleStyle(ThemedCheckToggleStyle())
+                            .padding(9)
+                            .background(selection.contains(option.key) ? themeAccent().opacity(0.10) : .clear,
+                                        in: RoundedRectangle(cornerRadius: 4))
                         }
-                        if visibleOptions.isEmpty { Text("没有匹配项").foregroundStyle(.secondary) }
-                    }.padding(.vertical, 4)
+                        if visibleOptions.isEmpty { Text("没有匹配项").foregroundStyle(.secondary).padding(9) }
+                    }
                 }.frame(maxHeight: 270)
-                Text(selection.isEmpty ? "当前显示全部；勾选后仅显示选中项" : "已选 \(selection.count) 项 · 点击外部即可收起")
-                    .font(.caption).foregroundStyle(.secondary)
-            }.padding(16).frame(width: 300)
+                Text(selection.isEmpty ? "全部 \(options.count) 项 · 可多选" : "已选 \(selection.count) 项 · 点击外部即可收起")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+            }.padding(16).frame(width: 320)
+                .foregroundStyle(settings.isPrism ? Prism.silver : .primary)
                 .background(settings.isPrism ? Prism.panel : Color(nsColor: .windowBackgroundColor))
+                .tint(themeAccent())
                 .preferredColorScheme(settings.isDarkSkin ? .dark : nil)
         }
         .onChange(of: presented) { _, showing in if showing { query = "" } }

@@ -18,12 +18,16 @@ func themeAccent() -> Color {
 
 /// 主题化分段控件:替代 .pickerStyle(.segmented)。
 /// HUD = 切角 + 代号感;LED = 圆角胶囊 + 辉光;经典 = 系统原生 Picker。
+enum ThemedTabLevel { case primary, secondary }
+
 struct ThemedSegmented<T: Hashable>: View {
     let items: [(value: T, label: String)]
     @Binding var selection: T
     /// 选中态颜色,nil = 跟随主题强调色
     var accent: Color? = nil
     var size: CGFloat = 10
+    var level: ThemedTabLevel = .secondary
+    var fillsWidth = false
 
     @ObservedObject private var settings = DisplaySettings.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -41,12 +45,13 @@ struct ThemedSegmented<T: Hashable>: View {
                 let selected = selection == item.value
                 Button { selection = item.value } label: {
                     Text(item.label).lineLimit(1)
+                        .frame(maxWidth: fillsWidth ? .infinity : nil)
                 }
-                .buttonStyle(PrismButtonStyle(prominent: selected, accent: tint, size: size))
+                .buttonStyle(PrismButtonStyle(prominent: selected, accent: tint, size: size, subtle: level == .secondary))
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .fixedSize()
+        .fixedSize(horizontal: !fillsWidth, vertical: true)
     }
 
     private var native: some View {
