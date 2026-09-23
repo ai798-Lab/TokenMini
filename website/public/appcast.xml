@@ -2,51 +2,27 @@
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>MacPulse</title>
+        <title>TokenMini</title>
         <item>
-            <title>0.10.0</title>
-            <pubDate>Sat, 29 Aug 2026 20:25:19 +0800</pubDate>
-            <link>https://macpulse-monitor.peaceaii.chatgpt.site</link>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>0.10.0</sparkle:shortVersionString>
+            <title>0.13.1</title>
+            <pubDate>Wed, 23 Sep 2026 22:57:04 +0800</pubDate>
+            <link>https://tokenmini.cc</link>
+            <sparkle:version>22</sparkle:version>
+            <sparkle:shortVersionString>0.13.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"><![CDATA[# MacPulse 0.10.0 Public Beta
+            <description sparkle:format="markdown"><![CDATA[# TokenMini 0.13.1 Public Beta
 
-建议所有 0.9.0 用户更新。这一版重点修复菜单弹窗稳定性、Claude 额度后台认证和 Opus 5 计价问题，并加入完全可选的社区排行榜。
+- 移除 Prism 菜单栏「AI 用量」页内重复的外观设置和监控台入口，统一使用顶部「外观」与底部「打开完整的中控台」。
+- 保留统一 Prism 外观、完整统计与模型目录功能，其他主题的独立监控台入口保持可用。
+- 官网中英文下载入口、版本信息与签名自动更新同步至 0.13.1（构建 22）。
 
-## 重要修复
-
-- 菜单栏改为固定尺寸原生模板图，CPU、内存等数值刷新时不再带着弹窗反复移动或偶发裁切
-- 菜单栏额度明确显示“剩余”，不再让裸百分比产生“已用还是剩余”的歧义
-- Claude 额度启动与定时刷新改为静默读取，不会在后台突然弹出钥匙串认证框；只有用户主动开启功能时才允许系统交互
-- 关闭 Claude 额度后，尚未完成的旧请求不会再把额度结果写回界面
-- 补全 Claude Opus 5 的输入、输出、缓存与 fast 模式计价，避免未知模型提示和费用漏算
-
-## 新功能
-
-- Google 登录完全可选；登录后可加入 Token 消耗与 API 等价费用两个本周榜单
-- 默认使用打码昵称，可自愿公开完整昵称，并可随时退出排行榜
-- 游客无需登录即可浏览 App 内与官网公开榜单
-- 新增官网隐私页和仅管理员可见的轻量运营后台
-
-## 隐私与安全
-
-- 不登录排行榜时不上传任何使用数据，本地监控功能保持完整可用
-- 排行榜只同步上海时区每日 Token 总量、API 等价费用、价格表版本和 App 版本
-- 不上传会话正文、提示词、回复、项目名、路径、模型明细、AI 凭证或设备信息
-- Google 会话保存在 macOS Keychain；退出排行榜后停止同步并删除排行榜数据和服务端刷新会话
-
-## 已知边界
-
-- 仅支持 Apple Silicon 与 macOS 14+
-- 不同 M 系列芯片的温度和风扇传感器可用性可能不同
-- Claude 额度依赖实验性接口，失效时不会影响其他功能
+需要 Apple Silicon 与 macOS 14 或更新版本。费用为 API 等价估算，不是订阅实际扣款。
 ]]></description>
-            <enclosure url="https://github.com/ai798-Lab/MacPulse/releases/download/v0.10.0/MacPulse-0.10.0.dmg" length="4142975" type="application/octet-stream" sparkle:edSignature="CtKopmKG3BEpWmhUVXtkqIPCt4o9PiS3f7mNCh1blXQPMxLCg1w+4NNd4mWh3E/cVKvke8MDEeT+iBfGJjF5Bw=="></enclosure>
+            <enclosure url="https://github.com/ai798-Lab/TokenMini/releases/download/v0.13.1/TokenMini-0.13.1.dmg" length="6324808" type="application/octet-stream" sparkle:edSignature="Kk3FkMOr6KuGN8agZamGVESyLoyKkLsn75243CylFF5Va2DPF+Q7NWJPXZviU778U1LfxEG3GlzLoS0xhrt9AA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: 4ft9F/9T5YSIRysN2pLAOnL4fzGfqgJMmz0XTNBhOtxvrXNBSvwj0UuH2D09iqe8esS77R6UJVmeim9p2lAACg==
-length: 3064
+edSignature: n9vZ4WKsM2G/PNuk5iW6DS9bILWsSX/hYoIga6yOchAov52rcTiGbVatLsla8B+57OZntLq4TeXjzxi8I0Z5Cw==
+length: 1773
 -->
