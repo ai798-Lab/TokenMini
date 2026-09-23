@@ -2,7 +2,11 @@ import SwiftUI
 
 /// Explicit selection styling prevents native checkbox/focus blue from leaking into dark skins.
 struct ThemedCheckToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    @ObservedObject private var settings = DisplaySettings.shared
+    @ViewBuilder func makeBody(configuration: Configuration) -> some View {
+        if settings.isPrism {
+            PrismSecondaryToggleStyle().makeBody(configuration: configuration)
+        } else {
         Button { configuration.isOn.toggle() } label: {
             HStack(spacing: 9) {
                 Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
@@ -14,6 +18,7 @@ struct ThemedCheckToggleStyle: ToggleStyle {
         .buttonStyle(.plain)
         .accessibilityValue(Text(configuration.isOn ? "已选" : "未选"))
         .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
+        }
     }
 }
 
@@ -44,11 +49,16 @@ struct ThemedSearchField: View {
     let title: String
     @Binding var text: String
     @FocusState private var focused: Bool
+    @State private var prismFocused = false
+    @ObservedObject private var settings = DisplaySettings.shared
     var body: some View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-            TextField(title, text: $text).textFieldStyle(.plain).focused($focused)
-                .tint(themeAccent())
+            if settings.isPrism {
+                PrismEntryField(placeholder: title, text: $text, focused: $prismFocused).frame(height: 18)
+            } else {
+                TextField(title, text: $text).textFieldStyle(.plain).focused($focused).tint(themeAccent())
+            }
             if !text.isEmpty {
                 Button { text = "" } label: { Image(systemName: "xmark.circle.fill") }
                     .buttonStyle(.plain).accessibilityLabel("清除搜索")
@@ -57,7 +67,7 @@ struct ThemedSearchField: View {
         .font(.system(size: 12)).padding(9)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 4))
         .overlay(RoundedRectangle(cornerRadius: 4)
-            .strokeBorder(focused ? themeAccent().opacity(0.7) : Color.primary.opacity(0.18)))
+            .strokeBorder((settings.isPrism ? prismFocused : focused) ? themeAccent().opacity(0.7) : Color.primary.opacity(0.18)))
     }
 }
 

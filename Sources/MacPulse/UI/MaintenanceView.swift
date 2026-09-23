@@ -13,7 +13,7 @@ struct MaintenanceView: View {
         VStack(alignment: .leading, spacing: 16) {
             if settings.isPrism {
                 HStack {
-                    ThemedSegmented(items: CleanupStore.Page.allCases.map { ($0, $0.rawValue) }, selection: $cleanup.page)
+                    ThemedSegmented(items: CleanupStore.Page.allCases.map { ($0, $0.rawValue) }, selection: $cleanup.page, level: .primary, fillsWidth: true)
                     Spacer()
                     Text("TOKENMINI").font(.system(size: 13, weight: .black)).foregroundStyle(Prism.secondary)
                 }
