@@ -75,7 +75,7 @@ struct AppearanceSettingsPanel: View {
                         }.buttonStyle(PrismButtonStyle())
                     }
                     section("关于 TokenMini") {
-                        Text("\(AppInfo.displayVersion) · Beta").font(.system(size: 12, weight: .medium))
+                        Text(AppInfo.displayVersion).font(.system(size: 12, weight: .medium))
                         HStack {
                             Button("检查更新") { updates.checkForUpdates() }.disabled(!updates.canCheckForUpdates)
                             Button("社区排行榜") { openWindow(id: "leaderboard"); dismiss() }
