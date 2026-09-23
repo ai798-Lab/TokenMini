@@ -100,3 +100,43 @@ body:has(.rank-page),body:has(.policy-page){background:#0b0d0c;color:#f1f1e9}
 .policy-page .policy-shell section h2{font-size:26px;color:#e5eddd}
 
 .kinetic-home .masthead-caption .edition{display:none}
+
+/* Desktop hero composition: one continuous backdrop with an upward breakout.
+   Keep clipping at the page edge; allow the transparent artwork over the masthead.
+   Content defines the section height so lifting the artwork leaves no empty panel. */
+@media (min-width: 761px) {
+  .kinetic-home .brand-hero {
+    height: auto;
+    min-height: clamp(380px, 27vw, 490px);
+    overflow: visible;
+    z-index: 4;
+    background: radial-gradient(ellipse at 76% 38%, #203021 0%, #152019 30%, #111513 66%);
+  }
+  .kinetic-home .hero-content {
+    height: auto;
+    min-height: inherit;
+    padding-block: 28px 36px;
+  }
+  .kinetic-home .hero-kicker { margin-bottom: 12px; }
+  .kinetic-home .hero-description { margin-block: 18px 22px; }
+  .kinetic-home .hero-scene {
+    inset: 0;
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .kinetic-home .hero-engine-atmosphere { display: none; }
+  .kinetic-home .engine-stage {
+    inset: auto;
+    top: calc(-1 * clamp(165px, 11.5vw, 220px));
+    left: 44%;
+    width: max(950px, 72vw);
+    height: auto;
+    aspect-ratio: 1672 / 941;
+  }
+  .kinetic-home .engine-poster {
+    mask-image: linear-gradient(90deg, transparent, #000 12%);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%);
+  }
+  .kinetic-home .hero-coordinate { display: none; }
+}

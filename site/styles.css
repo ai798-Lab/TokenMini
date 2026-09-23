@@ -43,3 +43,43 @@
 .brand-beta{font:600 10px/1 var(--font-geist-mono),ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#326b29;border:1px solid #326b29;border-radius:3px;padding:3px 5px;align-self:center;flex:none;white-space:nowrap}
 .brand-hero .brand-beta,.kinetic-footer .brand-beta,.footer .brand-beta,.policy-page .brand-beta{color:#b5ff39;border-color:#b5ff39}
 @media(max-width:760px){.brand-beta{font-size:9px;padding:2px 4px}}
+
+/* Desktop hero composition: one continuous backdrop with an upward breakout.
+   Keep clipping at the page edge; allow the transparent artwork over the masthead.
+   Content defines the section height so lifting the artwork leaves no empty panel. */
+@media (min-width: 761px) {
+  .kinetic-home .brand-hero {
+    height: auto;
+    min-height: clamp(380px, 27vw, 490px);
+    overflow: visible;
+    z-index: 4;
+    background: radial-gradient(ellipse at 76% 38%, #203021 0%, #152019 30%, #111513 66%);
+  }
+  .kinetic-home .hero-content {
+    height: auto;
+    min-height: inherit;
+    padding-block: 28px 36px;
+  }
+  .kinetic-home .hero-kicker { margin-bottom: 12px; }
+  .kinetic-home .hero-description { margin-block: 18px 22px; }
+  .kinetic-home .hero-scene {
+    inset: 0;
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .kinetic-home .hero-engine-atmosphere { display: none; }
+  .kinetic-home .engine-stage {
+    inset: auto;
+    top: calc(-1 * clamp(165px, 11.5vw, 220px));
+    left: 44%;
+    width: max(950px, 72vw);
+    height: auto;
+    aspect-ratio: 1672 / 941;
+  }
+  .kinetic-home .engine-poster {
+    mask-image: linear-gradient(90deg, transparent, #000 12%);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%);
+  }
+  .kinetic-home .hero-coordinate { display: none; }
+}
