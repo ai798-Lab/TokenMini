@@ -27,3 +27,10 @@
 @media(max-width:760px){.hero-machine-stage{width:510px;height:320px;right:-85px}.hero-machine{background-size:100% auto}}
 @media(max-width:760px){.hero-machine-stage{width:450px;height:300px;right:-8px}}
 .motion-toggle:disabled{cursor:default;opacity:.8}
+
+/* Optional first-party analytics preferences; no blocking consent overlay. */
+.analytics-preferences { position:fixed; bottom:12px; left:12px; z-index:90; max-width:min(350px,calc(100vw - 24px)); font:12px/1.6 system-ui; }
+.analytics-preferences button { border:1px solid #ccc; background:#fff; color:#222; border-radius:6px; padding:7px 11px; cursor:pointer; margin:3px; }
+.analytics-preferences button:focus-visible { outline:2px solid #14654e; outline-offset:3px; }
+.analytics-preferences-panel { background:#fff; color:#222; padding:16px; border:1px solid #ddd; border-radius:10px; box-shadow:0 5px 30px #0002; }
+.analytics-preferences-panel p { margin-bottom:10px; }

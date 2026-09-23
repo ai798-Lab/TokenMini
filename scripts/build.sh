@@ -16,8 +16,8 @@ DISPLAY_NAME="TokenMini"
 BUNDLE_ID="com.liangheping.macpulse"
 BUILD_DIR=".build/release"
 APP_DIR="dist/${APP_NAME}.app"
-VERSION="${1:-0.13.1}"
-BUILD_NUMBER="${2:-22}"
+VERSION="${1:-0.14.0}"
+BUILD_NUMBER="${2:-23}"
 SITE_URL="${MACPULSE_SITE_URL:-https://tokenmini.cc}"
 UPDATE_FEED_URL="${MACPULSE_UPDATE_FEED_URL:-${SITE_URL}/appcast.xml}"
 SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/ai798-Lab/TokenMini}"
@@ -111,6 +111,30 @@ cat > "${APP_DIR}/Contents/Info.plist" << PLIST
 </dict>
 </plist>
 PLIST
+
+# Optional release configuration. No endpoint means no analytics traffic.
+# Only a public write client ID is allowed. Collector-to-engine credentials stay on the server.
+if [[ -n "${TOKENMINI_ANALYTICS_CONFIG:-}" ]]; then
+    python3 - "${TOKENMINI_ANALYTICS_CONFIG}" "${APP_DIR}/Contents/Info.plist" <<'PY'
+import json, plistlib, sys
+from urllib.parse import urlparse
+from pathlib import Path
+config = json.loads(Path(sys.argv[1]).read_text())
+if set(config) - {"url", "clientId"}:
+    raise SystemExit("Unexpected analytics configuration fields")
+url = urlparse(config.get("url", ""))
+if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
+    raise SystemExit("Release analytics must use a clean HTTPS endpoint")
+if not isinstance(config.get("clientId"), str) or not config["clientId"].strip():
+    raise SystemExit("Missing project write client ID")
+p = Path(sys.argv[2]); info = plistlib.loads(p.read_bytes())
+for source, target in [("url", "TokenMiniAnalyticsURL"), ("clientId", "TokenMiniAnalyticsClientID")]:
+    value = config.get(source, "")
+    if not isinstance(value, str): raise SystemExit("Analytics values must be strings")
+    info[target] = value
+p.write_bytes(plistlib.dumps(info))
+PY
+fi
 
 # 图标:设计源文件(logo icon.svg)比 icns 新就自动重新生成。
 # 没这一步的话,改了设计稿、构建出来的还是旧图标,看着像"图标缓存没刷新",实际是根本没重新生成过。
