@@ -58,6 +58,10 @@ final class DisplaySettings: ObservableObject {
     @Published var tokenUnit: TokenUnitMode { didSet { d.set(tokenUnit.rawValue, forKey: kUnit) } }
     @Published var currency: CurrencyMode { didSet { d.set(currency.rawValue, forKey: kCurrency) } }
     @Published var usdToCny: Double { didSet { d.set(usdToCny, forKey: kRate) } }
+    @Published var showTokensInMenuBar: Bool { didSet { d.set(showTokensInMenuBar, forKey: "macpulse.menuBar.tokens") } }
+    @Published var showCPUInMenuBar: Bool { didSet { d.set(showCPUInMenuBar, forKey: "macpulse.menuBar.cpu") } }
+    @Published var showMemoryInMenuBar: Bool { didSet { d.set(showMemoryInMenuBar, forKey: "macpulse.menuBar.memory") } }
+    @Published var showCostInMenuBar: Bool { didSet { d.set(showCostInMenuBar, forKey: "macpulse.menuBar.cost") } }
     @Published var showQuotaInMenuBar: Bool { didSet { d.set(showQuotaInMenuBar, forKey: kQuotaBar) } }
     @Published var theme: AppTheme { didSet { d.set(theme.rawValue, forKey: kTheme) } }
     @Published var dashboardMode: DashboardMode { didSet { d.set(dashboardMode.rawValue, forKey: kDashboardMode) } }
@@ -84,6 +88,10 @@ final class DisplaySettings: ObservableObject {
         tokenUnit = TokenUnitMode(rawValue: d.string(forKey: kUnit) ?? "") ?? .chinese
         currency = CurrencyMode(rawValue: d.string(forKey: kCurrency) ?? "") ?? .cny
         usdToCny = d.object(forKey: kRate) != nil ? d.double(forKey: kRate) : 7.2
+        showTokensInMenuBar = d.object(forKey: "macpulse.menuBar.tokens") as? Bool ?? true
+        showCPUInMenuBar = d.bool(forKey: "macpulse.menuBar.cpu")
+        showMemoryInMenuBar = d.bool(forKey: "macpulse.menuBar.memory")
+        showCostInMenuBar = d.bool(forKey: "macpulse.menuBar.cost")
         showQuotaInMenuBar = d.bool(forKey: kQuotaBar)   // 默认 false
         theme = AppTheme(rawValue: d.string(forKey: kTheme) ?? "") ?? .prism
         dashboardMode = DashboardMode(rawValue: d.string(forKey: kDashboardMode) ?? "") ?? .overview

@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// 菜单栏常驻标签：CPU · 内存 · 今日 AI API 等价费用预估。
+/// 默认仅显示品牌标志与今日 Token，其他指标由用户自行开启。
 struct MenuBarLabel: View {
     @ObservedObject var system: SystemMonitor
     @ObservedObject var usage: UsageStore
@@ -9,16 +9,21 @@ struct MenuBarLabel: View {
     @ObservedObject private var settings = DisplaySettings.shared
 
     var body: some View {
-        // MenuBarExtra(.window) 会把弹窗锚定到菜单栏标签的外框。CPU/内存/金额
-        // 每次采样都可能改变文本宽度；若让外框跟着变化，打开的弹窗会被系统反复
-        // 重新锚定，表现为上下漂移或偶发裁切。部分 macOS 版本会绕过 SwiftUI
-        // 的 frame 重新测量 Text，因此仍把内容画进固定尺寸模板图；各字段的位置
-        // 固定，但不再用肉眼可见的等宽空格撑宽文本。
-        Image(nsImage: Self.renderLabel(cpu: cpuPercent,
-                                        memory: memoryPercent,
-                                        remainingQuota: remainingQuota))
-            .accessibilityLabel(Text(accessibilityText))
-            .help(accessibilityText)
+        // Field widths depend only on user preferences, never live values, so the popover stays anchored.
+        Image(nsImage: Self.renderLabel(fields: fields))
+            .accessibilityLabel(Text(accessibilityText)).help(accessibilityText)
+    }
+
+    private var fields: [(symbol: String?, text: String, width: CGFloat)] {
+        var result: [(String?, String, CGFloat)] = []
+        if settings.showTokensInMenuBar {
+            result.append((nil, usage.lastScan == nil ? "—" : MenuBarTokenFormatter.string(usage.today.totalTokens), 54))
+        }
+        if settings.showCPUInMenuBar { result.append(("cpu", "\(cpuPercent)", 45)) }
+        if settings.showMemoryInMenuBar { result.append(("memorychip", "\(memoryPercent)", 45)) }
+        if settings.showCostInMenuBar { result.append((nil, costText, 64)) }
+        if let remainingQuota { result.append((nil, remainingQuota >= 0 ? "余\(remainingQuota)%" : "余--%", 51)) }
+        return result
     }
 
     private var cpuPercent: Int {
@@ -46,7 +51,11 @@ struct MenuBarLabel: View {
     }
 
     private var accessibilityText: String {
-        var text = "TokenMini，CPU \(cpuPercent)%，内存 \(memoryPercent)%，今日 AI API 等价费用预估 \(costText)，不代表订阅实际扣款"
+        var text = "TokenMini"
+        if settings.showTokensInMenuBar { text += "，今日 Token " + (usage.lastScan == nil ? "加载中" : MenuBarTokenFormatter.string(usage.today.totalTokens)) }
+        if settings.showCPUInMenuBar { text += "，CPU \(cpuPercent)%" }
+        if settings.showMemoryInMenuBar { text += "，内存 \(memoryPercent)%" }
+        if settings.showCostInMenuBar { text += "，今日 API 等价费用预估 \(costText)，不代表订阅实际扣款" }
         if let remainingQuota {
             text += remainingQuota >= 0 ? "，最紧张额度剩余 \(remainingQuota)%" : "，额度数据加载中"
         }
@@ -58,25 +67,19 @@ struct MenuBarLabel: View {
         return min(100, max(0, Int(value.rounded())))
     }
 
-    private static func renderLabel(cpu: Int,
-                                    memory: Int,
-                                    remainingQuota: Int?) -> NSImage {
-        // 菜单栏优先留给系统与其他 app：常驻只显示实时 CPU / 内存，今日费用
-        // 放在悬停说明和点击后的首屏。画布仍固定，避免数值变化导致弹窗重锚定。
-        let size = NSSize(width: remainingQuota == nil ? 103 : 157, height: 20)
+    private static func renderLabel(fields: [(symbol: String?, text: String, width: CGFloat)]) -> NSImage {
+        let size = NSSize(width: 18 + fields.reduce(0) { $0 + $1.width + 5 }, height: 20)
         let image = NSImage(size: size, flipped: false) { rect in
-            // 只让数字等宽，中文、字母和标点继续使用系统比例字形，观感与 macOS
-            // 原生菜单栏一致；固定坐标负责稳定布局，不再依赖整串等宽字体。
             BrandImages.menuBar?.draw(in: NSRect(x: 0, y: 2, width: 16, height: 16))
-            drawSymbol("cpu", x: 23, in: rect)
-            drawText("\(cpu)", x: 39, maxWidth: 19, in: rect)
-
-            drawSymbol("memorychip", x: 61, in: rect)
-            drawText("\(memory)", x: 78, maxWidth: 19, in: rect)
-
-            if let remainingQuota {
-                let quotaText = remainingQuota >= 0 ? "余\(remainingQuota)%" : "余--%"
-                drawText(quotaText, x: 108, maxWidth: 46, in: rect)
+            var x: CGFloat = 23
+            for field in fields {
+                if let symbol = field.symbol {
+                    drawSymbol(symbol, x: x, in: rect)
+                    drawText(field.text, x: x + 17, maxWidth: field.width - 17, in: rect)
+                } else {
+                    drawText(field.text, x: x, maxWidth: field.width, in: rect)
+                }
+                x += field.width + 5
             }
             return true
         }

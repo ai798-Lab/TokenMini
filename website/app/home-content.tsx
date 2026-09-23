@@ -20,7 +20,7 @@ export default function Home() {
     <nav className="nav shell" aria-label={t("主导航")}>
       <Link href="/" className="brand" aria-label={t("TokenMini 首页")}><Image src="/brand/logo-horizontal-black.svg" width={160} height={42} alt="TokenMini" className="brand-lockup" unoptimized /></Link>
       <div className="nav-links"><a href="#features">{t("功能")}</a><Link href="/rankings">{t("社区排行")}</Link><a href={sourceUrl}>GitHub</a><Link href="/privacy">{t("隐私")}</Link></div>
-      <a className="button nav-download" href={releaseUrl}>{t("下载 TokenMini")} <ArrowUpRight size={18} aria-hidden="true" /></a>
+      <a className="button nav-download" href={releaseUrl}>{t("下载 TokenMini")} v{publicVersion} <ArrowUpRight size={18} aria-hidden="true" /></a>
     <LanguageSwitcher /></nav>
 
     <header className="masthead shell">
@@ -34,7 +34,7 @@ export default function Home() {
         <p className="hero-kicker">{t("免费 Mac AI 用量监控工具")}</p>
         <h1 id="hero-title">{t("让消耗，")}<br /><em>{t("看得见。")}</em></h1>
         <p className="hero-description">{t("AI 用量与 Mac 状态，尽在菜单栏。")}</p>
-        <a className="button hero-download" href={releaseUrl}>{t("免费下载 TokenMini")} <ArrowUpRight size={22} aria-hidden="true" /></a>
+        <a className="button hero-download" href={releaseUrl}>{t("免费下载 TokenMini")} v{publicVersion} <ArrowUpRight size={22} aria-hidden="true" /></a>
       </div>
     </section>
 
@@ -76,7 +76,7 @@ export default function Home() {
     <section className="install-section" id="download">
       <div className="shell">
         <div className="install-intro" data-reveal><p className="eyebrow">{t("小巧工具，清晰掌控。")}</p><h2>{t("现在，")}<br />{t("看个清楚。")}</h2><a className="install-arrow" href={releaseUrl} aria-label={t("下载 TokenMini 安装包")}><ArrowUpRight strokeWidth={1} aria-hidden="true" /></a></div>
-        <div className="install-bottom" data-reveal><a className="button nav-download" href={releaseUrl}><Download size={19} aria-hidden="true" /> {t("免费下载 TokenMini")} <ArrowUpRight size={19} aria-hidden="true" /></a><p>TokenMini {publicVersion} {t("Public Beta · 原名 MacPulse")}<br />{t("Apple Silicon · macOS 14+ · 免费开源")}</p></div>
+        <div className="install-bottom" data-reveal><a className="button nav-download" href={releaseUrl}><Download size={19} aria-hidden="true" /> {t("免费下载 TokenMini")} v{publicVersion} <ArrowUpRight size={19} aria-hidden="true" /></a><p>TokenMini {publicVersion} {t("Public Beta · 原名 MacPulse")}<br />{t("Apple Silicon · macOS 14+ · 免费开源")}</p></div>
         <ol className="install-steps"><li><span>01</span><h3>{t("下载")}</h3><p>{t("从 GitHub Releases 下载 DMG 安装包。")}</p></li><li><span>02</span><h3>{t("拖入应用程序")}</h3><p>{t("将 TokenMini 拖入 Applications 后打开。")}</p></li><li><span>03</span><h3>{t("从菜单栏开始")}</h3><p>{t("选择主题和提醒偏好，本地读取你的用量。")}</p></li></ol>
         <p className="cost-note">{t("费用显示为 API 等价估算，不是订阅实际扣款。")}</p>
       </div>

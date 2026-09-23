@@ -1038,7 +1038,13 @@ struct DisplaySettingsMenu: View {
                 Text("阈值按美元保存，界面会换算为当前货币")
             }
             Toggle("隐私模式（隐藏项目名）", isOn: $settings.privacyMode)
-            Toggle("菜单栏显示额度", isOn: $settings.showQuotaInMenuBar)
+            Menu("菜单栏显示") {
+                Toggle("今日 Token", isOn: $settings.showTokensInMenuBar)
+                Toggle("CPU 使用率", isOn: $settings.showCPUInMenuBar)
+                Toggle("内存使用率", isOn: $settings.showMemoryInMenuBar)
+                Toggle("今日等价费用", isOn: $settings.showCostInMenuBar)
+                Toggle("剩余额度", isOn: $settings.showQuotaInMenuBar)
+            }
             Button("预览刘海提醒") {
                 NotchController.shared.flash(
                     NotchAlert(icon: "checkmark.circle.fill",

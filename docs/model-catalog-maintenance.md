@@ -1,6 +1,6 @@
 # Model catalog and passive app updates
 
-This change is prepared locally. Publishing is paused until the owner explicitly requests it.
+The signed model catalog is distributed with the 0.13.0 release. Publish the verified envelope together with the website; keep signing keys private.
 
 ## Model data
 
@@ -20,7 +20,7 @@ On a price change, retain the old entry, close its interval, and append a new en
 
 Sign locally with `python3 scripts/model_catalog.py Config/ModelCatalog.json` (Python package `cryptography` required). This writes the envelope under `site/models/`; it does not upload it. The private key lives in ignored `.local-secrets/model-catalog.key` with owner-only permissions. Back it up securely before deleting the worktree. Do not commit, print or distribute it. A replacement private key will not match existing clients; the script deliberately refuses silent key rotation.
 
-The candidate includes standard API pricing verified on 2026-09-23 for GPT-6 Sol, GPT-6 Luna and Claude Opus 5.5. Sources are recorded in the readable catalog. The public endpoint and installed-user rollout remain unverified until publication is authorized.
+The candidate includes standard API pricing verified on 2026-09-23 for GPT-6 Sol, GPT-6 Luna and Claude Opus 5.5. Sources are recorded in the readable catalog. The public endpoint must serve the exact signed envelope from site/models/catalog.json. Verify signature, revision and automatic client adoption after deployment.
 
 ## Application updates
 

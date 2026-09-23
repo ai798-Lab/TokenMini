@@ -40,8 +40,16 @@ struct AppearanceSettingsPanel: View {
                                             selection: $settings.usdToCny, fillsWidth: true)
                         }
                     }
-                    section("菜单栏与隐私") {
+                    section("菜单栏显示") {
+                        Text("默认只显示图标与今日 Token，可自行增加指标")
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                        setting("今日 Token", $settings.showTokensInMenuBar)
+                        setting("CPU 使用率", $settings.showCPUInMenuBar)
+                        setting("内存使用率", $settings.showMemoryInMenuBar)
+                        setting("今日等价费用", $settings.showCostInMenuBar)
                         setting("菜单栏显示额度", $settings.showQuotaInMenuBar)
+                    }
+                    section("刘海与隐私") {
                         setting("刘海常驻油量表", Binding(get: { NotchDock.shared.enabled },
                                                        set: { NotchDock.shared.enabled = $0 }))
                         setting("隐私模式（隐藏项目名）", $settings.privacyMode)
