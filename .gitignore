@@ -23,3 +23,6 @@ release-notes/*.draft.md
 # Local verification captures and private analytics operations never enter public source.
 /artifacts/
 /analytics/
+
+__pycache__/
+*.pyc

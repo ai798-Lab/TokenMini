@@ -28,7 +28,7 @@ jobs:
       - name: Tests
         run: ./scripts/test.sh
       - name: Build app bundle
-        run: ./scripts/build.sh 0.13.1 22
+        run: ./scripts/build.sh 0.14.0 23
       - name: Verify bundle
         run: |
           test "$(lipo -archs dist/TokenMini.app/Contents/MacOS/MacPulse)" = "arm64"
