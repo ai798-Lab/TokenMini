@@ -4,30 +4,29 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>TokenMini</title>
         <item>
-            <title>0.14.0</title>
-            <pubDate>Thu, 24 Sep 2026 13:13:08 +0800</pubDate>
+            <title>0.14.1</title>
+            <pubDate>Thu, 24 Sep 2026 14:37:01 +0800</pubDate>
             <link>https://tokenmini.cc</link>
-            <sparkle:version>23</sparkle:version>
-            <sparkle:shortVersionString>0.14.0</sparkle:shortVersionString>
+            <sparkle:version>24</sparkle:version>
+            <sparkle:shortVersionString>0.14.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"><![CDATA[# TokenMini 0.14.0 Public Beta
+            <description sparkle:format="markdown"><![CDATA[# TokenMini 0.14.1 Public Beta
 
-- 菜单栏图标与 Token 数值的左右留白更均衡；首次加载时使用紧凑占位。
-- 多选筛选按钮整块区域都可点击，包含背景、箭头和留白。
-- 保留 Prism 统一外观、完整中控台入口、多工具与多模型筛选及签名模型目录更新。
-- 增加可选匿名产品统计基础，默认关闭。本次未配置正式接收服务，因此不上传产品统计，日活/周活尚未启用。
-- 新增免费 GitHub 安装包下载报表，可导出 JSON/CSV，便于后期迁移。下载次数不代表用户数。
-- 发布包移除编译机路径与调试记录，并加入安装包隐私检查，调试符号仅在本机私存。
+- 修复菜单栏短数值（如“1亿”）仍占用长数值宽度的问题，图标与数值按实际内容紧凑排列。
+- 补齐全主题紧凑更新提示：面板内显示“新版本可用”，展开后可滚动查看说明，“跳过此版本”和“下载更新”并排显示。
+- 保留多选筛选按钮整块可点击、统一 Prism 外观、完整中控台、多工具多模型筛选和签名模型目录更新。
+- 更新官网下载入口与签名更新清单；更新清单要求缓存重新验证。
+- 可选匿名产品统计仍默认关闭，未配置正式接收服务，不上传产品统计。
 
-Apple Silicon · macOS 14+ · Build 23。费用是 API 等价估算，不是订阅实际扣款。
+Apple Silicon · macOS 14+ · Build 24。费用是 API 等价估算，不是订阅实际扣款。
 
-Balances menu-bar spacing and makes the full multi-select button clickable. Optional analytics remains off and unconfigured in this build. Free GitHub installer-download reporting is available in the source tools.
+Fixes excessive menu-bar spacing for short token values. Includes the existing in-panel update notice, release notes, download action and skip-version control. Preserves previous UI fixes and local-first features.
 ]]></description>
-            <enclosure url="https://github.com/ai798-Lab/TokenMini/releases/download/v0.14.0/TokenMini-0.14.0.dmg" length="6173336" type="application/octet-stream" sparkle:edSignature="VosKi2HAao+ID98PQwwOVtjRW2BxAdqI+1NqhjS1WY9N7VSaZF4UrZ200Ii+sfW7ClWiGIM+i8NlE8XZr8uOBw=="></enclosure>
+            <enclosure url="https://github.com/ai798-Lab/TokenMini/releases/download/v0.14.1/TokenMini-0.14.1.dmg" length="6189270" type="application/octet-stream" sparkle:edSignature="afF/Ki96QjN9SMJUQ71EpDjENoebnWmS6+lacp8w5GnT+2cmW5U/vFEK0CiuTqnowDwuTGXROMn3n9Pf6BlbBA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: SK0inF/r/nl8GoWUrdpirx+owECpDrx0oXkYpi2J7f+/wgkrPYaV2e2rhN+0NfaDOTEBKxEiWeAEtWnBlLO4Bw==
-length: 2279
+edSignature: 3/2nJQWsfHrzuOJdG2D6oe32XJi19myTcLvbhifG8iW+OAkLb3ZQ0ssI1i0qPz7UGDXymghd3Uqb4C/c04VLCg==
+length: 2222
 -->
