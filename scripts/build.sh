@@ -164,6 +164,11 @@ cp "Resources/Prism/PrismCore.png" "${APP_DIR}/Contents/Resources/"
 ditto "${BUILD_DIR}/MacPulse_MacPulse.bundle" "${APP_DIR}/Contents/Resources/MacPulse_MacPulse.bundle"
 ditto "Resources/ThirdParty" "${APP_DIR}/Contents/Resources/ThirdParty"
 
+# Keep the unstripped executable in the ignored build directory for private dSYM.
+# Object-file debug records include build-machine paths and must not be shipped.
+strip -S "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}"
+python3 scripts/check-bundle-privacy.py "${APP_DIR}"
+
 echo "==> ad-hoc 签名"
 codesign --force -s - "${APP_DIR}"
 codesign --verify --strict --deep "${APP_DIR}"

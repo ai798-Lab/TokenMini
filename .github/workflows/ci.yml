@@ -26,7 +26,9 @@ jobs:
           npm run lint
           npm test
       - name: Tests
-        run: ./scripts/test.sh
+        run: |
+          ./scripts/test.sh
+          python3 -m unittest discover -s tests -p test_download_metrics.py
       - name: Build app bundle
         run: ./scripts/build.sh 0.14.0 23
       - name: Verify bundle
