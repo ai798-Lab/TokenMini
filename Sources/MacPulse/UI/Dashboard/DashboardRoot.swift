@@ -979,6 +979,7 @@ struct DisplaySettingsMenu: View {
     @EnvironmentObject private var quota: QuotaStore
     @Environment(\.openWindow) private var openWindow
     @State private var presented = false
+    @State private var analyticsPresented = false
     var body: some View {
         if settings.isPrism {
             Button { presented.toggle() } label: {
@@ -988,7 +989,13 @@ struct DisplaySettingsMenu: View {
             .modifier(DashboardAppearanceChrome(unified: unifiedToolbar))
             .accessibilityLabel("显示与主题设置")
             .popover(isPresented: $presented, arrowEdge: .bottom) { AppearanceSettingsPanel() }
-        } else { nativeMenu }
+        } else { nativeMenu.sheet(isPresented: $analyticsPresented) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("产品统计与隐私").font(.headline)
+                ProductAnalyticsSettings()
+                Button("完成") { analyticsPresented = false }
+            }.padding(24).frame(width: 380)
+        } }
     }
 
     private var nativeMenu: some View {
@@ -1054,6 +1061,7 @@ struct DisplaySettingsMenu: View {
                     duration: 6, sound: true)
             }
             Divider()
+            Button("产品统计与隐私…") { analyticsPresented = true }
             Button("社区排行榜…") { openWindow(id: "leaderboard") }
             Button("检查更新…") { updates.checkForUpdates() }
                 .disabled(!updates.canCheckForUpdates)

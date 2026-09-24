@@ -26,9 +26,11 @@ jobs:
           npm run lint
           npm test
       - name: Tests
-        run: ./scripts/test.sh
+        run: |
+          ./scripts/test.sh
+          python3 -m unittest discover -s tests -p test_download_metrics.py
       - name: Build app bundle
-        run: ./scripts/build.sh 0.13.1 22
+        run: ./scripts/build.sh 0.14.1 24
       - name: Verify bundle
         run: |
           test "$(lipo -archs dist/TokenMini.app/Contents/MacOS/MacPulse)" = "arm64"

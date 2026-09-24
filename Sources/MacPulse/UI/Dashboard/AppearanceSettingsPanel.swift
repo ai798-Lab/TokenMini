@@ -74,6 +74,7 @@ struct AppearanceSettingsPanel: View {
                                 duration: 6, sound: true)
                         }.buttonStyle(PrismButtonStyle())
                     }
+                    section("产品统计与隐私") { ProductAnalyticsSettings() }
                     section("关于 TokenMini") {
                         Text(AppInfo.displayVersion).font(.system(size: 12, weight: .medium))
                         HStack {

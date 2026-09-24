@@ -33,7 +33,7 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ command }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -42,8 +42,19 @@ export default defineConfig(async () => {
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
+  const analyticsURL = process.env.TOKENMINI_ANALYTICS_WEB_URL || "";
+  if (analyticsURL) {
+    const url = new URL(analyticsURL);
+    const localTest = command === "serve" && ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (url.username || url.password || (url.protocol !== "https:" && !localTest)) throw new Error("Analytics requires HTTPS (loopback HTTP is only allowed during local development)");
+  }
 
   return {
+    // Only the write-only web client ID is public. Never expose admin/read credentials.
+    define: {
+      "process.env.TOKENMINI_ANALYTICS_WEB_URL": JSON.stringify(analyticsURL),
+      "process.env.TOKENMINI_ANALYTICS_WEB_CLIENT_ID": JSON.stringify(process.env.TOKENMINI_ANALYTICS_WEB_CLIENT_ID || ""),
+    },
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,

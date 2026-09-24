@@ -9,7 +9,8 @@ struct MenuBarLabel: View {
     @ObservedObject private var settings = DisplaySettings.shared
 
     var body: some View {
-        // Field widths depend only on user preferences, never live values, so the popover stays anchored.
+        // Use the actual text width. Monospaced digits keep equal-length updates
+        // stable without reserving empty space for longer values.
         Image(nsImage: Self.renderLabel(fields: fields))
             .accessibilityLabel(Text(accessibilityText)).help(accessibilityText)
     }
@@ -17,7 +18,9 @@ struct MenuBarLabel: View {
     private var fields: [(symbol: String?, text: String, width: CGFloat)] {
         var result: [(String?, String, CGFloat)] = []
         if settings.showTokensInMenuBar {
-            result.append((nil, usage.lastScan == nil ? "—" : MenuBarTokenFormatter.string(usage.today.totalTokens), 54))
+            let loading = usage.lastScan == nil
+            result.append((nil, loading ? "—" : MenuBarTokenFormatter.string(usage.today.totalTokens),
+                           loading ? 16 : 54))
         }
         if settings.showCPUInMenuBar { result.append(("cpu", "\(cpuPercent)", 45)) }
         if settings.showMemoryInMenuBar { result.append(("memorychip", "\(memoryPercent)", 45)) }
@@ -67,12 +70,19 @@ struct MenuBarLabel: View {
         return min(100, max(0, Int(value.rounded())))
     }
 
-    private static func renderLabel(fields: [(symbol: String?, text: String, width: CGFloat)]) -> NSImage {
-        let size = NSSize(width: 18 + fields.reduce(0) { $0 + $1.width + 5 }, height: 20)
+    static func renderLabel(fields: [(symbol: String?, text: String, width: CGFloat)]) -> NSImage {
+        let measured = fields.map { field -> (symbol: String?, text: String, width: CGFloat) in
+            let symbolWidth: CGFloat = field.symbol == nil ? 0 : 17
+            let textWidth = ceil(fittedText(field.text, maxWidth: field.width - symbolWidth).size().width)
+            return (field.symbol, field.text, symbolWidth + textWidth)
+        }
+        let leadingInset: CGFloat = 1
+        let contentWidth = measured.isEmpty ? 16 : 23 + measured.reduce(0) { $0 + $1.width } + CGFloat(measured.count - 1) * 5
+        let size = NSSize(width: contentWidth + 2 * leadingInset, height: 20)
         let image = NSImage(size: size, flipped: false) { rect in
-            BrandImages.menuBar?.draw(in: NSRect(x: 0, y: 2, width: 16, height: 16))
-            var x: CGFloat = 23
-            for field in fields {
+            BrandImages.menuBar?.draw(in: NSRect(x: leadingInset, y: 2, width: 16, height: 16))
+            var x: CGFloat = leadingInset + 23
+            for field in measured {
                 if let symbol = field.symbol {
                     drawSymbol(symbol, x: x, in: rect)
                     drawText(field.text, x: x + 17, maxWidth: field.width - 17, in: rect)
@@ -102,19 +112,23 @@ struct MenuBarLabel: View {
                                  x: CGFloat,
                                  maxWidth: CGFloat,
                                  in rect: NSRect) {
+        let attributed = fittedText(text, maxWidth: maxWidth)
+        let textSize = attributed.size()
+        attributed.draw(at: NSPoint(x: x,
+                                    y: rect.minY + max(0, (rect.height - textSize.height) / 2)))
+    }
+
+    private static func fittedText(_ text: String, maxWidth: CGFloat) -> NSAttributedString {
         let baseSize: CGFloat = 13
         let baseFont = NSFont.monospacedDigitSystemFont(ofSize: baseSize, weight: .medium)
         let baseWidth = NSAttributedString(string: text, attributes: [.font: baseFont]).size().width
         let fittedSize = baseWidth > maxWidth
             ? max(10, baseSize * maxWidth / baseWidth)
             : baseSize
-        let attributed = NSAttributedString(string: text, attributes: [
+        return NSAttributedString(string: text, attributes: [
             .font: NSFont.monospacedDigitSystemFont(ofSize: fittedSize, weight: .medium),
             .foregroundColor: NSColor.black
         ])
-        let textSize = attributed.size()
-        attributed.draw(at: NSPoint(x: x,
-                                    y: rect.minY + max(0, (rect.height - textSize.height) / 2)))
     }
 
     /// 人民币 1 万以内直接显示完整整数（¥5700），避免菜单栏里的 K 需要二次换算。

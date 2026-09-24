@@ -99,7 +99,7 @@ DSYM_DIR="${PRIVATE_DIR}/${APP_NAME}-${VERSION}.dSYM"
 DSYM_ZIP="${PRIVATE_DIR}/${APP_NAME}-${VERSION}-dSYM.zip"
 rm -rf "${DSYM_DIR}"
 rm -f "${DSYM_ZIP}"
-dsymutil "${APP_DIR}/Contents/MacOS/${EXECUTABLE_NAME}" -o "${DSYM_DIR}"
+dsymutil ".build/release/${EXECUTABLE_NAME}" -o "${DSYM_DIR}"
 ditto -c -k --keepParent "${DSYM_DIR}" "${DSYM_ZIP}"
 
 if [ "${SKIP_NOTARIZE}" != "1" ]; then

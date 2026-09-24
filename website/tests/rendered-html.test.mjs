@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { publicVersion, releaseUrl } from "../app/brand-config.ts";
 
 async function render(pathname = "/", language) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -23,7 +24,7 @@ test("server-renders the TokenMini public beta landing page", async () => {
   assert.match(html, /FREE AI USAGE MONITOR FOR MAC/);
   assert.match(html, /TokenMini/);
   assert.match(html, /https:\/\/tokenmini\.cc/);
-  assert.match(html, /0\.11\.0/);
+  assert.ok(html.includes(publicVersion));
   assert.match(html, /Apple Silicon/);
   assert.match(html, /macOS 14\+/);
   assert.match(html, /LOCAL BY DEFAULT/);
@@ -36,12 +37,12 @@ test("server-renders the TokenMini public beta landing page", async () => {
   assert.doesNotMatch(html, /google-analytics|googletagmanager|segment\.com|plausible\.io/i);
 });
 
-test("publishes the signed 0.10.0 update feed", async () => {
+test("publishes a signed feed consistent with the public download version", async () => {
     const appcast = await readFile(new URL("../public/appcast.xml", import.meta.url), "utf8");
     assert.match(appcast, /xmlns:sparkle=/);
-    assert.match(appcast, /<sparkle:version>3<\/sparkle:version>/);
-    assert.match(appcast, /<sparkle:shortVersionString>0\.10\.0<\/sparkle:shortVersionString>/);
-    assert.match(appcast, /releases\/download\/v0\.10\.0\/MacPulse-0\.10\.0\.dmg/);
+    assert.match(appcast, /<sparkle:version>[1-9][0-9]*<\/sparkle:version>/);
+    assert.ok(appcast.includes(`<sparkle:shortVersionString>${publicVersion}</sparkle:shortVersionString>`));
+    assert.ok(appcast.includes(releaseUrl));
     assert.match(appcast, /sparkle:edSignature=/);
     assert.match(appcast, /sparkle-signatures:/);
 });

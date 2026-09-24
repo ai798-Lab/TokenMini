@@ -26,18 +26,28 @@ struct UpdateNoticeView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("TokenMini 有更新").font(.system(size: 19, weight: .bold))
                         Text("版本 \(update.version)").font(.caption).foregroundStyle(.secondary)
-                        Text(update.notes).font(.system(size: 12)).lineSpacing(5)
-                            .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
-                        Button { updates.checkForUpdates() } label: {
-                            Label("下载更新", systemImage: "arrow.down.to.line")
-                                .font(.system(size: 12, weight: .semibold))
-                                .frame(maxWidth: .infinity).padding(.vertical, 10)
-                                .foregroundStyle(settings.isDarkSkin ? Color.black : Color.white)
-                                .background(accent, in: RoundedRectangle(cornerRadius: 4))
-                        }.buttonStyle(.plain).disabled(!updates.canCheckForUpdates)
-                        Button("跳过此版本") { updates.skipVersion(); expanded = false }
-                            .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity).padding(.bottom, 4)
+                        ScrollView {
+                            Text(update.notes).font(.system(size: 12)).lineSpacing(5)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                        }.frame(maxHeight: 160)
+                        HStack(spacing: 10) {
+                            Button { updates.skipVersion(); expanded = false } label: {
+                                Text("跳过此版本")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                    .foregroundStyle(.primary)
+                                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 4))
+                                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color.primary.opacity(0.15)))
+                            }.buttonStyle(.plain)
+                            Button { updates.checkForUpdates() } label: {
+                                Label("下载更新", systemImage: "arrow.down.to.line")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                    .foregroundStyle(settings.isDarkSkin ? Color.black : Color.white)
+                                    .background(accent, in: RoundedRectangle(cornerRadius: 4))
+                            }.buttonStyle(.plain).disabled(!updates.canCheckForUpdates)
+                        }
                     }.padding(12)
                     .background(settings.isPrism ? Prism.panel : Color.primary.opacity(0.04),
                                 in: RoundedRectangle(cornerRadius: 6))
