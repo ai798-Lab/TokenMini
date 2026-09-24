@@ -116,7 +116,7 @@ All app screenshots above were captured from the built macOS app with privacy mo
 
 ## Privacy model
 
-TokenMini is local-first. It does not upload conversation text, prompts, responses, private project paths, or AI credentials. Product analytics, advertising telemetry, and automatic crash reporting are not enabled.
+TokenMini is local-first. It does not upload conversation text, prompts, responses, private project paths, or AI credentials. Product analytics is off by default and requires explicit consent plus a configured HTTPS collection service. The 0.14 candidate without a production endpoint sends no product analytics. Advertising telemetry and automatic crash reporting are not enabled.
 
 Network access only occurs for user-visible features such as update checks, optional Claude quota access, installing a Skill from a user-selected GitHub repository, and the optional community ranking. See the full [Privacy Notice](PRIVACY.md) and [Security Policy](SECURITY.md).
 

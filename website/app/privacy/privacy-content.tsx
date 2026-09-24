@@ -19,7 +19,7 @@ const getRankingData = (t: ReturnType<typeof useLanguage>["t"]) => [
 ];
 
 export default function PrivacyPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   return (
     <main className="policy-page">
       <nav className="nav shell" aria-label={t("隐私页导航")}>
@@ -48,6 +48,13 @@ export default function PrivacyPage() {
           <p>{t("不登录时，所有本地功能均可正常使用，也可以匿名浏览公开榜单。用户点击“使用 Google 登录并加入”后，会自动加入 Token 与 API 等价费用两个本周榜单，并保存：")}</p>
           <ul>{getRankingData(t).map((item) => <li key={item}>{item}</li>)}</ul>
           <p>{t("登录令牌只保存在 macOS Keychain。退出排行榜后会停止同步、删除每日排行汇总和服务端刷新会话，并清除本机排行榜凭证；本地监控不受影响。")}</p>
+        </section>
+
+        <section>
+          <h2>{locale === "zh" ? "可选的产品与网站统计（0.14 起）" : "Optional product and website analytics (from 0.14)"}</h2>
+          <p>{locale === "zh" ? "产品统计默认关闭。只有你主动同意后，TokenMini 才会向自托管统计服务发送随机安装或浏览器标识、版本、公开页面或功能入口的查看与点击、运行和有效交互时长，用于分析活跃度与留存。未配置统计服务时不发送数据。" : "Analytics are off by default. Only after you opt in, TokenMini sends a random installation or browser ID, version, public page or feature views, named link clicks, runtime and active time to its self-hosted analytics service. Nothing is sent if the service is not configured."}</p>
+          <p>{locale === "zh" ? "不采集提示词、对话正文、项目名、文件路径、API Key、设备序列号或个人 AI 用量明细，也不做会话录屏。网站和应用分别征求同意，不与排行榜账号关联。" : "No prompts, conversations, project names, file paths, API keys, serial numbers or personal AI usage details are collected. Session replay is not used. Website and app consent are separate and not linked to ranking accounts."}</p>
+          <p>{locale === "zh" ? "可随时在应用的“产品统计与隐私”或网站的“网站统计”中关闭，并清除尚未发送的数据。关闭不会自动删除服务端已经收到的数据。旧版本的历史使用情况无法追溯。" : "Turn analytics off in the app’s Product analytics & privacy settings or this site’s Analytics control to clear unsent data. This does not automatically delete data already received by the server. Usage from earlier versions cannot be reconstructed."}</p>
         </section>
 
         <section>

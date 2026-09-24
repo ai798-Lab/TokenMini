@@ -61,8 +61,14 @@ enum PricingTable {
     /// Pinned ccusage/models.dev reference snapshot. Exact raw IDs only: provider prices must not collide.
     /// Tiered models are intentionally excluded until their tier semantics are implemented.
     static let communityPrices: [String: ModelPricing] = {
-        let resourceBundle = Bundle.main.resourceURL.flatMap { Bundle(url: $0.appendingPathComponent("MacPulse_MacPulse.bundle")) } ?? Bundle.module
-        guard let url = resourceBundle.url(forResource: "CommunityPrices", withExtension: "json"),
+        #if DEBUG
+        let resourceBundle: Bundle? = Bundle.main.resourceURL.flatMap { Bundle(url: $0.appendingPathComponent("MacPulse_MacPulse.bundle")) } ?? Bundle.module
+        #else
+        // SPM's generated Bundle.module embeds an absolute build-machine path.
+        // Release apps resolve only the resource shipped inside the signed bundle.
+        let resourceBundle = Bundle.main.resourceURL.flatMap { Bundle(url: $0.appendingPathComponent("MacPulse_MacPulse.bundle")) }
+        #endif
+        guard let url = resourceBundle?.url(forResource: "CommunityPrices", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let rates = try? JSONDecoder().decode([String: CustomRate].self, from: data) else { return [:] }
         return rates.filter { $0.value.valid }.mapValues(\.pricing)

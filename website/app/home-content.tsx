@@ -19,8 +19,8 @@ export default function Home() {
   return <KineticShell>
     <nav className="nav shell" aria-label={t("主导航")}>
       <Link href="/" className="brand" aria-label={t("TokenMini 首页")}><Image src="/brand/logo-horizontal-black.svg" width={160} height={42} alt="TokenMini" className="brand-lockup" unoptimized /></Link>
-      <div className="nav-links"><a href="#features">{t("功能")}</a><Link href="/rankings">{t("社区排行")}</Link><a href={sourceUrl}>GitHub</a><Link href="/privacy">{t("隐私")}</Link></div>
-      <a className="button nav-download" href={releaseUrl}>{t("下载 TokenMini")} v{publicVersion} <ArrowUpRight size={18} aria-hidden="true" /></a>
+      <div className="nav-links"><a data-analytics-entry="nav_features" href="#features">{t("功能")}</a><Link data-analytics-entry="nav_rankings" href="/rankings">{t("社区排行")}</Link><a data-analytics-entry="nav_source" href={sourceUrl}>GitHub</a><Link data-analytics-entry="nav_privacy" href="/privacy">{t("隐私")}</Link></div>
+      <a className="button nav-download" data-analytics-entry="nav_download" href={releaseUrl}>{t("下载 TokenMini")} v{publicVersion} <ArrowUpRight size={18} aria-hidden="true" /></a>
     <LanguageSwitcher /></nav>
 
     <header className="masthead shell">
@@ -34,7 +34,7 @@ export default function Home() {
         <p className="hero-kicker">{t("免费 Mac AI 用量监控工具")}</p>
         <h1 id="hero-title">{t("让消耗，")}<br /><em>{t("看得见。")}</em></h1>
         <p className="hero-description">{t("AI 用量与 Mac 状态，尽在菜单栏。")}</p>
-        <a className="button hero-download" href={releaseUrl}>{t("免费下载 TokenMini")} v{publicVersion} <ArrowUpRight size={22} aria-hidden="true" /></a>
+        <a className="button hero-download" data-analytics-entry="hero_download" href={releaseUrl}>{t("免费下载 TokenMini")} v{publicVersion} <ArrowUpRight size={22} aria-hidden="true" /></a>
       </div>
     </section>
 
@@ -55,7 +55,7 @@ export default function Home() {
       <div className="feature-rows">{getFeatures(t).map(({ n, icon: Icon, en, title, copy, tags }) => <article key={n} className="feature-row" data-reveal>
         <span className="feature-number">{n}</span><div className="feature-name"><p>{en}</p><h3>{title}</h3></div><div className="feature-copy"><p>{copy}</p><div>{tags.map(tag => <span key={tag}>{tag}</span>)}</div></div><Icon className="feature-icon" size={38} strokeWidth={1.4} aria-hidden="true" />
       </article>)}</div>
-      <a className="explore" href="#details">{t("继续了解")} <ArrowDown size={20} aria-hidden="true" /></a>
+      <a className="explore" data-analytics-entry="explore_details" href="#details">{t("继续了解")} <ArrowDown size={20} aria-hidden="true" /></a>
     </section>
 
     <section className="limit-section" id="details">
@@ -63,25 +63,25 @@ export default function Home() {
       <div className="shell limit-content">
         <p className="eyebrow" data-reveal>{t("02 / 掌控消耗")}</p>
         <h2 data-reveal>{t("火力全开。")}<br /><span>{t("掌控消耗。")}</span></h2>
-        <div className="limit-bottom" data-reveal><p>{t("让灵感继续，让用量清楚。")}<br />{t("从今天的消耗，到下一次重置。")}</p><Link href="/rankings" className="circle-link" aria-label={t("探索社区排行")}><ArrowUpRight size={39} /></Link></div>
+        <div className="limit-bottom" data-reveal><p>{t("让灵感继续，让用量清楚。")}<br />{t("从今天的消耗，到下一次重置。")}</p><Link href="/rankings" data-analytics-entry="explore_rankings" className="circle-link" aria-label={t("探索社区排行")}><ArrowUpRight size={39} /></Link></div>
         <div className="limit-caption"><span>CLAUDE CODE + CODEX</span><span>{t("观察。理解。创造。")}</span></div>
       </div>
     </section>
 
     <section className="privacy-editorial shell">
       <div className="privacy-title" data-reveal><p className="eyebrow">{t("03 / 默认本地处理 · 自愿加入排行")}</p><h2>{t("能力放开。")}<br /><span>{t("隐私守住。")}</span></h2><ShieldCheck size={58} strokeWidth={1.2} aria-hidden="true" /></div>
-      <div className="privacy-explanation" data-reveal><p className="privacy-lead">{t("你的会话，")}<br />{t("留在你的 Mac。")}</p><p>{t("本地监控默认不需要账号。TokenMini 读取本机的会话记录，在本地汇总用量；不会上传你的提示词或对话正文。")}</p><p>{t("TokenMini 默认定期从官网获取签名模型价格目录，不上传会话或用量。软件更新、Claude 额度和 Skill 安装会按功能需要联网；社区排行榜目前未开放。")}</p><Link className="text-link" href="/privacy">{t("阅读完整隐私说明")} <ArrowRight size={19} aria-hidden="true" /></Link></div>
+      <div className="privacy-explanation" data-reveal><p className="privacy-lead">{t("你的会话，")}<br />{t("留在你的 Mac。")}</p><p>{t("本地监控默认不需要账号。TokenMini 读取本机的会话记录，在本地汇总用量；不会上传你的提示词或对话正文。")}</p><p>{t("TokenMini 默认定期从官网获取签名模型价格目录，不上传会话或用量。软件更新、Claude 额度和 Skill 安装会按功能需要联网；社区排行榜目前未开放。")}</p><Link className="text-link" data-analytics-entry="privacy_details" href="/privacy">{t("阅读完整隐私说明")} <ArrowRight size={19} aria-hidden="true" /></Link></div>
     </section>
 
     <section className="install-section" id="download">
       <div className="shell">
-        <div className="install-intro" data-reveal><p className="eyebrow">{t("小巧工具，清晰掌控。")}</p><h2>{t("现在，")}<br />{t("看个清楚。")}</h2><a className="install-arrow" href={releaseUrl} aria-label={t("下载 TokenMini 安装包")}><ArrowUpRight strokeWidth={1} aria-hidden="true" /></a></div>
-        <div className="install-bottom" data-reveal><a className="button nav-download" href={releaseUrl}><Download size={19} aria-hidden="true" /> {t("免费下载 TokenMini")} v{publicVersion} <ArrowUpRight size={19} aria-hidden="true" /></a><p>TokenMini {publicVersion} {t("Public Beta · 原名 MacPulse")}<br />{t("Apple Silicon · macOS 14+ · 免费开源")}</p></div>
+        <div className="install-intro" data-reveal><p className="eyebrow">{t("小巧工具，清晰掌控。")}</p><h2>{t("现在，")}<br />{t("看个清楚。")}</h2><a className="install-arrow" data-analytics-entry="install_download" href={releaseUrl} aria-label={t("下载 TokenMini 安装包")}><ArrowUpRight strokeWidth={1} aria-hidden="true" /></a></div>
+        <div className="install-bottom" data-reveal><a className="button nav-download" data-analytics-entry="footer_download" href={releaseUrl}><Download size={19} aria-hidden="true" /> {t("免费下载 TokenMini")} v{publicVersion} <ArrowUpRight size={19} aria-hidden="true" /></a><p>TokenMini {publicVersion} {t("Public Beta · 原名 MacPulse")}<br />{t("Apple Silicon · macOS 14+ · 免费开源")}</p></div>
         <ol className="install-steps"><li><span>01</span><h3>{t("下载")}</h3><p>{t("从 GitHub Releases 下载 DMG 安装包。")}</p></li><li><span>02</span><h3>{t("拖入应用程序")}</h3><p>{t("将 TokenMini 拖入 Applications 后打开。")}</p></li><li><span>03</span><h3>{t("从菜单栏开始")}</h3><p>{t("选择主题和提醒偏好，本地读取你的用量。")}</p></li></ol>
         <p className="cost-note">{t("费用显示为 API 等价估算，不是订阅实际扣款。")}</p>
       </div>
     </section>
 
-    <footer className="kinetic-footer"><div className="shell"><div className="footer-meta"><Link href="/" className="brand" aria-label={t("TokenMini 首页")}><Image src="/brand/logo-horizontal-white.svg" alt="TokenMini" width={160} height={42} unoptimized /></Link><div><a href={sourceUrl}><GitBranch size={15} /> GitHub</a><Link href="/rankings">{t("社区排行")}</Link><Link href="/privacy">{t("隐私")}</Link><a href="#top">{t("回到顶部 ↑")}</a></div></div><p className="footer-display" aria-hidden="true">TOKENMINI</p><div className="footer-colophon"><span>© {new Date().getFullYear()} TOKENMINI</span><span>EVERY TOKEN. IN VIEW.</span><span>BUILT FOR CLARITY.</span></div></div></footer>
+    <footer className="kinetic-footer"><div className="shell"><div className="footer-meta"><Link href="/" className="brand" aria-label={t("TokenMini 首页")}><Image src="/brand/logo-horizontal-white.svg" alt="TokenMini" width={160} height={42} unoptimized /></Link><div><a data-analytics-entry="footer_source" href={sourceUrl}><GitBranch size={15} /> GitHub</a><Link data-analytics-entry="footer_rankings" href="/rankings">{t("社区排行")}</Link><Link data-analytics-entry="footer_privacy" href="/privacy">{t("隐私")}</Link><a data-analytics-entry="back_top" href="#top">{t("回到顶部 ↑")}</a></div></div><p className="footer-display" aria-hidden="true">TOKENMINI</p><div className="footer-colophon"><span>© {new Date().getFullYear()} TOKENMINI</span><span>EVERY TOKEN. IN VIEW.</span><span>BUILT FOR CLARITY.</span></div></div></footer>
   </KineticShell>;
 }

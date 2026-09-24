@@ -17,6 +17,7 @@ struct MacPulseApp: App {
     var body: some Scene {
         MenuBarExtra {
             PopoverView()
+                .analyticsSurface(.menuViewed)
                 .environmentObject(system)
                 .environmentObject(usage)
                 .environmentObject(cleanup)
@@ -44,6 +45,7 @@ struct MacPulseApp: App {
         // 独立的 Token 监控台窗口(单实例);从弹窗「打开监控台」按钮开启
         Window("TokenMini · Token 监控台", id: "dashboard") {
             DashboardRoot()
+                .analyticsSurface(.dashboardViewed)
                 .environmentObject(usage)
                 .environmentObject(system)
                 .environmentObject(quota)
@@ -54,6 +56,7 @@ struct MacPulseApp: App {
 
         Window("TokenMini · 清理与内存管理", id: "maintenance") {
             MaintenanceView()
+                .analyticsSurface(.maintenanceViewed)
                 .environmentObject(cleanup)
                 .environmentObject(system)
                 .environmentObject(processActions)
@@ -63,6 +66,7 @@ struct MacPulseApp: App {
 
         Window("社区排行", id: "leaderboard") {
             LeaderboardView()
+                .analyticsSurface(.rankingsViewed)
                 .environmentObject(leaderboard)
         }
         .windowResizability(.contentMinSize)
@@ -105,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         RunLoop.main.add(guardTimer, forMode: .common)
         duplicateGuardTimer = guardTimer
         NotificationManager.shared.bootstrap()
+        ProductAnalytics.shared.start()
         showInstallLocationWarningIfNeeded()
 
         // 调试:MACPULSE_NOTIF_TEST 时 8 秒后发一条测试通知,验证 授权→排程→送达→刘海 整链
@@ -144,6 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        ProductAnalytics.shared.stop()
         duplicateGuardTimer?.invalidate()
         if let duplicateLaunchObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(duplicateLaunchObserver)
@@ -198,7 +204,9 @@ private final class SingleInstanceGuard {
 
     func acquire() -> Bool {
         guard descriptor < 0 else { return true }
-        let path = "/private/tmp/macpulse-\(getuid()).lock"
+        // An explicitly repackaged local analytics fixture must not contend with the installed app.
+        let lockName = Bundle.main.bundleIdentifier == "com.liangheping.tokenmini.analytics-test" ? "tokenmini-analytics-test" : "macpulse"
+        let path = "/private/tmp/\(lockName)-\(getuid()).lock"
         let fd = open(path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
         guard fd >= 0 else {
             // 临时目录异常不应让 app 完全打不开；仅在明确拿不到锁时阻止重复实例。
