@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.14.1 (24)
+
+- 修复菜单栏短数值（如“1亿”）仍占用长数值宽度的问题，图标与数值按实际内容紧凑排列。
+- 保留全主题统一的更新提示：面板内显示“新版本可用”，可展开版本说明、下载更新或跳过此版本。
+- 保留多选筛选按钮整块可点击、统一 Prism 外观、完整中控台、多工具多模型筛选和签名模型目录更新。
+- 更新官网下载入口与签名更新清单；更新清单要求缓存重新验证。
+- 可选匿名产品统计仍默认关闭，未配置正式接收服务，不上传产品统计。
+
+Apple Silicon · macOS 14+ · Build 24。费用是 API 等价估算，不是订阅实际扣款。
+
+Fixes excessive menu-bar spacing for short token values. Includes the existing in-panel update notice, release notes, download action and skip-version control. Preserves previous UI fixes and local-first features.
+
+
 ## 0.14.0 — 2026-09-24
 
 - 平衡菜单栏图标与数值左右留白，首次扫描时使用紧凑占位，扫描后保持固定宽度。

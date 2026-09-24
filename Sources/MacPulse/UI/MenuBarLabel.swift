@@ -9,8 +9,8 @@ struct MenuBarLabel: View {
     @ObservedObject private var settings = DisplaySettings.shared
 
     var body: some View {
-        // Loading uses a compact placeholder. After the first scan, field widths
-        // stay fixed across live value changes so the popover stays anchored.
+        // Use the actual text width. Monospaced digits keep equal-length updates
+        // stable without reserving empty space for longer values.
         Image(nsImage: Self.renderLabel(fields: fields))
             .accessibilityLabel(Text(accessibilityText)).help(accessibilityText)
     }
@@ -70,23 +70,19 @@ struct MenuBarLabel: View {
         return min(100, max(0, Int(value.rounded())))
     }
 
-    private static func renderLabel(fields: [(symbol: String?, text: String, width: CGFloat)]) -> NSImage {
-        let size = NSSize(width: 18 + fields.reduce(0) { $0 + $1.width + 5 }, height: 20)
-        // Keep the native canvas stable, but distribute unused trailing field space
-        // equally around the visible logo + values instead of leaving it all on the right.
-        let contentWidth: CGFloat
-        if let last = fields.last {
-            let symbolWidth: CGFloat = last.symbol == nil ? 0 : 17
-            let textWidth = fittedText(last.text, maxWidth: last.width - symbolWidth).size().width
-            contentWidth = size.width - last.width + symbolWidth + textWidth
-        } else {
-            contentWidth = 16
+    static func renderLabel(fields: [(symbol: String?, text: String, width: CGFloat)]) -> NSImage {
+        let measured = fields.map { field -> (symbol: String?, text: String, width: CGFloat) in
+            let symbolWidth: CGFloat = field.symbol == nil ? 0 : 17
+            let textWidth = ceil(fittedText(field.text, maxWidth: field.width - symbolWidth).size().width)
+            return (field.symbol, field.text, symbolWidth + textWidth)
         }
-        let leadingInset = max(0, (size.width - contentWidth) / 2)
+        let leadingInset: CGFloat = 1
+        let contentWidth = measured.isEmpty ? 16 : 23 + measured.reduce(0) { $0 + $1.width } + CGFloat(measured.count - 1) * 5
+        let size = NSSize(width: contentWidth + 2 * leadingInset, height: 20)
         let image = NSImage(size: size, flipped: false) { rect in
             BrandImages.menuBar?.draw(in: NSRect(x: leadingInset, y: 2, width: 16, height: 16))
             var x: CGFloat = leadingInset + 23
-            for field in fields {
+            for field in measured {
                 if let symbol = field.symbol {
                     drawSymbol(symbol, x: x, in: rect)
                     drawText(field.text, x: x + 17, maxWidth: field.width - 17, in: rect)
