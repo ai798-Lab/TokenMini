@@ -30,7 +30,7 @@
 ![TokenMini brand](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.15.1** restores metering from compressed Codex sessions and adds opt-in DeepSeek balance monitoring. The app supports English, Simplified Chinese, Traditional Chinese, Japanese, Korean and Arabic. Download the signed installer from Releases.
+> **TokenMini 0.15.1** restores metering from compressed Codex sessions and adds opt-in DeepSeek balance monitoring. The app supports English, Simplified Chinese, Traditional Chinese, Japanese, Korean and Arabic. The public installer is currently 0.14.1. The 0.15.1 installer is awaiting Apple notarization.
 
 ## Why TokenMini
 

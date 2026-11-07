@@ -30,7 +30,7 @@
 ![TokenMini 品牌主视觉](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.15.1** 可恢复压缩 Codex 会话中的用量，支持按需开启 DeepSeek 官方余额和模型查询。应用界面支持简体中文、繁体中文、英语、日语、韩语和阿拉伯语。签名安装包可从 Releases 下载。
+> **TokenMini 0.15.1** 可恢复压缩 Codex 会话中的用量，支持按需开启 DeepSeek 官方余额和模型查询。应用界面支持简体中文、繁体中文、英语、日语、韩语和阿拉伯语。目前公开下载的安装包为 0.14.1，0.15.1 正在等待 Apple 公证。
 
 ## 为什么是 TokenMini
 
