@@ -29,18 +29,18 @@ struct LEDSystemPanelView: View {
         .onAppear {
             if !cleanup.hasScanned && !cleanup.scanning { cleanup.scan() }
         }
-        .alert("结束进程", isPresented: Binding(
+        .alert(L10n.text("结束进程"), isPresented: Binding(
             get: { procToKill != nil },
             set: { if !$0 { procToKill = nil } })
         ) {
-            Button("取消", role: .cancel) { procToKill = nil }
-            Button("结束", role: .destructive) {
+            Button(L10n.text("取消"), role: .cancel) { procToKill = nil }
+            Button(L10n.text("结束"), role: .destructive) {
                 if let p = procToKill { actions.terminate(p, system: system) }
                 procToKill = nil
             }
         } message: {
             if let p = procToKill {
-                Text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。")
+                Text(L10n.text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。"))
             }
         }
     }
@@ -73,8 +73,8 @@ struct LEDSystemPanelView: View {
                 Sparkline(values: system.cpuHistory, color: cpuColor)
                     .frame(height: 32)
                 HStack(spacing: 12) {
-                    legend("系统", String(format: "%.1f%%", system.cpu.systemUsage * 100), LED.red)
-                    legend("用户", String(format: "%.1f%%", system.cpu.userUsage * 100), LED.amber)
+                    legend(L10n.text("系统"), String(format: "%.1f%%", system.cpu.systemUsage * 100), LED.red)
+                    legend(L10n.text("用户"), String(format: "%.1f%%", system.cpu.userUsage * 100), LED.amber)
                     Spacer()
                 }
             }
@@ -93,7 +93,7 @@ struct LEDSystemPanelView: View {
     private var memorySection: some View {
         LEDPanel(tint: memColor, padding: 11) {
             VStack(alignment: .leading, spacing: 7) {
-                sectionHeader("MEMORY", cn: "内存", tint: memColor) { EmptyView() }
+                sectionHeader("MEMORY", cn: L10n.text("内存"), tint: memColor) { EmptyView() }
                 HStack(alignment: .bottom, spacing: 7) {
                     SevenSegmentText(text: memUsedGB, height: 20, color: memColor)
                     Text("GB / \(ByteFormat.memory(system.memory.total))")
@@ -104,10 +104,10 @@ struct LEDSystemPanelView: View {
                 }
                 LEDGauge(ratio: system.memory.usageRatio, color: memColor)
                 HStack(spacing: 12) {
-                    legend("系统保留", ByteFormat.memory(system.memory.wired), LED.amber)
-                    legend("已压缩", ByteFormat.memory(system.memory.compressed), LED.green)
+                    legend(L10n.text("系统保留"), ByteFormat.memory(system.memory.wired), LED.amber)
+                    legend(L10n.text("已压缩"), ByteFormat.memory(system.memory.compressed), LED.green)
                     Spacer()
-                    Button("管理内存") {
+                    Button(L10n.text("管理内存")) {
                         cleanup.page = .memory
                         openWindow(id: "maintenance")
                         NSApp.activate(ignoringOtherApps: true)
@@ -123,13 +123,13 @@ struct LEDSystemPanelView: View {
     private var ratesSection: some View {
         LEDPanel(tint: LED.green, padding: 11) {
             HStack(spacing: 0) {
-                rateCell(code: "NETWORK", cn: "网络", icon: "network",
+                rateCell(code: "NETWORK", cn: L10n.text("网络"), icon: "network",
                          l1: "↓ \(ByteFormat.string(system.network.rxPerSec))/s",
                          l2: "↑ \(ByteFormat.string(system.network.txPerSec))/s")
                 Capsule().fill(LED.green.opacity(0.22)).frame(width: 1, height: 30)
-                rateCell(code: "DISK I/O", cn: "磁盘", icon: "internaldrive",
-                         l1: "读 \(ByteFormat.string(system.disk.readPerSec))/s",
-                         l2: "写 \(ByteFormat.string(system.disk.writePerSec))/s")
+                rateCell(code: "DISK I/O", cn: L10n.text("磁盘"), icon: "internaldrive",
+                         l1: L10n.text("读 \(ByteFormat.string(system.disk.readPerSec))/s"),
+                         l2: L10n.text("写 \(ByteFormat.string(system.disk.writePerSec))/s"))
             }
         }
     }
@@ -161,8 +161,8 @@ struct LEDSystemPanelView: View {
     private var diskSpaceSection: some View {
         LEDPanel(tint: diskColor, padding: 11) {
             VStack(alignment: .leading, spacing: 7) {
-                sectionHeader("DISK SPACE", cn: "磁盘空间", tint: diskColor) {
-                    Text("可用 \(ByteFormat.memory(system.diskSpace.free)) / \(ByteFormat.memory(system.diskSpace.total))")
+                sectionHeader("DISK SPACE", cn: L10n.text("磁盘空间"), tint: diskColor) {
+                    Text(L10n.text("可用 \(ByteFormat.memory(system.diskSpace.free)) / \(ByteFormat.memory(system.diskSpace.total))"))
                         .font(LED.mono(8))
                         .foregroundStyle(LED.dim)
                 }
@@ -182,7 +182,7 @@ struct LEDSystemPanelView: View {
                     legend("GPU", String(format: "%.0f°C", g), LED.red)
                 }
                 ForEach(system.sensors.fans) { fan in
-                    legend("风扇\(fan.index + 1)", String(format: "%.0f rpm", fan.currentRPM), LED.green)
+                    legend(L10n.text("风扇\(fan.index + 1)"), String(format: "%.0f rpm", fan.currentRPM), LED.green)
                 }
                 Spacer()
             }
@@ -197,7 +197,7 @@ struct LEDSystemPanelView: View {
             LEDPanel(tint: LED.green, padding: 11) {
                 // 电量 + 三项指标塞不进标头右侧(340pt 弹窗会把中文标签挤到换行),拆两行
                 VStack(alignment: .leading, spacing: 6) {
-                    sectionHeader("BATTERY", cn: "电池", tint: LED.green) {
+                    sectionHeader("BATTERY", cn: L10n.text("电池"), tint: LED.green) {
                         HStack(spacing: 6) {
                             Image(systemName: batteryIcon).font(.system(size: 9)).foregroundStyle(LED.dim)
                             if let p = system.battery.currentPercent {
@@ -214,13 +214,13 @@ struct LEDSystemPanelView: View {
     private var batteryReadout: some View {
         HStack(spacing: 12) {
             if let h = system.battery.healthPercent {
-                legend("健康", "\(h)%", h >= 80 ? LED.green : LED.amber)
+                legend(L10n.text("健康"), "\(h)%", h >= 80 ? LED.green : LED.amber)
             }
             if let c = system.battery.cycleCount {
-                legend("循环", "\(c)", LED.faint)
+                legend(L10n.text("循环"), "\(c)", LED.faint)
             }
             if let t = system.battery.temperatureC {
-                legend("温度", String(format: "%.0f°C", t), LED.faint)
+                legend(L10n.text("温度"), String(format: "%.0f°C", t), LED.faint)
             }
             Spacer()
         }
@@ -236,7 +236,7 @@ struct LEDSystemPanelView: View {
     private var processSection: some View {
         LEDPanel(tint: LED.red, padding: 11) {
             VStack(alignment: .leading, spacing: 4) {
-                sectionHeader("TOP PROCESSES", cn: "占用最高", tint: LED.red) { EmptyView() }
+                sectionHeader("TOP PROCESSES", cn: L10n.text("占用最高"), tint: LED.red) { EmptyView() }
                 ForEach(Array(system.topProcesses.enumerated()), id: \.element.id) { i, p in
                     HStack(spacing: 6) {
                         Text(String(format: "%02d", i + 1))
@@ -260,7 +260,7 @@ struct LEDSystemPanelView: View {
                                 .background(Circle().fill(Color.white.opacity(0.07)))
                         }
                         .buttonStyle(.plain)
-                        .help("请求退出该进程，请先保存工作")
+                        .help(L10n.text("请求退出该进程，请先保存工作"))
                         .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: p.pid, name: p.name))
                     }
                     .padding(.vertical, 1)
@@ -275,7 +275,7 @@ struct LEDSystemPanelView: View {
     private var junkSection: some View {
         LEDPanel(tint: LED.amber, padding: 11) {
             VStack(alignment: .leading, spacing: 6) {
-                sectionHeader("JUNK CLEANUP", cn: "垃圾清理", tint: LED.amber) { junkHeaderTrailing }
+                sectionHeader("JUNK CLEANUP", cn: L10n.text("垃圾清理"), tint: LED.amber) { junkHeaderTrailing }
 
                 CleanupStatusView()
                 ForEach(cleanup.results) { result in
@@ -325,7 +325,7 @@ struct LEDSystemPanelView: View {
                     } label: {
                         HStack(spacing: 4) {
                             if cleanup.cleaning { ProgressView().controlSize(.mini) }
-                            Text(cleanup.cleaning ? "清理中…" : "预览清理")
+                            Text(cleanup.cleaning ? L10n.text("清理中…") : L10n.text("预览清理"))
                         }
                     }
                     .buttonStyle(LEDGhostButtonStyle(size: 10, prominent: true))
@@ -343,7 +343,7 @@ struct LEDSystemPanelView: View {
                 Text(cleanup.scanStatus).font(LED.mono(8)).foregroundStyle(LED.dim)
             }
         } else {
-            Button("重新扫描") { cleanup.scan() }
+            Button(L10n.text("重新扫描")) { cleanup.scan() }
                 .buttonStyle(LEDGhostButtonStyle(size: 9))
                 .disabled(cleanup.cleaning)
         }

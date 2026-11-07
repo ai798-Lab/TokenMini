@@ -28,7 +28,7 @@ struct HUDSimpleHomeView: View {
             HStack(spacing: 8) {
                 if quota.lastRefresh == nil { ProgressView().controlSize(.small) }
                 else { Image(systemName: "exclamationmark.circle").foregroundStyle(HUD.amber) }
-                Text(quota.lastRefresh == nil ? "正在读取额度…" : "未读取到额度,稍后自动重试")
+                Text(quota.lastRefresh == nil ? L10n.text("正在读取额度…") : L10n.text("未读取到额度,稍后自动重试"))
                     .font(.caption).foregroundStyle(HUD.dim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -45,9 +45,9 @@ struct HUDSimpleHomeView: View {
     private var spendRow: some View {
         HUDPanel(padding: 8, accent: HUD.violet) {
             HStack(spacing: 0) {
-                spendCell("今日花费", "COST.TODAY", settings.currencyStr(usage.today.totalCostUSD))
+                spendCell(L10n.text("24 小时花费"), "COST.24H", settings.currencyStr(usage.last24Hours.totalCostUSD))
                 Rectangle().fill(HUD.gridline).frame(width: 1, height: 30)
-                spendCell("本月花费", "COST.MONTH", settings.currencyStr(usage.thisMonth.totalCostUSD))
+                spendCell(L10n.text("本月花费"), "COST.MONTH", settings.currencyStr(usage.thisMonth.totalCostUSD))
             }
         }
     }
@@ -93,7 +93,7 @@ private struct QuotaCard: View {
                     }
                     Spacer()
                     if !quota.authoritative {
-                        Text("估算").font(HUD.mono(8)).foregroundStyle(HUD.faint)
+                        Text(L10n.text("估算")).font(HUD.mono(8)).foregroundStyle(HUD.faint)
                     }
                 }
                 ForEach(quota.windows) { w in QuotaBar(window: w, now: now) }
@@ -115,7 +115,7 @@ private struct QuotaBar: View {
             HStack {
                 Text(window.kind.label).font(.system(size: 10)).foregroundStyle(HUD.dim)
                 Spacer()
-                Text(window.hasReset(now: now) ? "满额可用" : "已用 \(Int(window.usedPercent))%")
+                Text(window.hasReset(now: now) ? L10n.text("满额可用") : L10n.text("已用 \(Int(window.usedPercent))%"))
                     .font(HUD.mono(10, .semibold))
                     .foregroundStyle(window.hasReset(now: now) ? HUD.green : color)
             }
@@ -123,8 +123,8 @@ private struct QuotaBar: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock.arrow.circlepath").font(.system(size: 8)).foregroundStyle(HUD.faint)
                 Text(window.hasReset(now: now)
-                     ? "已重置,随时可用"
-                     : "还能用 \(QuotaFormat.duration(window.remaining(now: now))) · \(QuotaFormat.resetClock(window.resetsAt)) 重置")
+                     ? L10n.text("已重置,随时可用")
+                     : L10n.text("还能用 \(QuotaFormat.duration(window.remaining(now: now))) · \(QuotaFormat.resetClock(window.resetsAt)) 重置"))
                     .font(.system(size: 9)).foregroundStyle(HUD.dim)
             }
         }
@@ -193,18 +193,18 @@ enum ComputerHealth {
         var level: Level = .good
         func bump(_ l: Level) { if l == .critical { level = .critical } else if l == .warn && level == .good { level = .warn } }
 
-        if memPressure >= 1 { bump(.critical); issues.append("内存压力很高") }
-        else if memPressure >= 0.8 { bump(.warn); issues.append("内存压力偏高") }
-        if temp > 92 { bump(.critical); issues.append("CPU 很烫") }
-        else if temp > 82 { bump(.warn); issues.append("CPU 有点热") }
-        if cpu > 0.9 { bump(.warn); issues.append("CPU 满载") }
-        if diskFreeRatio < 0.05 { bump(.critical); issues.append("磁盘快满了") }
-        else if diskFreeRatio < 0.1 { bump(.warn); issues.append("磁盘空间不多") }
+        if memPressure >= 1 { bump(.critical); issues.append(L10n.text("内存压力很高")) }
+        else if memPressure >= 0.8 { bump(.warn); issues.append(L10n.text("内存压力偏高")) }
+        if temp > 92 { bump(.critical); issues.append(L10n.text("CPU 很烫")) }
+        else if temp > 82 { bump(.warn); issues.append(L10n.text("CPU 有点热")) }
+        if cpu > 0.9 { bump(.warn); issues.append(L10n.text("CPU 满载")) }
+        if diskFreeRatio < 0.05 { bump(.critical); issues.append(L10n.text("磁盘快满了")) }
+        else if diskFreeRatio < 0.1 { bump(.warn); issues.append(L10n.text("磁盘空间不多")) }
 
         switch level {
-        case .good: return Result(level: .good, title: "电脑一切正常", detail: "CPU、内存、温度都很健康")
-        case .warn: return Result(level: .warn, title: "电脑有点吃紧", detail: issues.joined(separator: " · "))
-        case .critical: return Result(level: .critical, title: "电脑该歇歇了", detail: issues.joined(separator: " · "))
+        case .good: return Result(level: .good, title: L10n.text("电脑一切正常"), detail: L10n.text("CPU、内存、温度都很健康"))
+        case .warn: return Result(level: .warn, title: L10n.text("电脑有点吃紧"), detail: issues.joined(separator: " · "))
+        case .critical: return Result(level: .critical, title: L10n.text("电脑该歇歇了"), detail: issues.joined(separator: " · "))
         }
     }
 }

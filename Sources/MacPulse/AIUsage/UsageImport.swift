@@ -54,16 +54,16 @@ enum UsageImport {
         return fresh.count
     }
     static func parse(_ data: Data, format: String, tool: ToolKind) throws -> [UsageRecord] {
-        guard data.count <= 32 * 1_048_576 else { throw ImportError(message: "文件超过 32 MB，请分批导入。") }
+        guard data.count <= 32 * 1_048_576 else { throw ImportError(message: L10n.text("文件超过 32 MB，请分批导入。")) }
         let objects: [[String: Any]]
         if format.lowercased() == "csv" {
-            guard let text = String(data: data, encoding: .utf8) else { throw ImportError(message: "CSV 需要 UTF-8 编码。") }
+            guard let text = String(data: data, encoding: .utf8) else { throw ImportError(message: L10n.text("CSV 需要 UTF-8 编码。")) }
             let table = try csv(text)
-            guard let header = table.first else { throw ImportError(message: "文件为空。") }
+            guard let header = table.first else { throw ImportError(message: L10n.text("文件为空。")) }
             let names = header.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "\u{feff}", with: "") }
-            guard Set(names).count == names.count else { throw ImportError(message: "CSV 存在重复列名。") }
+            guard Set(names).count == names.count else { throw ImportError(message: L10n.text("CSV 存在重复列名。")) }
             objects = try table.dropFirst().enumerated().map { index, values in
-                guard values.count == names.count else { throw ImportError(message: "第 \(index + 2) 行列数不正确，未导入。") }
+                guard values.count == names.count else { throw ImportError(message: L10n.text("第 \(index + 2) 行列数不正确，未导入。")) }
                 let row = Dictionary(uniqueKeysWithValues: zip(names, values))
                 func value(_ keys: [String]) -> String? { keys.compactMap { row[$0] }.first }
                 var obj: [String: Any] = [:]
@@ -78,7 +78,7 @@ enum UsageImport {
                 ]
                 for (key, columns) in numeric {
                     if let v = value(columns), !v.isEmpty {
-                        guard let n = Double(v.replacingOccurrences(of: ",", with: "")), n.isFinite else { throw ImportError(message: "第 \(index + 2) 行的 \(key) 不是数字。") }
+                        guard let n = Double(v.replacingOccurrences(of: ",", with: "")), n.isFinite else { throw ImportError(message: L10n.text("第 \(index + 2) 行的 \(key) 不是数字。")) }
                         obj[key] = n
                     }
                 }
@@ -90,7 +90,7 @@ enum UsageImport {
                     let clean = cost.replacingOccurrences(of: "$", with: "").replacingOccurrences(of: ",", with: "")
                     if let n = Double(clean) { obj["costUSD"] = n }
                     else if !["included", "free", "-", "n/a"].contains(clean.lowercased()) {
-                        throw ImportError(message: "第 \(index + 2) 行费用无法识别。费用必须是美元数字或 Included。")
+                        throw ImportError(message: L10n.text("第 \(index + 2) 行费用无法识别。费用必须是美元数字或 Included。"))
                     }
                 }
                 obj["id"] = value(["id", "Request ID", "request_id"])
@@ -99,17 +99,17 @@ enum UsageImport {
                 return obj
             }
         } else if format.lowercased() == "json" {
-            guard let array = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { throw ImportError(message: "JSON 文件需要用量记录数组。") }
+            guard let array = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { throw ImportError(message: L10n.text("JSON 文件需要用量记录数组。")) }
             objects = array
         } else {
             objects = try data.split(separator: 10).map { line in
-                guard let obj = try JSONSerialization.jsonObject(with: Data(line)) as? [String: Any] else { throw ImportError(message: "JSONL 每行需要一条用量记录。") }
+                guard let obj = try JSONSerialization.jsonObject(with: Data(line)) as? [String: Any] else { throw ImportError(message: L10n.text("JSONL 每行需要一条用量记录。")) }
                 return obj
             }
         }
-        guard !objects.isEmpty else { throw ImportError(message: "没有可导入的记录。") }
+        guard !objects.isEmpty else { throw ImportError(message: L10n.text("没有可导入的记录。")) }
         return try objects.enumerated().map { index, obj in
-            func fail(_ field: String) -> ImportError { ImportError(message: "第 \(index + 1) 条缺少或包含无效的 \(field)，整份文件未导入。") }
+            func fail(_ field: String) -> ImportError { ImportError(message: L10n.text("第 \(index + 1) 条缺少或包含无效的 \(field)，整份文件未导入。")) }
             guard let date = UsageRecord.date(obj["timestamp"]), date <= Date().addingTimeInterval(300),
                   let model = obj["model"] as? String, !model.trimmingCharacters(in: .whitespaces).isEmpty, model.count <= 256 else { throw fail("timestamp / model") }
             func count(_ key: String, required: Bool = false) throws -> Int {
@@ -151,7 +151,7 @@ enum UsageImport {
                 row.append(field); if row.contains(where: { !$0.isEmpty }) { rows.append(row) }; row = []; field = ""
             } else { field.append(c) }
         }
-        guard !quoted else { throw ImportError(message: "CSV 引号未闭合。") }
+        guard !quoted else { throw ImportError(message: L10n.text("CSV 引号未闭合。")) }
         if !field.isEmpty || !row.isEmpty { row.append(field); rows.append(row) }
         return rows
     }

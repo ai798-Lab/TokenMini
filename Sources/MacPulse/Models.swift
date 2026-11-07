@@ -101,10 +101,10 @@ struct RecentAIActivity: Sendable, Equatable {
 
     func statusLabel(now: Date) -> String {
         let age = max(0, now.timeIntervalSince(timestamp))
-        if age < 3 * 60 { return "正在使用" }
-        if age < 60 * 60 { return "最近使用 · \(max(1, Int(age / 60)))分钟前" }
-        if age < 24 * 60 * 60 { return "最近使用 · \(Int(age / 3600))小时前" }
-        return "最近使用 · \(Int(age / 86400))天前"
+        if age < 3 * 60 { return L10n.text("正在使用") }
+        if age < 60 * 60 { return L10n.text("最近使用 · \(max(1, Int(age / 60)))分钟前") }
+        if age < 24 * 60 * 60 { return L10n.text("最近使用 · \(Int(age / 3600))小时前") }
+        return L10n.text("最近使用 · \(Int(age / 86400))天前")
     }
 }
 
@@ -112,7 +112,7 @@ struct RecentAIActivity: Sendable, Equatable {
 enum ModelName {
     static func display(_ raw: String) -> String {
         let normalized = PricingTable.normalize(raw)
-        guard !normalized.isEmpty, normalized != "unknown" else { return "模型未知" }
+        guard !normalized.isEmpty, normalized != "unknown" else { return L10n.text("模型未知") }
 
         if normalized.hasPrefix("claude-") {
             return familyName(String(normalized.dropFirst("claude-".count)))
@@ -177,40 +177,40 @@ enum CompanionMood {
                         quotaReset: Bool, health: CompanionHealth,
                         now: Date, calendar: Calendar = .current) -> CompanionMoment {
         if health == .critical {
-            return CompanionMoment(text: "电脑也累了，先照顾一下它",
+            return CompanionMoment(text: L10n.text("电脑也累了，先照顾一下它"),
                                    icon: "heart.slash.fill", tone: .urgent)
         }
         if health == .warn {
-            return CompanionMoment(text: "电脑有点忙，慢一点也没关系",
+            return CompanionMoment(text: L10n.text("电脑有点忙，慢一点也没关系"),
                                    icon: "heart.fill", tone: .caution)
         }
         if let used = quotaUsedPercent, used >= 85 {
-            return CompanionMoment(text: "快到边了，我替你盯着",
+            return CompanionMoment(text: L10n.text("快到边了，我替你盯着"),
                                    icon: "eye.fill", tone: .urgent)
         }
         if let used = quotaUsedPercent, used >= 60 {
-            return CompanionMoment(text: "进入后半程，把火力留给重点",
+            return CompanionMoment(text: L10n.text("进入后半程，把火力留给重点"),
                                    icon: "scope", tone: .caution)
         }
 
         if let activity, activity.isCurrent(now: now) {
             let hour = calendar.component(.hour, from: now)
             if hour >= 23 || hour < 6 {
-                return CompanionMoment(text: "夜深了，我陪你写完这一段",
+                return CompanionMoment(text: L10n.text("夜深了，我陪你写完这一段"),
                                        icon: "moon.stars.fill", tone: .warm)
             }
-            return CompanionMoment(text: "状态在线，放心往前写",
+            return CompanionMoment(text: L10n.text("状态在线，放心往前写"),
                                    icon: "sparkles", tone: .warm)
         }
         if let activity, now.timeIntervalSince(activity.timestamp) < 60 * 60 {
-            return CompanionMoment(text: "刚才的思路还热着",
+            return CompanionMoment(text: L10n.text("刚才的思路还热着"),
                                    icon: "flame.fill", tone: .warm)
         }
         if quotaReset {
-            return CompanionMoment(text: "余量满满，等你开工",
+            return CompanionMoment(text: L10n.text("余量满满，等你开工"),
                                    icon: "battery.100percent", tone: .calm)
         }
-        return CompanionMoment(text: "我在这儿，等你继续",
+        return CompanionMoment(text: L10n.text("我在这儿，等你继续"),
                                icon: "heart.fill", tone: .calm)
     }
 }
@@ -230,23 +230,23 @@ enum VibeCopy {
             let tool = activity.tool == .claude ? "Claude" : activity.tool.label
             identity = "\(tool) · \(ModelName.display(activity.model))"
         } else {
-            identity = "AI 搭档"
+            identity = L10n.text("AI 搭档")
         }
 
         if hour >= 5 && hour < 11 {
-            return VibeGreeting(title: "早呀，慢慢进入状态 ☕",
-                                subtitle: "\(identity) 已就位，今天也一起顺顺利利")
+            return VibeGreeting(title: L10n.text("早呀，慢慢进入状态 ☕"),
+                                subtitle: L10n.text("\(identity) 已就位，今天也一起顺顺利利"))
         }
         if hour >= 11 && hour < 18 {
-            return VibeGreeting(title: "开工啦，灵感上线 ✨",
-                                subtitle: "\(identity) 已就位，今天也一起顺顺利利")
+            return VibeGreeting(title: L10n.text("开工啦，灵感上线 ✨"),
+                                subtitle: L10n.text("\(identity) 已就位，今天也一起顺顺利利"))
         }
         if hour >= 18 && hour < 23 {
-            return VibeGreeting(title: "晚上好，一起写一会儿",
-                                subtitle: "\(identity) 已就位，慢慢写，不着急")
+            return VibeGreeting(title: L10n.text("晚上好，一起写一会儿"),
+                                subtitle: L10n.text("\(identity) 已就位，慢慢写，不着急"))
         }
-        return VibeGreeting(title: "夜深了，我陪你写一段",
-                            subtitle: "\(identity) 已就位，写完记得早点休息")
+        return VibeGreeting(title: L10n.text("夜深了，我陪你写一段"),
+                            subtitle: L10n.text("\(identity) 已就位，写完记得早点休息"))
     }
 }
 
@@ -459,7 +459,7 @@ struct DailyUsage: Identifiable, Sendable {
 enum RankingMetric: String, Codable, CaseIterable, Identifiable, Sendable {
     case tokens, cost
     var id: String { rawValue }
-    var label: String { self == .tokens ? "Token 消耗" : "API 等价费用" }
+    var label: String { self == .tokens ? L10n.text("Token 消耗") : L10n.text("API 等价费用") }
 }
 
 struct RankingEntry: Codable, Identifiable, Sendable, Equatable {
@@ -593,19 +593,19 @@ enum CleanupCategory: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .trash: return "废纸篓"
-        case .appCaches: return "应用缓存"
-        case .userLogs: return "用户日志"
-        case .devCaches: return "开发者缓存"
+        case .trash: return L10n.text("废纸篓")
+        case .appCaches: return L10n.text("应用缓存")
+        case .userLogs: return L10n.text("用户日志")
+        case .devCaches: return L10n.text("开发者缓存")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .trash: return "已丢进废纸篓的文件"
-        case .appCaches: return "应用可再生缓存,删后自动重建(建议先退出常用应用)"
-        case .userLogs: return "历史日志,删除不影响运行"
-        case .devCaches: return "npm / Xcode 派生数据,下次构建自动重下"
+        case .trash: return L10n.text("已丢进废纸篓的文件")
+        case .appCaches: return L10n.text("应用可再生缓存,删后自动重建(建议先退出常用应用)")
+        case .userLogs: return L10n.text("历史日志,删除不影响运行")
+        case .devCaches: return L10n.text("npm / Xcode 派生数据,下次构建自动重下")
         }
     }
 
@@ -642,8 +642,8 @@ struct CleanupScanResult: Identifiable, Sendable {
     let items: [CleanupItem]
     var issues: [CleanupIssue] = []
     var sizeLabel: String {
-        if items.isEmpty && !issues.isEmpty { return "未能读取" }
-        return ByteFormat.memory(UInt64(max(0, totalBytes))) + (issues.isEmpty ? "" : " · 部分")
+        if items.isEmpty && !issues.isEmpty { return L10n.text("未能读取") }
+        return ByteFormat.memory(UInt64(max(0, totalBytes))) + (issues.isEmpty ? "" : L10n.text(" · 部分"))
     }
 }
 
@@ -655,9 +655,9 @@ struct CleanupReport: Sendable {
     var missingCount: Int = 0
     var issues: [CleanupIssue] = []
     var summary: String {
-        "已删除 \(deletedCount) 项（约 \(ByteFormat.memory(UInt64(max(0, freedBytes)))))" +
-        (failedCount > 0 ? "，失败 \(failedCount) 项" : "") +
-        (missingCount > 0 ? "，\(missingCount) 项已不存在" : "")
+        L10n.text("已删除 \(deletedCount) 项（约 \(ByteFormat.memory(UInt64(max(0, freedBytes)))))") +
+        (failedCount > 0 ? L10n.text("，失败 \(failedCount) 项") : "") +
+        (missingCount > 0 ? L10n.text("，\(missingCount) 项已不存在") : "")
     }
 }
 
@@ -665,7 +665,7 @@ struct CleanupReport: Sendable {
 
 enum AppInfo {
     static var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? L10n.text("开发版")
     }
 
     static var build: String {

@@ -5,7 +5,8 @@ import SwiftUI
 final class ProductAnalytics: ObservableObject {
     static let shared = ProductAnalytics()
     @Published private(set) var enabled = false
-    @Published private(set) var status = "产品统计默认关闭"
+    @Published private var statusMessage: LocalizedMessage = "产品统计默认关闭"
+    var status: String { L10n.text(statusMessage) }
     private let queue: AnalyticsOutbox
     private let endpoint: URL?
     private let clientID: String
@@ -28,7 +29,7 @@ final class ProductAnalytics: ObservableObject {
         var visible = false
     }
     var configured: Bool { endpoint != nil && !clientID.isEmpty }
-    var destination: String { endpoint?.host ?? "尚未配置统计服务器" }
+    var destination: String { endpoint?.host ?? L10n.text("尚未配置统计服务器") }
 
     private init() {
         let bundle = Bundle.main
@@ -45,7 +46,7 @@ final class ProductAnalytics: ObservableObject {
         queue = AnalyticsOutbox(file: base.appendingPathComponent(local ? "TokenMini/analytics-test/outbox.json" : "TokenMini/analytics/outbox.json"), cohort: cohort)
         enabled = queue.enabled && UserDefaults.standard.bool(forKey: consentKey)
         if !enabled { queue.setEnabled(false) }
-        status = enabled ? "等待发送统计" : "产品统计默认关闭"
+        statusMessage = enabled ? "等待发送统计" : "产品统计默认关闭"
     }
 
     private var consentKey: String { endpoint?.scheme == "http" ? "tokenmini.analytics.testConsent.v1" : "tokenmini.analytics.consent.v1" }
@@ -53,12 +54,12 @@ final class ProductAnalytics: ObservableObject {
     func setEnabled(_ value: Bool) {
         guard value != enabled else { return }
         if value {
-            guard configured else { status = "尚未配置统计服务器"; return }
+            guard configured else { statusMessage = "尚未配置统计服务器"; return }
             let alert = NSAlert()
-            alert.messageText = "帮助改进 TokenMini？"
-            alert.informativeText = "开启后向 \(destination) 发送随机安装标识、版本、面板打开次数和使用时长，用于活跃与留存分析。不会发送提示词、对话、项目名、文件路径、API Key 或用量明细。可随时关闭；关闭将清除待发送事件，已接收的数据不会自动删除。"
-            alert.addButton(withTitle: "同意并开启")
-            alert.addButton(withTitle: "暂不开启")
+            alert.messageText = L10n.text("帮助改进 TokenMini？")
+            alert.informativeText = L10n.text("开启后向 \(destination) 发送随机安装标识、版本、面板打开次数和使用时长，用于活跃与留存分析。不会发送提示词、对话、项目名、文件路径、API Key 或用量明细。可随时关闭；关闭将清除待发送事件，已接收的数据不会自动删除。")
+            alert.addButton(withTitle: L10n.text("同意并开启"))
+            alert.addButton(withTitle: L10n.text("暂不开启"))
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
         epoch += 1
@@ -67,8 +68,8 @@ final class ProductAnalytics: ObservableObject {
         enabled = value
         queue.setEnabled(value)
         duration = .zero; clock.reset()
-        status = value ? "已开启，等待发送" : "已关闭，待发送事件已清除"
-        if queue.storageFailed { status = "本地统计存储失败；请保持关闭并重试" }
+        statusMessage = value ? "已开启，等待发送" : "已关闭，待发送事件已清除"
+        if queue.storageFailed { statusMessage = "本地统计存储失败；请保持关闭并重试" }
         if value { queue.record(.appStart); flush() }
     }
 
@@ -173,12 +174,12 @@ final class ProductAnalytics: ObservableObject {
                     let (_, response) = try await URLSession.shared.data(for: request)
                     guard self.enabled, self.epoch == generation, !Task.isCancelled else { return }
                     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                        self.status = "服务器未接收，稍后重试"; return
+                        self.statusMessage = "服务器未接收，稍后重试"; return
                     }
                     self.queue.acknowledge(event.id)
-                    self.status = "已连接 · 待发送 \(self.queue.events.count) 条"
+                    self.statusMessage = "已连接 · 待发送 \(self.queue.events.count) 条"
                 } catch {
-                    if self.enabled && self.epoch == generation { self.status = "暂时离线，事件留在本机等待补传" }
+                    if self.enabled && self.epoch == generation { self.statusMessage = "暂时离线，事件留在本机等待补传" }
                     return
                 }
             }
@@ -209,10 +210,10 @@ struct ProductAnalyticsSettings: View {
     @ObservedObject private var analytics = ProductAnalytics.shared
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Toggle("帮助改进 TokenMini（可选）", isOn: Binding(get: { analytics.enabled }, set: { analytics.setEnabled($0) }))
+            Toggle(L10n.text("帮助改进 TokenMini（可选）"), isOn: Binding(get: { analytics.enabled }, set: { analytics.setEnabled($0) }))
                 .disabled(!analytics.configured && !analytics.enabled)
-            Text("仅发送随机标识、版本、面板打开次数与使用时长。不发送对话、项目或用量明细。")
-            Text(analytics.configured ? analytics.status : "统计服务尚未配置，本版本不会发送产品统计。")
+            Text(L10n.text("仅发送随机标识、版本、面板打开次数与使用时长。不发送对话、项目或用量明细。"))
+            Text(analytics.configured ? analytics.status : L10n.text("统计服务尚未配置，本版本不会发送产品统计。"))
                 .foregroundStyle(.secondary)
         }.font(.system(size: 11)).fixedSize(horizontal: false, vertical: true)
     }

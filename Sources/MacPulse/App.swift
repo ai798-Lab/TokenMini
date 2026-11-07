@@ -13,10 +13,11 @@ struct MacPulseApp: App {
     @StateObject private var quota = QuotaStore()
     @StateObject private var skillStore = SkillManagerStore()
     @StateObject private var leaderboard = LeaderboardStore()
+    @StateObject private var language = AppLanguageStore.shared
 
     var body: some Scene {
         MenuBarExtra {
-            PopoverView()
+            PopoverView().localizedInterface()
                 .analyticsSurface(.menuViewed)
                 .environmentObject(system)
                 .environmentObject(usage)
@@ -26,7 +27,7 @@ struct MacPulseApp: App {
                 .environmentObject(skillStore)
                 .environmentObject(leaderboard)
         } label: {
-            MenuBarLabel(system: system, usage: usage, quota: quota)
+            MenuBarLabel(system: system, usage: usage, quota: quota).localizedInterface()
                 .onAppear {
                     system.start()
                     UpdateController.shared.start()
@@ -43,8 +44,9 @@ struct MacPulseApp: App {
         .menuBarExtraStyle(.window)
 
         // 独立的 Token 监控台窗口(单实例);从弹窗「打开监控台」按钮开启
-        Window("TokenMini · Token 监控台", id: "dashboard") {
-            DashboardRoot()
+        Window(L10n.lookup("TokenMini · Token 监控台", language: language.resolved), id: "dashboard") {
+            DashboardRoot().localizedInterface()
+                .navigationTitle(L10n.lookup("TokenMini · Token 监控台", language: language.resolved))
                 .analyticsSurface(.dashboardViewed)
                 .environmentObject(usage)
                 .environmentObject(system)
@@ -54,8 +56,9 @@ struct MacPulseApp: App {
         .windowResizability(.contentMinSize)
         .defaultSize(width: 980, height: 660)
 
-        Window("TokenMini · 清理与内存管理", id: "maintenance") {
-            MaintenanceView()
+        Window(L10n.lookup("TokenMini · 清理与内存管理", language: language.resolved), id: "maintenance") {
+            MaintenanceView().localizedInterface()
+                .navigationTitle(L10n.lookup("TokenMini · 清理与内存管理", language: language.resolved))
                 .analyticsSurface(.maintenanceViewed)
                 .environmentObject(cleanup)
                 .environmentObject(system)
@@ -64,8 +67,9 @@ struct MacPulseApp: App {
         .windowResizability(.contentMinSize)
         .defaultSize(width: 700, height: 650)
 
-        Window("社区排行", id: "leaderboard") {
-            LeaderboardView()
+        Window(L10n.lookup("社区排行", language: language.resolved), id: "leaderboard") {
+            LeaderboardView().localizedInterface()
+                .navigationTitle(L10n.lookup("社区排行", language: language.resolved))
                 .analyticsSurface(.rankingsViewed)
                 .environmentObject(leaderboard)
         }
@@ -117,8 +121,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let c = UNUserNotificationCenter.current()
             c.getNotificationSettings { s in NSLog("[notif-test] authStatus=\(s.authorizationStatus.rawValue)") }
             let content = UNMutableNotificationContent()
-            content.title = "Codex · 5 小时额度已重置"
-            content.body = "满血复活,可以继续了 🎉"
+            content.title = L10n.text("Codex · 5 小时额度已重置")
+            content.body = L10n.text("满血复活,可以继续了 🎉")
             content.sound = .default
             content.userInfo = ["tool": "codex", "kind": "fiveHour"]
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 8, repeats: false)
@@ -135,8 +139,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSLog("[notch-test] firing flash; screens=\(NSScreen.screens.count) notch=\(String(describing: NSScreen.builtInNotch?.notchSize))")
                 NotchController.shared.flash(
                     NotchAlert(icon: "checkmark.circle.fill",
-                               title: "Claude · 5 小时额度已重置",
-                               subtitle: "满血复活,可以继续了 🎉",
+                               title: L10n.text("Claude · 5 小时额度已重置"),
+                               subtitle: L10n.text("满血复活,可以继续了 🎉"),
                                tint: .green),
                     duration: 30, sound: false)
             }
@@ -184,10 +188,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             let alert = NSAlert()
             alert.alertStyle = .warning
-            alert.messageText = "请先把 TokenMini 拖到“应用程序”"
-            alert.informativeText = "当前正在磁盘镜像中运行，应用内更新无法可靠安装。请退出后把 TokenMini 拖入 Applications，再从那里启动。"
-            alert.addButton(withTitle: "打开应用程序文件夹")
-            alert.addButton(withTitle: "稍后")
+            alert.messageText = L10n.text("请先把 TokenMini 拖到“应用程序”")
+            alert.informativeText = L10n.text("当前正在磁盘镜像中运行，应用内更新无法可靠安装。请退出后把 TokenMini 拖入 Applications，再从那里启动。")
+            alert.addButton(withTitle: L10n.text("打开应用程序文件夹"))
+            alert.addButton(withTitle: L10n.text("稍后"))
             NSApp.activate(ignoringOtherApps: true)
             if alert.runModal() == .alertFirstButtonReturn {
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications", isDirectory: true))

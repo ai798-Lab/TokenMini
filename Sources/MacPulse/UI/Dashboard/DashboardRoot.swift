@@ -82,11 +82,11 @@ struct DashboardRoot: View {
     private var prismHero: some View {
         let overview = usage.dashboard.overview
         let ready = usage.lastScan != nil
-        let tools = usage.filter.tools.isEmpty ? "全部工具" : usage.filter.tools.map(\.label).sorted().joined(separator: "、")
+        let tools = usage.filter.tools.isEmpty ? L10n.text("全部工具") : usage.filter.tools.map(\.label).sorted().joined(separator: "、")
         return PrismDashboardBanner(
             total: ready ? settings.tokens(overview.totalTokens) : "—",
             scope: "\(usage.filter.time.label) · \(tools)",
-            calls: ready ? "\(overview.eventCount.formatted()) 次调用" : "正在读取本地用量…",
+            calls: ready ? L10n.text("\(overview.eventCount.formatted()) 次调用") : L10n.text("正在读取本地用量…"),
             input: ready ? settings.tokens(overview.input) : "—",
             output: ready ? settings.tokens(overview.output) : "—",
             cacheWrite: ready ? settings.tokens(overview.cacheWrite) : "—",
@@ -97,6 +97,14 @@ struct DashboardRoot: View {
         VStack(alignment: .leading, spacing: 16) {
             DataStatusBar()
             OverviewCards()
+            if quota.deepSeekAccessEnabled {
+                GlassCard {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(L10n.text("DeepSeek 官方余额")).font(.system(size: 13, weight: .semibold))
+                        DeepSeekBalanceContent()
+                    }
+                }
+            }
             InsightCard()
             if settings.dashboardMode == .analysis {
                 TokenCompositionCard()
@@ -118,7 +126,7 @@ struct DashboardRoot: View {
         // 下一 runloop 窗口已建好再置顶
         DispatchQueue.main.async {
             NSApp.activate(ignoringOtherApps: true)
-            let win = NSApp.windows.first { $0.identifier?.rawValue == "dashboard" || $0.title == "Token 监控台" }
+            let win = NSApp.windows.first { $0.identifier?.rawValue == "dashboard" || $0.title == L10n.text("Token 监控台") }
             (win ?? NSApp.windows.last { $0.canBecomeMain })?.makeKeyAndOrderFront(nil)
             win?.orderFrontRegardless()
         }
@@ -173,18 +181,18 @@ private struct FilterBar: View {
                 }
             }
             HStack(spacing: 10) {
-                multiMenu("工具", options: usage.dashboard.facets.tools.map { ($0.rawValue, $0.label) },
+                multiMenu(L10n.text("工具"), options: usage.dashboard.facets.tools.map { ($0.rawValue, $0.label) },
                           selection: toolBinding)
-                multiMenu("项目", options: usage.dashboard.facets.projects.map {
+                multiMenu(L10n.text("项目"), options: usage.dashboard.facets.projects.map {
                     ($0, settings.projectName($0))
                 }, selection: $usage.filter.projects)
-                multiMenu("模型", options: usage.dashboard.facets.models.map { ($0, shortModel($0)) },
+                multiMenu(L10n.text("模型"), options: usage.dashboard.facets.models.map { ($0, shortModel($0)) },
                           selection: $usage.filter.models)
-                multiMenu("Token 构成", options: TokenType.allCases.map { ($0.rawValue, $0.label) },
+                multiMenu(L10n.text("Token 构成"), options: TokenType.allCases.map { ($0.rawValue, $0.label) },
                           selection: tokenTypeBinding)
                 Spacer()
                 if usage.filter != UsageFilter(time: usage.filter.time) {
-                    Button("重置筛选") { usage.filter = UsageFilter(time: usage.filter.time) }
+                    Button(L10n.text("重置筛选")) { usage.filter = UsageFilter(time: usage.filter.time) }
                         .buttonStyle(ThemedToolbarButtonStyle())
                         .font(settings.isLED ? LED.display(10, .medium)
                               : (settings.isHUD ? HUD.mono(10) : .caption))
@@ -194,7 +202,7 @@ private struct FilterBar: View {
             }
             if usage.filter != UsageFilter(time: usage.filter.time) { selectedFilters }
             if usage.isReaggregating {
-                HStack { ProgressView().controlSize(.mini); Text("正在按所选条件计算…").font(.caption); Spacer() }
+                HStack { ProgressView().controlSize(.mini); Text(L10n.text("正在按所选条件计算…")).font(.caption); Spacer() }
             }
         }
     }
@@ -216,15 +224,15 @@ private struct FilterBar: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
             Button { openWindow(id: "leaderboard") } label: {
-                DashboardToolbarLabel(title: "排行", icon: "trophy")
+                DashboardToolbarLabel(title: L10n.text("排行"), icon: "trophy")
             }
             .buttonStyle(DashboardToolbarButtonStyle())
-            .help("社区排行榜")
+            .help(L10n.text("社区排行榜"))
             Button { showSources = true } label: {
-                DashboardToolbarLabel(title: "数据源", icon: "externaldrive")
+                DashboardToolbarLabel(title: L10n.text("数据源"), icon: "externaldrive")
             }
             .buttonStyle(DashboardToolbarButtonStyle())
-            .help("工具与模型接入")
+            .help(L10n.text("工具与模型接入"))
             .sheet(isPresented: $showSources) { UsageSourcesView().environmentObject(usage) }
             DisplaySettingsMenu(unifiedToolbar: true)
         }
@@ -268,7 +276,7 @@ private struct FilterBar: View {
             HStack(spacing: 5) { Text(label).lineLimit(1); Image(systemName: "xmark").font(.system(size: 8)) }
                 .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 5)
                 .foregroundStyle(themeAccent()).background(themeAccent().opacity(0.12), in: Capsule())
-        }.buttonStyle(.plain).help("取消选择：" + label).accessibilityLabel("取消选择：" + label)
+        }.buttonStyle(.plain).help(L10n.text("取消选择：") + label).accessibilityLabel(L10n.text("取消选择：") + label)
     }
 
 }
@@ -303,31 +311,31 @@ private struct DataStatusBar: View {
         Label(refreshText, systemImage: usage.scanning ? "arrow.triangle.2.circlepath" : "clock")
         Label(sourceText, systemImage: "externaldrive.connected.to.line.below")
         if !usage.dashboard.quality.unknownModels.isEmpty {
-            Label("\(usage.dashboard.quality.unknownModels.count) 个模型待定价（用量已计入）",
+            Label(L10n.text("\(usage.dashboard.quality.unknownModels.count) 个模型待定价（用量已计入）"),
                   systemImage: "exclamationmark.triangle")
                 .foregroundStyle(warningColor)
                 .help(usage.dashboard.quality.unknownModels.joined(separator: "\n"))
         }
         if settings.privacyMode {
-            Label("隐私模式", systemImage: "eye.slash")
+            Label(L10n.text("隐私模式"), systemImage: "eye.slash")
                 .foregroundStyle(accentColor)
         }
     }
 
     private var disclaimer: some View {
-        Text("API 等价预估，非订阅实际扣款")
+        Text(L10n.text("API 等价预估，非订阅实际扣款"))
             .foregroundStyle(mutedColor)
     }
 
     private var refreshText: String {
-        if usage.scanning { return "正在更新" }
-        guard let date = usage.lastScan else { return "等待首次扫描" }
-        return "更新于 " + date.formatted(date: .omitted, time: .standard)
+        if usage.scanning { return L10n.text("正在更新") }
+        guard let date = usage.lastScan else { return L10n.text("等待首次扫描") }
+        return L10n.text("更新于 ") + date.formatted(date: .omitted, time: .standard)
     }
 
     private var sourceText: String {
         let sources = usage.dashboard.quality.sources.map(\.label)
-        return sources.isEmpty ? "暂无数据源" : sources.count > 2 ? "已接入 \(sources.count) 个用量来源" : "来源 " + sources.joined(separator: " + ")
+        return sources.isEmpty ? L10n.text("暂无数据源") : sources.count > 2 ? L10n.text("已接入 \(sources.count) 个用量来源") : L10n.text("来源 ") + sources.joined(separator: " + ")
     }
 
     private var mutedColor: Color {
@@ -344,7 +352,7 @@ private struct InsightCard: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "使用洞察", icon: "sparkles")
+                SectionHeader(title: L10n.text("使用洞察"), icon: "sparkles")
                 Text(insightText)
                     .font(settings.isLED ? LED.display(13, .medium)
                           : (settings.isHUD ? HUD.mono(12) : .body))
@@ -352,17 +360,17 @@ private struct InsightCard: View {
                                      : (settings.isHUD ? HUD.text : Color.primary))
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 14) {
-                    Label("本月外推 \(settings.currencyStr(usage.dashboard.burn.monthProjectionUSD))",
+                    Label(L10n.text("本月外推 \(settings.currencyStr(usage.dashboard.burn.monthProjectionUSD))"),
                           systemImage: "calendar")
-                        .help("按本月至今日的日均等价成本外推整月，不受顶部时间范围影响")
+                        .help(L10n.text("按本月至今日的日均等价成本外推整月，不受顶部时间范围影响"))
                     Spacer()
                     if let model = usage.dashboard.insight.topModel {
-                        drillButton("聚焦 \(shortModel(model))", icon: "cpu") {
+                        drillButton(L10n.text("聚焦 \(shortModel(model))"), icon: "cpu") {
                             toggleModel(model)
                         }
                     }
                     if let project = usage.dashboard.insight.topProject {
-                        drillButton("聚焦 \(settings.projectName(project))", icon: "folder") {
+                        drillButton(L10n.text("聚焦 \(settings.projectName(project))"), icon: "folder") {
                             toggleProject(project)
                         }
                     }
@@ -379,22 +387,29 @@ private struct InsightCard: View {
         let d = usage.dashboard.insight
         var parts: [String] = []
         if let pct = d.deltaPct {
-            let direction = d.deltaUSD >= 0 ? "增加" : "减少"
-            parts.append("API 等价预估\(usage.filter.time.comparisonLabel)\(direction)"
+            let direction = d.deltaUSD >= 0 ? L10n.text("增加") : L10n.text("减少")
+            parts.append(L10n.text("API 等价预估\(usage.filter.time.comparisonLabel)\(direction)")
                          + " \(settings.currencyStr(abs(d.deltaUSD)))（\(String(format: "%.0f", abs(pct) * 100))%）")
         } else {
-            parts.append("本时段 API 等价预估为 \(settings.currencyStr(usage.dashboard.overview.totalCostUSD))，暂无可比上一周期")
+            parts.append(L10n.text("本时段 API 等价预估为 \(settings.currencyStr(usage.dashboard.overview.totalCostUSD))，暂无可比上一周期"))
         }
         if let model = d.topModel {
-            parts.append("\(shortModel(model)) 占成本 \(String(format: "%.0f", d.topModelShare * 100))%")
+            parts.append(L10n.text("\(shortModel(model)) 占成本 \(String(format: "%.0f", d.topModelShare * 100))%"))
         }
         if let project = d.topProject {
-            parts.append("主要项目是 \(settings.projectName(project))（\(String(format: "%.0f", d.topProjectShare * 100))%）")
+            parts.append(L10n.text("主要项目是 \(settings.projectName(project))（\(String(format: "%.0f", d.topProjectShare * 100))%）"))
         }
         if let peak = d.peakLabel {
-            parts.append("峰值出现在 \(peak)，为 \(settings.currencyStr(d.peakCostUSD))")
+            parts.append(L10n.text("峰值出现在 \(peak)，为 \(settings.currencyStr(d.peakCostUSD))"))
         }
-        return parts.joined(separator: "；") + "。"
+        switch AppLanguage.current {
+        case .simplifiedChinese, .traditionalChinese, .japanese:
+            return parts.joined(separator: "；") + "。"
+        case .arabic:
+            return parts.joined(separator: "؛ ") + "."
+        default:
+            return parts.joined(separator: "; ") + "."
+        }
     }
 
     @ViewBuilder
@@ -405,7 +420,7 @@ private struct InsightCard: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(themeAccent())
-        .help("点击切换该筛选，再点一次取消")
+        .help(L10n.text("点击切换该筛选，再点一次取消"))
     }
 
     private func toggleModel(_ model: String) {
@@ -424,15 +439,15 @@ private struct TokenCompositionCard: View {
         let o = usage.dashboard.overview
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "Token 构成", icon: "square.stack.3d.up")
+                SectionHeader(title: L10n.text("Token 构成"), icon: "square.stack.3d.up")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 8) {
-                    item("新增处理量", settings.tokens(o.newTokens), "输入 + 输出 + 缓存写")
-                    item("输入", settings.tokens(o.input), nil)
-                    item("输出", settings.tokens(o.output), nil)
-                    item("缓存写入", settings.tokens(o.cacheWrite), "建立可复用缓存")
-                    item("缓存复用", settings.tokens(o.reusedTokens), "不计入新增处理量")
+                    item(L10n.text("新增处理量"), settings.tokens(o.newTokens), L10n.text("输入 + 输出 + 缓存写"))
+                    item(L10n.text("输入"), settings.tokens(o.input), nil)
+                    item(L10n.text("输出"), settings.tokens(o.output), nil)
+                    item(L10n.text("缓存写入"), settings.tokens(o.cacheWrite), L10n.text("建立可复用缓存"))
+                    item(L10n.text("缓存复用"), settings.tokens(o.reusedTokens), L10n.text("不计入新增处理量"))
                 }
-                Text("共 \(o.eventCount) 次调用 · 缓存复用单列，因此不会再与输入/输出合计产生误解")
+                Text(L10n.text("共 \(o.eventCount) 次调用 · 缓存复用单列，因此不会再与输入/输出合计产生误解"))
                     .font(settings.isLED ? LED.mono(9)
                           : (settings.isHUD ? HUD.mono(9) : .caption))
                     .foregroundStyle(settings.isLED ? LED.faint
@@ -480,26 +495,26 @@ private struct OverviewCards: View {
         let o = usage.dashboard.overview
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 4), spacing: 16) {
             GlassCard {
-                MetricTile(title: "API 等价预估", value: settings.currencyStr(o.totalCostUSD),
+                MetricTile(title: L10n.text("API 等价预估"), value: settings.currencyStr(o.totalCostUSD),
                            delta: o.deltaPct,
                            deltaAbsolute: o.deltaPct == nil ? nil : signedCurrency(o.deltaUSD),
                            deltaContext: o.deltaPct == nil ? nil : usage.filter.time.comparisonLabel,
-                           subtitle: "筛选范围 · \(o.eventCount) 次调用",
+                           subtitle: L10n.text("筛选范围 · \(o.eventCount) 次调用"),
                            code: "API EQUIV.")
             }
             GlassCard {
                 quotaTile
             }
             GlassCard {
-                MetricTile(title: "当前消耗速度",
+                MetricTile(title: L10n.text("当前消耗速度"),
                            value: settings.currencyStr(usage.dashboard.burn.perHourUSD) + "/h",
-                           subtitle: "过去 1 小时 · 固定实时窗口",
+                           subtitle: L10n.text("过去 1 小时 · 固定实时窗口"),
                            code: "BURN RATE")
             }
             GlassCard {
-                MetricTile(title: "输入缓存复用率",
+                MetricTile(title: L10n.text("输入缓存复用率"),
                            value: String(format: "%.0f%%", o.cacheHitRate * 100),
-                           subtitle: "复用 \(settings.tokens(o.reusedTokens)) · 理论省 \(settings.currencyStr(usage.dashboard.cache.savedUSD))",
+                           subtitle: L10n.text("复用 \(settings.tokens(o.reusedTokens)) · 理论省 \(settings.currencyStr(usage.dashboard.cache.savedUSD))"),
                            accent: settings.isLED ? LED.green : HUD.green,
                            code: "CACHE REUSE")
             }
@@ -519,15 +534,15 @@ private struct OverviewCards: View {
         if let w = quota.mostConstrained(now: now) {
             let used = w.effectiveUsed(now: now)
             let available = max(0, 100 - used)
-            MetricTile(title: "额度状态",
-                       value: "\(w.tool.label) \(String(format: "%.0f", available))% 可用",
+            MetricTile(title: L10n.text("额度状态"),
+                       value: L10n.text("\(w.tool.label) \(String(format: "%.0f", available))% 可用"),
                        subtitle: w.hasReset(now: now)
-                        ? "\(w.kind.shortLabel) · 已重置，等待新快照"
-                        : "\(w.kind.shortLabel) · \(QuotaFormat.duration(w.remaining(now: now))) 后重置",
+                        ? L10n.text("\(w.kind.shortLabel) · 已重置，等待新快照")
+                        : L10n.text("\(w.kind.shortLabel) · \(QuotaFormat.duration(w.remaining(now: now))) 后重置"),
                        accent: quotaColor(used), code: "QUOTA")
         } else {
-            MetricTile(title: "额度状态", value: "暂不可用",
-                       subtitle: "等待 Claude / Codex 额度数据", code: "QUOTA")
+            MetricTile(title: L10n.text("额度状态"), value: L10n.text("暂不可用"),
+                       subtitle: L10n.text("等待 Claude / Codex 额度数据"), code: "QUOTA")
         }
     }
 
@@ -575,8 +590,8 @@ private struct TrendCard: View {
         usage.dashboard.trend.flatMap { point in
             let parts: [(String, Double)] = stackByModel
                 ? point.byModel.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
-                : [("输入", point.byType.input), ("输出", point.byType.output),
-                   ("缓存写", point.byType.cacheWrite), ("缓存读", point.byType.cacheRead)]
+                : [(L10n.text("输入"), point.byType.input), (L10n.text("输出"), point.byType.output),
+                   (L10n.text("缓存写"), point.byType.cacheWrite), (L10n.text("缓存读"), point.byType.cacheRead)]
             return parts.filter { $0.1 > 0 }.map { Bar(bucket: point.label, series: $0.0, cost: $0.1) }
         }
     }
@@ -597,19 +612,19 @@ private struct TrendCard: View {
         let (start, end) = UsageAggregator.timeBounds(usage.filter.time, now: usage.lastScan ?? Date(), cal: .current)
         let pattern = hourly ? "MM/dd HH:mm" : "MM/dd"
         return axis.format(start, pattern) + " — " + axis.format(end, pattern)
-            + (hourly ? " · 每小时汇总 · 本地时间" : " · 每天汇总 · 本地时间")
+            + (hourly ? L10n.text(" · 每小时汇总 · 本地时间") : L10n.text(" · 每天汇总 · 本地时间"))
     }
 
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 10) {
-                SectionHeader(title: "等价成本趋势", icon: "chart.bar.xaxis",
-                              trailing: AnyView(ThemedSegmented(items: [(true, "按模型"), (false, "成本构成")],
+                SectionHeader(title: L10n.text("等价成本趋势"), icon: "chart.bar.xaxis",
+                              trailing: AnyView(ThemedSegmented(items: [(true, L10n.text("按模型")), (false, L10n.text("成本构成"))],
                                                                selection: $stackByModel, size: 9)))
                 Text(intervalText)
                     .font(.system(size: 11)).foregroundStyle(axisColor)
                 if usage.dashboard.trend.allSatisfy({ $0.costUSD == 0 }) {
-                    Text("该范围内无数据").font(.caption).foregroundStyle(axisColor)
+                    Text(L10n.text("该范围内无数据")).font(.caption).foregroundStyle(axisColor)
                         .frame(maxWidth: .infinity, minHeight: 200)
                 } else {
                     trendChart
@@ -627,7 +642,7 @@ private struct TrendCard: View {
     private var trendChart: some View {
         Chart {
             ForEach(bars) { bar in
-                BarMark(x: .value("时间", bar.bucket), y: .value("等价成本", bar.cost),
+                BarMark(x: .value(L10n.text("时间"), bar.bucket), y: .value(L10n.text("等价成本"), bar.cost),
                         width: .ratio(settings.isLED ? 0.55 : 0.7))
                     .foregroundStyle(SeriesColor.color(for: shortModel(bar.series)))
                     .cornerRadius(settings.isLED ? 2 : 1)
@@ -721,7 +736,8 @@ private struct TrendCard: View {
     @ViewBuilder private var selectionDetail: some View {
         VStack(alignment: .leading, spacing: 5) {
             if let point = selectedPoint {
-                Text(detailDate(point) + " · 等价成本 " + settings.currencyStr(point.costUSD))
+                Text(detailDate(point) + L10n.text(" · 等价成本 ") + settings.currencyStr(point.costUSD)
+                     + " · Token " + settings.tokens(point.tokens))
                     .font(.system(size: 12, weight: .medium)).monospacedDigit()
                 let parts = bars.filter { $0.bucket == point.label }
                     .map { shortModel($0.series) + " " + settings.currencyStr($0.cost) }
@@ -729,7 +745,7 @@ private struct TrendCard: View {
                     .font(.system(size: 11)).foregroundStyle(axisColor)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text("移到或点击柱子，查看完整时间与费用明细")
+                Text(L10n.text("移到或点击柱子，查看完整时间与费用明细"))
                     .font(.system(size: 11)).foregroundStyle(axisColor)
             }
         }
@@ -747,7 +763,7 @@ private struct TrendCard: View {
 // MARK: - 空态标签(卡片内共用)
 
 private struct EmptyLabel: View {
-    var text = "无数据"
+    var text = L10n.text("无数据")
     @ObservedObject private var settings = DisplaySettings.shared
     var body: some View {
         Text(text)
@@ -767,7 +783,7 @@ private struct ModelBreakdownCard: View {
         let models = Array(usage.dashboard.byModel.prefix(6))
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "按模型", icon: "cpu")
+                SectionHeader(title: L10n.text("按模型"), icon: "cpu")
                 if models.isEmpty {
                     EmptyLabel()
                 } else {
@@ -785,7 +801,7 @@ private struct ModelBreakdownCard: View {
                                     .frame(width: 88, height: 88)
                             }
                             Chart(models) { s in
-                                SectorMark(angle: .value("花费", s.costUSD),
+                                SectorMark(angle: .value(L10n.text("花费"), s.costUSD),
                                            innerRadius: .ratio(0.62),
                                            angularInset: settings.isHUD ? 2 : 1.5)
                                     .foregroundStyle(SeriesColor.color(for: s.key))
@@ -835,7 +851,7 @@ private struct ModelBreakdownCard: View {
                                     Spacer(minLength: 8)
                                     Text(settings.currencyStr(s.costUSD))
                                         .font(settings.isLED ? LED.mono(10, .semibold)
-                                              : (settings.isHUD ? HUD.mono(10, .medium) : .system(.caption, design: .monospaced)))
+                                              : (settings.isHUD ? HUD.mono(10, .medium) : .system(.caption, design: AppLanguage.monospacedDesign)))
                                         .foregroundStyle(settings.isLED ? LED.amber
                                                          : (settings.isHUD ? HUD.text : Color.primary))
                                     Text(String(format: "%.0f%%", s.share * 100))
@@ -853,8 +869,8 @@ private struct ModelBreakdownCard: View {
                                 }
                                 .buttonStyle(.plain)
                                 .contentShape(Rectangle())
-                                .help("点击筛选该模型，再点一次取消")
-                                .accessibilityLabel("筛选模型 \(shortModel(s.key))，成本 \(settings.currencyStr(s.costUSD))，占比 \(String(format: "%.0f", s.share * 100))%")
+                                .help(L10n.text("点击筛选该模型，再点一次取消"))
+                                .accessibilityLabel(L10n.text("筛选模型 \(shortModel(s.key))，成本 \(settings.currencyStr(s.costUSD))，占比 \(String(format: "%.0f", s.share * 100))%"))
                                 .accessibilityAddTraits(usage.filter.models.contains(s.key) ? .isSelected : [])
                             }
                         }
@@ -877,7 +893,7 @@ private struct GroupRankingCard: View {
         let maxCost = projects.first?.costUSD ?? 1
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "按项目", icon: "folder")
+                SectionHeader(title: L10n.text("按项目"), icon: "folder")
                 if projects.isEmpty {
                     EmptyLabel()
                 } else {
@@ -893,8 +909,8 @@ private struct GroupRankingCard: View {
                                         selected: usage.filter.projects.contains(s.key))
                             }
                             .buttonStyle(PressableButtonStyle())
-                            .help("点击筛选该项目，再点一次取消")
-                            .accessibilityLabel("筛选项目 \(settings.projectName(s.key))，成本 \(settings.currencyStr(s.costUSD))，占比 \(String(format: "%.0f", s.share * 100))%")
+                            .help(L10n.text("点击筛选该项目，再点一次取消"))
+                            .accessibilityLabel(L10n.text("筛选项目 \(settings.projectName(s.key))，成本 \(settings.currencyStr(s.costUSD))，占比 \(String(format: "%.0f", s.share * 100))%"))
                             .accessibilityAddTraits(usage.filter.projects.contains(s.key) ? .isSelected : [])
                         }
                     }
@@ -915,7 +931,7 @@ private struct GroupRankingCard: View {
                 Spacer(minLength: 8)
                 Text(settings.currencyStr(cost))
                     .font(settings.isLED ? LED.mono(10)
-                          : (settings.isHUD ? HUD.mono(10) : .system(.caption, design: .monospaced)))
+                          : (settings.isHUD ? HUD.mono(10) : .system(.caption, design: AppLanguage.monospacedDesign)))
                     .foregroundStyle(settings.isLED ? LED.dim
                                      : (settings.isHUD ? HUD.dim : Color.secondary))
                 Text(String(format: "%.0f%%", share * 100))
@@ -983,17 +999,17 @@ struct DisplaySettingsMenu: View {
     var body: some View {
         if settings.isPrism {
             Button { presented.toggle() } label: {
-                DashboardToolbarLabel(title: "外观", icon: "slider.horizontal.3")
+                DashboardToolbarLabel(title: L10n.text("外观"), icon: "slider.horizontal.3")
             }
             .buttonStyle(.plain)
             .modifier(DashboardAppearanceChrome(unified: unifiedToolbar))
-            .accessibilityLabel("显示与主题设置")
+            .accessibilityLabel(L10n.text("显示与主题设置"))
             .popover(isPresented: $presented, arrowEdge: .bottom) { AppearanceSettingsPanel() }
         } else { nativeMenu.sheet(isPresented: $analyticsPresented) {
             VStack(alignment: .leading, spacing: 16) {
-                Text("产品统计与隐私").font(.headline)
+                Text(L10n.text("产品统计与隐私")).font(.headline)
                 ProductAnalyticsSettings()
-                Button("完成") { analyticsPresented = false }
+                Button(L10n.text("完成")) { analyticsPresented = false }
             }.padding(24).frame(width: 380)
         } }
     }
@@ -1001,86 +1017,86 @@ struct DisplaySettingsMenu: View {
     private var nativeMenu: some View {
         Menu {
             // 主题切换:所有界面(弹窗/二级页/监控台/灵动岛)一起换肤
-            Picker("主题", selection: $settings.theme) {
+            Picker(L10n.text("主题"), selection: $settings.theme) {
                 ForEach(AppTheme.allCases) { Text($0.label).tag($0) }
             }
             Divider()
-            Picker("Token 单位", selection: $settings.tokenUnit) {
+            Picker(L10n.text("Token 单位"), selection: $settings.tokenUnit) {
                 ForEach(TokenUnitMode.allCases) { Text($0.label).tag($0) }
             }
-            Picker("货币", selection: $settings.currency) {
+            Picker(L10n.text("货币"), selection: $settings.currency) {
                 ForEach(CurrencyMode.allCases) { Text($0.label).tag($0) }
             }
             if settings.currency == .cny {
                 Divider()
-                Text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY")
-                Button("汇率 7.0") { settings.usdToCny = 7.0 }
-                Button("汇率 7.2") { settings.usdToCny = 7.2 }
-                Button("汇率 7.4") { settings.usdToCny = 7.4 }
+                Text(L10n.text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY"))
+                Button(L10n.text("汇率 7.0")) { settings.usdToCny = 7.0 }
+                Button(L10n.text("汇率 7.2")) { settings.usdToCny = 7.2 }
+                Button(L10n.text("汇率 7.4")) { settings.usdToCny = 7.4 }
             }
             Divider()
-            Toggle("刘海常驻油量表", isOn: Binding(
+            Toggle(L10n.text("刘海常驻油量表"), isOn: Binding(
                 get: { NotchDock.shared.enabled },
                 set: { NotchDock.shared.enabled = $0 }))
-            Toggle("Claude 额度（实验）", isOn: Binding(
+            Toggle(L10n.text("Claude 额度（实验）"), isOn: Binding(
                 get: { quota.claudeAccessEnabled },
                 set: { quota.setClaudeAccessEnabled($0) }))
-            Toggle("额度重置提醒", isOn: Binding(
+            Toggle(L10n.text("额度重置提醒"), isOn: Binding(
                 get: { alerts.enabled },
                 set: { alerts.setAlertsEnabled($0) }))
-            Toggle("等价成本提醒", isOn: Binding(
+            Toggle(L10n.text("等价成本提醒"), isOn: Binding(
                 get: { alerts.costAlertsEnabled },
                 set: { alerts.setCostAlertsEnabled($0) }))
             if alerts.costAlertsEnabled {
-                Picker("每小时提醒线", selection: $alerts.hourlyThresholdUSD) {
+                Picker(L10n.text("每小时提醒线"), selection: $alerts.hourlyThresholdUSD) {
                     ForEach([10.0, 20.0, 50.0, 100.0], id: \.self) { amount in
-                        Text(settings.currencyStr(amount) + "/小时").tag(amount)
+                        Text(settings.currencyStr(amount) + L10n.text("/小时")).tag(amount)
                     }
                 }
-                Picker("每日提醒线", selection: $alerts.dailyThresholdUSD) {
+                Picker(L10n.text("每日提醒线"), selection: $alerts.dailyThresholdUSD) {
                     ForEach([50.0, 100.0, 250.0, 500.0], id: \.self) { amount in
-                        Text(settings.currencyStr(amount) + "/天").tag(amount)
+                        Text(settings.currencyStr(amount) + L10n.text("/天")).tag(amount)
                     }
                 }
-                Text("阈值按美元保存，界面会换算为当前货币")
+                Text(L10n.text("阈值按美元保存，界面会换算为当前货币"))
             }
-            Toggle("隐私模式（隐藏项目名）", isOn: $settings.privacyMode)
-            Menu("菜单栏显示") {
-                Toggle("今日 Token", isOn: $settings.showTokensInMenuBar)
-                Toggle("CPU 使用率", isOn: $settings.showCPUInMenuBar)
-                Toggle("内存使用率", isOn: $settings.showMemoryInMenuBar)
-                Toggle("今日等价费用", isOn: $settings.showCostInMenuBar)
-                Toggle("剩余额度", isOn: $settings.showQuotaInMenuBar)
+            Toggle(L10n.text("隐私模式（隐藏项目名）"), isOn: $settings.privacyMode)
+            Menu(L10n.text("菜单栏显示")) {
+                Toggle(L10n.text("今日 Token"), isOn: $settings.showTokensInMenuBar)
+                Toggle(L10n.text("CPU 使用率"), isOn: $settings.showCPUInMenuBar)
+                Toggle(L10n.text("内存使用率"), isOn: $settings.showMemoryInMenuBar)
+                Toggle(L10n.text("今日等价费用"), isOn: $settings.showCostInMenuBar)
+                Toggle(L10n.text("剩余额度"), isOn: $settings.showQuotaInMenuBar)
             }
-            Button("预览刘海提醒") {
+            Button(L10n.text("预览刘海提醒")) {
                 NotchController.shared.flash(
                     NotchAlert(icon: "checkmark.circle.fill",
-                               title: "Claude · 5 小时额度已重置",
-                               subtitle: "满血复活,可以继续了 🎉",
+                               title: L10n.text("Claude · 5 小时额度已重置"),
+                               subtitle: L10n.text("满血复活,可以继续了 🎉"),
                                tint: .green),
                     duration: 6, sound: true)
             }
             Divider()
-            Button("产品统计与隐私…") { analyticsPresented = true }
-            Button("社区排行榜…") { openWindow(id: "leaderboard") }
-            Button("检查更新…") { updates.checkForUpdates() }
+            Button(L10n.text("产品统计与隐私…")) { analyticsPresented = true }
+            Button(L10n.text("社区排行榜…")) { openWindow(id: "leaderboard") }
+            Button(L10n.text("检查更新…")) { updates.checkForUpdates() }
                 .disabled(!updates.canCheckForUpdates)
-            Menu("关于 TokenMini") {
-                Text("版本 \(AppInfo.displayVersion)")
-                Button("打开官网") { NSWorkspace.shared.open(AppInfo.homepage) }
-                Button("隐私说明") { NSWorkspace.shared.open(AppInfo.privacy) }
-                Button("开源许可与源码") { NSWorkspace.shared.open(AppInfo.source) }
+            Menu(L10n.text("关于 TokenMini")) {
+                Text(L10n.text("版本 \(AppInfo.displayVersion)"))
+                Button(L10n.text("打开官网")) { NSWorkspace.shared.open(AppInfo.homepage) }
+                Button(L10n.text("隐私说明")) { NSWorkspace.shared.open(AppInfo.privacy) }
+                Button(L10n.text("开源许可与源码")) { NSWorkspace.shared.open(AppInfo.source) }
                 Divider()
-                Button("退出 TokenMini") { NSApp.terminate(nil) }
+                Button(L10n.text("退出 TokenMini")) { NSApp.terminate(nil) }
             }
         } label: {
             if unifiedToolbar {
-                DashboardToolbarLabel(title: "外观", icon: "slider.horizontal.3")
+                DashboardToolbarLabel(title: L10n.text("外观"), icon: "slider.horizontal.3")
             } else if settings.isPrism {
                 HStack(spacing: 6) {
                     Image(systemName: "slider.horizontal.3")
                         .foregroundColor(Prism.silver)
-                    Text("外观")
+                    Text(L10n.text("外观"))
                         .foregroundColor(Prism.silver)
                 }.font(Prism.label(11))
             } else {
@@ -1089,8 +1105,8 @@ struct DisplaySettingsMenu: View {
         }
         .menuIndicator(.hidden)
         .modifier(DashboardAppearanceChrome(unified: unifiedToolbar))
-        .accessibilityLabel("显示与主题设置")
-        .help("显示与主题设置")
+        .accessibilityLabel(L10n.text("显示与主题设置"))
+        .help(L10n.text("显示与主题设置"))
         .fixedSize()
     }
 }

@@ -28,7 +28,7 @@ struct ClassicSimpleHomeView: View {
             HStack(spacing: 8) {
                 if quota.lastRefresh == nil { ProgressView().controlSize(.small) }
                 else { Image(systemName: "exclamationmark.circle").foregroundStyle(.orange) }
-                Text(quota.lastRefresh == nil ? "正在读取额度…" : "未读取到额度,稍后自动重试")
+                Text(quota.lastRefresh == nil ? L10n.text("正在读取额度…") : L10n.text("未读取到额度,稍后自动重试"))
                     .font(.caption).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -44,9 +44,9 @@ struct ClassicSimpleHomeView: View {
 
     private var spendRow: some View {
         HStack(spacing: 0) {
-            spendCell("今日花费", settings.currencyStr(usage.today.totalCostUSD))
+            spendCell(L10n.text("24 小时花费"), settings.currencyStr(usage.last24Hours.totalCostUSD))
             Divider().frame(height: 26)
-            spendCell("本月花费", settings.currencyStr(usage.thisMonth.totalCostUSD))
+            spendCell(L10n.text("本月花费"), settings.currencyStr(usage.thisMonth.totalCostUSD))
         }
         .padding(.vertical, 8).padding(.horizontal, 4)
         .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -81,7 +81,7 @@ private struct ClassicQuotaCard: View {
                 }
                 Spacer()
                 if !quota.authoritative {
-                    Text("估算").font(.caption2).foregroundStyle(.tertiary)
+                    Text(L10n.text("估算")).font(.caption2).foregroundStyle(.tertiary)
                 }
             }
             ForEach(quota.windows) { w in ClassicQuotaBar(window: w, now: now) }
@@ -104,7 +104,7 @@ private struct ClassicQuotaBar: View {
             HStack {
                 Text(window.kind.label).font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Text(window.hasReset(now: now) ? "满额可用" : "已用 \(Int(window.usedPercent))%")
+                Text(window.hasReset(now: now) ? L10n.text("满额可用") : L10n.text("已用 \(Int(window.usedPercent))%"))
                     .font(.system(.caption, design: .rounded).weight(.medium))
                     .foregroundStyle(window.hasReset(now: now) ? .green : color)
             }
@@ -120,8 +120,8 @@ private struct ClassicQuotaBar: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock.arrow.circlepath").font(.system(size: 9)).foregroundStyle(.tertiary)
                 Text(window.hasReset(now: now)
-                     ? "已重置,随时可用"
-                     : "还能用 \(QuotaFormat.duration(window.remaining(now: now))) · \(QuotaFormat.resetClock(window.resetsAt)) 重置")
+                     ? L10n.text("已重置,随时可用")
+                     : L10n.text("还能用 \(QuotaFormat.duration(window.remaining(now: now))) · \(QuotaFormat.resetClock(window.resetsAt)) 重置"))
                     .font(.caption2).foregroundStyle(.secondary)
             }
         }

@@ -70,7 +70,7 @@ final class CleanupScanner: @unchecked Sendable {
             for root in allowedRoots(for: category) {
                 if cancelled() { break }
                 if Self.hasSymlinkComponent(from: home, through: root) {
-                    issues.append(CleanupIssue(path: root, message: "目录经过符号链接，已跳过以保护目标文件"))
+                    issues.append(CleanupIssue(path: root, message: L10n.text("目录经过符号链接，已跳过以保护目标文件")))
                     continue
                 }
                 do {
@@ -92,7 +92,7 @@ final class CleanupScanner: @unchecked Sendable {
                             if Date() > deadline {
                                 lock.lock()
                                 if !rootIssues.contains(where: { $0.path == root }) {
-                                    rootIssues.append(CleanupIssue(path: root, message: "扫描超过时限，结果不完整；可重新扫描"))
+                                    rootIssues.append(CleanupIssue(path: root, message: L10n.text("扫描超过时限，结果不完整；可重新扫描")))
                                 }
                                 lock.unlock()
                                 break
@@ -161,7 +161,7 @@ final class CleanupScanner: @unchecked Sendable {
                 task.waitUntilExit()
                 if cancelled() { throw CocoaError(.userCancelled) }
                 throw NSError(domain: "MacPulse", code: 1, userInfo: [NSLocalizedDescriptionKey:
-                    "读取超时（可能等待系统访问许可），已跳过。请检查权限后重新扫描。"])
+                    L10n.text("读取超时（可能等待系统访问许可），已跳过。请检查权限后重新扫描。")])
             }
             Thread.sleep(forTimeInterval: 0.02)
         }
@@ -175,7 +175,7 @@ final class CleanupScanner: @unchecked Sendable {
                 throw CocoaError(.fileReadNoPermission)
             }
             throw NSError(domain: "MacPulse", code: 2, userInfo: [NSLocalizedDescriptionKey:
-                "体积未完整读取，目录可能在扫描期间变化；请重新扫描"])
+                L10n.text("体积未完整读取，目录可能在扫描期间变化；请重新扫描")])
         }
         guard let text = String(data: data, encoding: .utf8),
               let first = text.split(separator: "\t").first,
@@ -191,7 +191,7 @@ final class CleanupScanner: @unchecked Sendable {
             [NSFileReadNoPermissionError, NSFileWriteNoPermissionError].contains(ns.code)) ||
             (ns.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM)].contains(ns.code))
         return CleanupIssue(path: path,
-            message: denied ? "macOS 拒绝访问，请检查完整磁盘访问权限或文件权限" : error.localizedDescription,
+            message: denied ? L10n.text("macOS 拒绝访问，请检查完整磁盘访问权限或文件权限") : error.localizedDescription,
             permissionDenied: denied)
     }
 
@@ -207,14 +207,14 @@ final class CleanupScanner: @unchecked Sendable {
                 guard isSafeToDelete(item.path),
                       allowedRoots(for: result.category).contains((item.path as NSString).deletingLastPathComponent) else {
                     report.failedCount += 1
-                    report.issues.append(CleanupIssue(path: item.path, message: "路径未通过安全校验"))
+                    report.issues.append(CleanupIssue(path: item.path, message: L10n.text("路径未通过安全校验")))
                     continue
                 }
                 do {
                     let current = try Self.identity(at: item.path)
                     guard let expected = item.identity, expected == current else {
                         report.failedCount += 1
-                        report.issues.append(CleanupIssue(path: item.path, message: "文件在扫描后发生变化，请重新扫描后确认"))
+                        report.issues.append(CleanupIssue(path: item.path, message: L10n.text("文件在扫描后发生变化，请重新扫描后确认")))
                         continue
                     }
                     try FileManager.default.removeItem(atPath: item.path)

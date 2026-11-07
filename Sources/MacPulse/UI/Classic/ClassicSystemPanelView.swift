@@ -31,18 +31,18 @@ struct ClassicSystemPanelView: View {
         .onAppear {
             if !cleanup.hasScanned && !cleanup.scanning { cleanup.scan() }
         }
-        .alert("结束进程", isPresented: Binding(
+        .alert(L10n.text("结束进程"), isPresented: Binding(
             get: { procToKill != nil },
             set: { if !$0 { procToKill = nil } })
         ) {
-            Button("取消", role: .cancel) { procToKill = nil }
-            Button("结束", role: .destructive) {
+            Button(L10n.text("取消"), role: .cancel) { procToKill = nil }
+            Button(L10n.text("结束"), role: .destructive) {
                 if let p = procToKill { actions.terminate(p, system: system) }
                 procToKill = nil
             }
         } message: {
             if let p = procToKill {
-                Text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。")
+                Text(L10n.text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。"))
             }
         }
     }
@@ -60,13 +60,13 @@ struct ClassicSystemPanelView: View {
                         .foregroundStyle(t > 85 ? .red : .secondary)
                 }
                 Text(String(format: "%.1f%%", system.cpu.totalUsage * 100))
-                    .font(.system(.body, design: .monospaced).weight(.semibold))
+                    .font(.system(.body, design: AppLanguage.monospacedDesign).weight(.semibold))
             }
             Sparkline(values: system.cpuHistory, color: .blue)
                 .frame(height: 36)
             HStack(spacing: 12) {
-                legend("系统", String(format: "%.1f%%", system.cpu.systemUsage * 100), .red)
-                legend("用户", String(format: "%.1f%%", system.cpu.userUsage * 100), .blue)
+                legend(L10n.text("系统"), String(format: "%.1f%%", system.cpu.systemUsage * 100), .red)
+                legend(L10n.text("用户"), String(format: "%.1f%%", system.cpu.userUsage * 100), .blue)
                 Spacer()
             }
         }
@@ -77,10 +77,10 @@ struct ClassicSystemPanelView: View {
     private var memorySection: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                sectionTitle("内存", icon: "memorychip")
+                sectionTitle(L10n.text("内存"), icon: "memorychip")
                 Spacer()
                 Text("\(ByteFormat.memory(system.memory.used)) / \(ByteFormat.memory(system.memory.total))")
-                    .font(.system(.body, design: .monospaced).weight(.semibold))
+                    .font(.system(.body, design: AppLanguage.monospacedDesign).weight(.semibold))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -92,10 +92,10 @@ struct ClassicSystemPanelView: View {
             }
             .frame(height: 6)
             HStack(spacing: 12) {
-                legend("系统保留", ByteFormat.memory(system.memory.wired), .orange)
-                legend("已压缩", ByteFormat.memory(system.memory.compressed), .purple)
+                legend(L10n.text("系统保留"), ByteFormat.memory(system.memory.wired), .orange)
+                legend(L10n.text("已压缩"), ByteFormat.memory(system.memory.compressed), .purple)
                 Spacer()
-                Button("管理内存") {
+                Button(L10n.text("管理内存")) {
                     cleanup.page = .memory
                     openWindow(id: "maintenance")
                     NSApp.activate(ignoringOtherApps: true)
@@ -114,13 +114,13 @@ struct ClassicSystemPanelView: View {
 
     private var ratesSection: some View {
         HStack(spacing: 0) {
-            rateCell(icon: "network", title: "网络",
+            rateCell(icon: "network", title: L10n.text("网络"),
                      l1: "↓ \(ByteFormat.string(system.network.rxPerSec))/s",
                      l2: "↑ \(ByteFormat.string(system.network.txPerSec))/s")
             Divider().frame(height: 28)
-            rateCell(icon: "internaldrive", title: "磁盘",
-                     l1: "读 \(ByteFormat.string(system.disk.readPerSec))/s",
-                     l2: "写 \(ByteFormat.string(system.disk.writePerSec))/s")
+            rateCell(icon: "internaldrive", title: L10n.text("磁盘"),
+                     l1: L10n.text("读 \(ByteFormat.string(system.disk.readPerSec))/s"),
+                     l2: L10n.text("写 \(ByteFormat.string(system.disk.writePerSec))/s"))
         }
     }
 
@@ -128,8 +128,8 @@ struct ClassicSystemPanelView: View {
         HStack(spacing: 8) {
             Image(systemName: icon).foregroundStyle(.secondary).frame(width: 16)
             VStack(alignment: .leading, spacing: 1) {
-                Text(l1).font(.system(.caption, design: .monospaced))
-                Text(l2).font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+                Text(l1).font(.system(.caption, design: AppLanguage.monospacedDesign))
+                Text(l2).font(.system(.caption, design: AppLanguage.monospacedDesign)).foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -141,9 +141,9 @@ struct ClassicSystemPanelView: View {
     private var diskSpaceSection: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
-                sectionTitle("磁盘空间", icon: "externaldrive")
+                sectionTitle(L10n.text("磁盘空间"), icon: "externaldrive")
                 Spacer()
-                Text("可用 \(ByteFormat.memory(system.diskSpace.free)) / \(ByteFormat.memory(system.diskSpace.total))")
+                Text(L10n.text("可用 \(ByteFormat.memory(system.diskSpace.free)) / \(ByteFormat.memory(system.diskSpace.total))"))
                     .font(.caption2).foregroundStyle(.secondary)
             }
             GeometryReader { geo in
@@ -168,7 +168,7 @@ struct ClassicSystemPanelView: View {
                     legend("GPU", String(format: "%.0f°C", g), .teal)
                 }
                 ForEach(system.sensors.fans) { fan in
-                    legend("风扇\(fan.index + 1)", String(format: "%.0f rpm", fan.currentRPM), .gray)
+                    legend(L10n.text("风扇\(fan.index + 1)"), String(format: "%.0f rpm", fan.currentRPM), .gray)
                 }
                 Spacer()
             }
@@ -181,18 +181,18 @@ struct ClassicSystemPanelView: View {
     private var batterySection: some View {
         if system.battery.present {
             HStack(spacing: 12) {
-                sectionTitle("电池", icon: batteryIcon)
+                sectionTitle(L10n.text("电池"), icon: batteryIcon)
                 if let p = system.battery.currentPercent {
-                    Text("\(p)%").font(.system(.caption, design: .monospaced).weight(.semibold))
+                    Text("\(p)%").font(.system(.caption, design: AppLanguage.monospacedDesign).weight(.semibold))
                 }
                 if let h = system.battery.healthPercent {
-                    legend("健康", "\(h)%", h >= 80 ? .green : .orange)
+                    legend(L10n.text("健康"), "\(h)%", h >= 80 ? .green : .orange)
                 }
                 if let c = system.battery.cycleCount {
-                    legend("循环", "\(c)", .secondary)
+                    legend(L10n.text("循环"), "\(c)", .secondary)
                 }
                 if let t = system.battery.temperatureC {
-                    legend("温度", String(format: "%.0f°C", t), .secondary)
+                    legend(L10n.text("温度"), String(format: "%.0f°C", t), .secondary)
                 }
                 Spacer()
             }
@@ -208,17 +208,17 @@ struct ClassicSystemPanelView: View {
 
     private var processSection: some View {
         VStack(alignment: .leading, spacing: 3) {
-            sectionTitle("占用最高", icon: "list.number")
+            sectionTitle(L10n.text("占用最高"), icon: "list.number")
             ForEach(system.topProcesses) { p in
                 HStack(spacing: 6) {
                     Text(p.name).font(.caption).lineLimit(1)
                     Spacer()
                     Text(ByteFormat.memory(p.memoryBytes))
-                        .font(.system(.caption2, design: .monospaced))
+                        .font(.system(.caption2, design: AppLanguage.monospacedDesign))
                         .foregroundStyle(.tertiary)
                         .frame(width: 62, alignment: .trailing)
                     Text(String(format: "%.1f%%", p.cpuPercent))
-                        .font(.system(.caption, design: .monospaced))
+                        .font(.system(.caption, design: AppLanguage.monospacedDesign))
                         .foregroundStyle(.secondary)
                         .frame(width: 48, alignment: .trailing)
                     Button {
@@ -227,7 +227,7 @@ struct ClassicSystemPanelView: View {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
-                    .help("请求退出该进程，请先保存工作")
+                    .help(L10n.text("请求退出该进程，请先保存工作"))
                     .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: p.pid, name: p.name))
                 }
             }
@@ -239,7 +239,7 @@ struct ClassicSystemPanelView: View {
     private var junkSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                sectionTitle("垃圾清理", icon: "trash")
+                sectionTitle(L10n.text("垃圾清理"), icon: "trash")
                 Spacer()
                 if cleanup.scanning {
                     HStack(spacing: 4) {
@@ -247,7 +247,7 @@ struct ClassicSystemPanelView: View {
                         Text(cleanup.scanStatus).font(.caption2).foregroundStyle(.secondary)
                     }
                 } else {
-                    Button("重新扫描") { cleanup.scan() }
+                    Button(L10n.text("重新扫描")) { cleanup.scan() }
                         .controlSize(.mini)
                         .disabled(cleanup.cleaning)
                 }
@@ -267,7 +267,7 @@ struct ClassicSystemPanelView: View {
                                 Text(result.category.title).font(.caption.weight(.medium))
                                 Spacer()
                                 Text(result.sizeLabel)
-                                    .font(.system(.caption2, design: .monospaced))
+                                    .font(.system(.caption2, design: AppLanguage.monospacedDesign))
                                     .foregroundStyle(.secondary)
                             }
                             Text(result.category.subtitle)
@@ -296,7 +296,7 @@ struct ClassicSystemPanelView: View {
                 } label: {
                     HStack(spacing: 4) {
                         if cleanup.cleaning { ProgressView().controlSize(.mini) }
-                        Text(cleanup.cleaning ? "清理中…" : "预览清理")
+                        Text(cleanup.cleaning ? L10n.text("清理中…") : L10n.text("预览清理"))
                     }
                 }
                 .controlSize(.small)
@@ -318,7 +318,7 @@ struct ClassicSystemPanelView: View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(name).font(.caption2).foregroundStyle(.secondary)
-            Text(value).font(.system(.caption2, design: .monospaced))
+            Text(value).font(.system(.caption2, design: AppLanguage.monospacedDesign))
         }
     }
 }

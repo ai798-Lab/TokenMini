@@ -18,6 +18,7 @@ final class AdditionalUsageScanner: @unchecked Sendable {
         var size: Int, modified: Date, records: [UsageRecord]
     }
     private let home: URL
+    private let apiScanner = APIUsageScanner()
     private var cache: [String: Cached] = [:]
     init(home: URL = FileManager.default.homeDirectoryForCurrentUser) { self.home = home }
 
@@ -26,6 +27,8 @@ final class AdditionalUsageScanner: @unchecked Sendable {
         var records: [UsageRecord] = []
         var seen = Set<String>(), visited = Set<String>()
         var errors: [ToolKind: Int] = [:]
+        do { errors[.deepseekAPI] = try apiScanner.scan(home: home) }
+        catch { errors[.deepseekAPI, default: 0] += 1 }
         for (tool, root, fileName) in [
             (ToolKind.kimi, ".kimi-code/sessions", "wire.jsonl"),
             (.kimi, ".kimi/sessions", "wire.jsonl"),
@@ -65,7 +68,7 @@ final class AdditionalUsageScanner: @unchecked Sendable {
         catch { errors[.traeWork, default: 0] += 1 }
         var statuses: [ToolSourceStatus] = [ToolKind.kimi, .gemini, .opencode].map { tool in
             let count = records.filter { $0.tool == tool }.count
-            let detail = errors[tool, default: 0] > 0 ? "部分记录读取失败（\(errors[tool]!) 处）" : count > 0 ? "本地记录 · 自动更新" : "近 90 天未发现可读取用量"
+            let detail = errors[tool, default: 0] > 0 ? L10n.text("部分记录读取失败（\(errors[tool]!) 处）") : count > 0 ? L10n.text("本地记录 · 自动更新") : L10n.text("近 90 天未发现可读取用量")
             return ToolSourceStatus(tool: tool, count: count, detail: detail)
         }
         do {
@@ -73,11 +76,17 @@ final class AdditionalUsageScanner: @unchecked Sendable {
             records += imported.filter { $0.timestamp >= cutoff }
             for tool in ToolKind.allCases where !tool.localScanner {
                 let count = records.filter { $0.tool == tool && $0.timestamp >= cutoff }.count
+                if tool == .deepseekAPI {
+                    let detail = errors[tool, default: 0] > 0 ? L10n.text("部分 API 用量记录读取失败，已保留历史记录")
+                        : count > 0 ? L10n.text("本机 API 用量账本 · 每 60 秒自动更新") : L10n.text("待接入调用日志；官方余额见上方，不能由余额反推 Token")
+                    statuses.append(ToolSourceStatus(tool: tool, count: count, detail: detail))
+                    continue
+                }
                 statuses.append(ToolSourceStatus(tool: tool, count: count,
-                    detail: tool == .traeWork ? (errors[.traeWork, default: 0] > 0 ? "同步缓存读取失败" : count > 0 ? "官方用量缓存 / 导入记录 · 在下方更新" : "可选：同步 Trae Work CN 官方用量") : count > 0 ? "已导入 · 不自动同步工具账号" : tool == .cursor ? "待导入 Cursor 用量 CSV" : "待接入 · 支持通用用量文件导入"))
+                    detail: tool == .traeWork ? (errors[.traeWork, default: 0] > 0 ? L10n.text("同步缓存读取失败") : count > 0 ? L10n.text("官方用量缓存 / 导入记录 · 在下方更新") : L10n.text("可选：同步 Trae Work CN 官方用量")) : count > 0 ? L10n.text("已导入 · 不自动同步工具账号") : tool == .cursor ? L10n.text("待导入 Cursor 用量 CSV") : L10n.text("待接入 · 支持通用用量文件导入")))
             }
         } catch {
-            statuses.append(ToolSourceStatus(tool: .other, detail: "导入记录读取失败：\(error.localizedDescription)"))
+            statuses.append(ToolSourceStatus(tool: .other, detail: L10n.text("导入记录读取失败：\(error.localizedDescription)")))
         }
         return Result(events: records.map(\.event), statuses: statuses)
     }

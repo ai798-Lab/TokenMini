@@ -122,16 +122,16 @@ struct PrismPopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 9) {
-                BrandLockup().foregroundStyle(Color(red: 24/255, green: 33/255, blue: 28/255))
+                BrandLockup().environment(\.layoutDirection, .leftToRight).foregroundStyle(Color(red: 24/255, green: 33/255, blue: 28/255))
                 Spacer(minLength: 0)
                 DisplaySettingsMenu().foregroundStyle(Prism.secondary)
             }
             .padding(.horizontal, 16).padding(.vertical, 9).background(Prism.silver)
             ThemedSegmented(items: Page.allCases.map { ($0, $0.rawValue) }, selection: $page, size: 11, level: .primary, fillsWidth: true)
                 .padding(.horizontal, Prism.contentInset).padding(.vertical, 12)
+            UpdateNoticeView()
             HUDScrollView(accent: Prism.mint) {
                 VStack(spacing: 12) {
-                    UpdateNoticeView()
                     switch page {
                     case .overview:
                         tokenHero
@@ -148,18 +148,19 @@ struct PrismPopoverView: View {
                 Button { openWindow(id: "dashboard") } label: {
                     HStack {
                         Image(systemName: "chart.xyaxis.line")
-                        Text("打开完整的中控台")
+                        Text(L10n.text("打开完整的中控台"))
                         Spacer()
                         Image(systemName: "arrow.up.right")
                     }
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 13).padding(.vertical, 11)
-                    .foregroundStyle(Prism.bg).background(Prism.mint, in: RoundedRectangle(cornerRadius: Prism.controlRadius))
+                    .foregroundStyle(Prism.silver).background(Prism.panel, in: RoundedRectangle(cornerRadius: Prism.controlRadius))
+                    .overlay(RoundedRectangle(cornerRadius: Prism.controlRadius).strokeBorder(Prism.line))
                 }.buttonStyle(PressableButtonStyle())
                 HStack {
-                    Text(usage.scanning ? "正在更新本地数据…" : usage.lastScan.map { "更新于 \($0.formatted(date: .omitted, time: .shortened))" } ?? "等待本地数据")
+                    Text(usage.scanning ? L10n.text("正在更新本地数据…") : usage.lastScan.map { L10n.text("更新于 \($0.formatted(date: .omitted, time: .shortened))") } ?? L10n.text("等待本地数据"))
                     Spacer()
-                    Button("退出") { NSApp.terminate(nil) }.buttonStyle(.plain)
+                    Button(L10n.text("退出")) { NSApp.terminate(nil) }.buttonStyle(.plain)
                 }.font(.system(size: 10)).foregroundStyle(Prism.secondary)
             }.padding(Prism.contentInset).background(Prism.bg)
         }

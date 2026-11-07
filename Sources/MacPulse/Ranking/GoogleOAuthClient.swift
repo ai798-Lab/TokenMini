@@ -132,13 +132,13 @@ enum GoogleOAuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .cannotOpenBrowser: return "无法打开 Google 登录页面"
-        case .cancelled: return "已取消 Google 登录"
-        case .invalidState: return "登录回调校验失败，请重试"
-        case .missingCode, .invalidResponse: return "Google 登录返回的数据不完整"
-        case .randomFailure: return "无法创建安全登录请求"
-        case .timedOut: return "Google 登录已超时，请重试"
-        case .provider: return "Google 登录失败，请重试"
+        case .cannotOpenBrowser: return L10n.text("无法打开 Google 登录页面")
+        case .cancelled: return L10n.text("已取消 Google 登录")
+        case .invalidState: return L10n.text("登录回调校验失败，请重试")
+        case .missingCode, .invalidResponse: return L10n.text("Google 登录返回的数据不完整")
+        case .randomFailure: return L10n.text("无法创建安全登录请求")
+        case .timedOut: return L10n.text("Google 登录已超时，请重试")
+        case .provider: return L10n.text("Google 登录失败，请重试")
         }
     }
 }
@@ -222,7 +222,7 @@ private final class LoopbackCallbackServer: @unchecked Sendable {
             if next.range(of: Data("\r\n\r\n".utf8)) != nil {
                 self.process(next, connection: connection)
             } else if next.count >= 16_384 || complete || error != nil {
-                self.respond(status: "400 Bad Request", body: "请求无效", connection: connection)
+                self.respond(status: "400 Bad Request", body: L10n.text("请求无效"), connection: connection)
             } else {
                 self.receive(from: connection, buffer: next)
             }
@@ -232,20 +232,21 @@ private final class LoopbackCallbackServer: @unchecked Sendable {
     private func process(_ data: Data, connection: NWConnection) {
         guard let request = String(data: data, encoding: .utf8),
               let first = request.components(separatedBy: "\r\n").first else {
-            respond(status: "400 Bad Request", body: "请求无效", connection: connection); return
+            respond(status: "400 Bad Request", body: L10n.text("请求无效"), connection: connection); return
         }
         let parts = first.split(separator: " ", maxSplits: 2)
         guard parts.count >= 2, parts[0] == "GET",
               let url = URL(string: "http://127.0.0.1" + String(parts[1])),
               url.path == "/oauth2redirect" else {
-            respond(status: "404 Not Found", body: "页面不存在", connection: connection); return
+            respond(status: "404 Not Found", body: L10n.text("页面不存在"), connection: connection); return
         }
         let html = """
-        <!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-        <title>TokenMini 登录完成</title>
+        <!doctype html><html dir="\(AppLanguage.current.isRightToLeft ? "rtl" : "ltr")"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+        <title>\(L10n.text("TokenMini 登录完成"))</title>
         <style>body{font:16px -apple-system;margin:0;display:grid;place-items:center;min-height:100vh;background:#071014;color:#e8fbff}main{max-width:420px;padding:36px;text-align:center}h1{color:#58e4ef}p{line-height:1.7;color:#a9c4c9}</style>
-        <main><h1>登录已完成</h1><p>可以关闭这个页面，返回 TokenMini。</p></main>
+        <main><h1>\(L10n.text("登录已完成"))</h1><p>\(L10n.text("可以关闭这个页面，返回 TokenMini。"))</p></main>
         <script>setTimeout(()=>window.close(),900)</script>
+        </html>
         """
         respond(status: "200 OK", body: html, contentType: "text/html; charset=utf-8", connection: connection)
         finishCallback(.success(url))

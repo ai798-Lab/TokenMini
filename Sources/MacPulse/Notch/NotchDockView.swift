@@ -168,8 +168,8 @@ struct NotchDockView: View {
             if let hero { heroBlock(tool: hero.0, w: hero.1, now: now) } else { noQuotaHero }
             divider
             HStack(alignment: .firstTextBaseline, spacing: 20) {
-                spendCell("今日花费", "COST.TD", usage.today.totalCostUSD)
-                spendCell("本月花费", "COST.MO", usage.thisMonth.totalCostUSD)
+                spendCell(L10n.text("今日花费"), "COST.TD", usage.today.totalCostUSD)
+                spendCell(L10n.text("本月花费"), "COST.MO", usage.thisMonth.totalCostUSD)
                 Spacer()
             }
             if !rest.isEmpty {
@@ -217,7 +217,7 @@ struct NotchDockView: View {
                         .foregroundStyle(.white.opacity(0.48))
                     Text("\(activity.tool == .claude ? "Claude" : activity.tool.label) · \(ModelName.display(activity.model))")
                         .font(led ? LED.display(14, .bold)
-                                  : (hud ? .system(size: 14, weight: .bold, design: .monospaced)
+                                  : (hud ? .system(size: 14, weight: .bold, design: AppLanguage.monospacedDesign)
                                          : .system(size: 15, weight: .semibold, design: .rounded)))
                         .foregroundStyle(.white.opacity(0.94))
                         .lineLimit(1).minimumScaleFactor(0.78)
@@ -229,9 +229,9 @@ struct NotchDockView: View {
             HStack(spacing: 7) {
                 Circle().fill(.white.opacity(0.25)).frame(width: 7, height: 7)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("等待 AI 活动")
+                    Text(L10n.text("等待 AI 活动"))
                         .font(.system(size: 9)).foregroundStyle(.white.opacity(0.45))
-                    Text("模型待识别")
+                    Text(L10n.text("模型待识别"))
                         .font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.72))
                     companionLine(mood)
                 }
@@ -289,14 +289,14 @@ struct NotchDockView: View {
                 LEDCaption(text: reset ? "READY" : seg.unit, tint: LED.faint, size: 7)
             }
             if reset {
-                Text("满额可用")
+                Text(L10n.text("满额可用"))
                     .font(LED.display(22, .bold))
                     .foregroundStyle(LED.green)
                     .shadow(color: LED.green.opacity(0.7), radius: 6)
             } else {
                 HStack(alignment: .bottom, spacing: 8) {
                     SevenSegmentText(text: seg.digits, height: 30, color: c)
-                    LEDCaption(text: w.usedPercent >= 85 ? "我替你盯着" : "还能痛快写",
+                    LEDCaption(text: w.usedPercent >= 85 ? L10n.text("我替你盯着") : L10n.text("还能痛快写"),
                                tint: c.opacity(0.75), size: 7)
                         .padding(.bottom, 3)
                 }
@@ -309,7 +309,7 @@ struct NotchDockView: View {
                     .foregroundStyle(.white.opacity(0.85)).frame(width: 38, alignment: .trailing)
             }
             if !reset {
-                Text("\(QuotaFormat.resetClock(w.resetsAt)) 重置")
+                Text(L10n.text("\(QuotaFormat.resetClock(w.resetsAt)) 重置"))
                     .font(LED.mono(9)).foregroundStyle(.white.opacity(0.45))
             }
         }
@@ -336,8 +336,8 @@ struct NotchDockView: View {
                         .font(HUD.mono(7, .medium)).kerning(1.0).foregroundStyle(HUD.faint)
                 }
             }
-            Text(reset ? "满额可用" : "还能用 \(QuotaFormat.duration(w.remaining(now: now)))")
-                .font(hud ? .system(size: 22, weight: .bold, design: .monospaced)
+            Text(reset ? L10n.text("满额可用") : L10n.text("还能用 \(QuotaFormat.duration(w.remaining(now: now)))"))
+                .font(hud ? .system(size: 22, weight: .bold, design: AppLanguage.monospacedDesign)
                           : .system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(reset ? (hud ? HUD.green : .green) : .white)
                 .contentTransition(.numericText())
@@ -361,7 +361,7 @@ struct NotchDockView: View {
                     .foregroundStyle(.white.opacity(0.85)).frame(width: 38, alignment: .trailing)
             }
             if !reset {
-                Text("\(QuotaFormat.resetClock(w.resetsAt)) 重置")
+                Text(L10n.text("\(QuotaFormat.resetClock(w.resetsAt)) 重置"))
                     .font(hud ? HUD.mono(9) : .system(size: 10))
                     .foregroundStyle(.white.opacity(0.45))
             }
@@ -370,13 +370,13 @@ struct NotchDockView: View {
 
     private var noQuotaHero: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("额度充足")
+            Text(L10n.text("额度充足"))
                 .font(led ? LED.display(22, .bold)
-                          : (hud ? .system(size: 22, weight: .bold, design: .monospaced)
+                          : (hud ? .system(size: 22, weight: .bold, design: AppLanguage.monospacedDesign)
                                  : .system(size: 22, weight: .bold, design: .rounded)))
                 .foregroundStyle(led ? LED.green : (hud ? HUD.green : .green))
                 .shadow(color: led ? LED.green.opacity(0.7) : .clear, radius: 6)
-            Text("放心写,还早着呢").font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))
+            Text(L10n.text("放心写,还早着呢")).font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))
         }
     }
 
@@ -430,7 +430,7 @@ struct NotchDockView: View {
                 }
                 .frame(height: 4)
             }
-            Text(w.hasReset(now: now) ? "满" : QuotaFormat.duration(w.remaining(now: now)))
+            Text(w.hasReset(now: now) ? L10n.text("满") : QuotaFormat.duration(w.remaining(now: now)))
                 .font(led ? LED.mono(8) : (hud ? HUD.mono(8) : .system(size: 9)))
                 .foregroundStyle(.white.opacity(0.45))
                 .frame(width: 52, alignment: .trailing).lineLimit(1)

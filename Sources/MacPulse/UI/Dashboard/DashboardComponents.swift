@@ -125,8 +125,8 @@ struct MetricTile: View {
         var parts = [value]
         if let delta {
             parts.append(delta >= 0
-                         ? "增加 \(String(format: "%.0f", abs(delta) * 100))%"
-                         : "减少 \(String(format: "%.0f", abs(delta) * 100))%")
+                         ? L10n.text("增加 \(String(format: "%.0f", abs(delta) * 100))%")
+                         : L10n.text("减少 \(String(format: "%.0f", abs(delta) * 100))%"))
         }
         if let deltaAbsolute { parts.append(deltaAbsolute) }
         if let deltaContext { parts.append(deltaContext) }
@@ -142,7 +142,7 @@ struct MetricTile: View {
                 if let accent { Rectangle().fill(accent).frame(width: 6, height: 6) }
             }
             Text(value)
-                .font(.system(size: 29, weight: .heavy)).tracking(-0.7)
+                .font(.system(size: 29, weight: .heavy)).localizedTracking(-0.7)
                 .monospacedDigit().foregroundStyle(Prism.silver)
                 .contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.5)
                 .frame(height: 36, alignment: .leading)
@@ -264,11 +264,11 @@ struct SectionHeader: View {
 
     /// LED 小标注只认已知分区;映射不到就只显示中文标题(不硬造英文)
     private static let ledCodes: [String: String] = [
-        "等价成本趋势": "EST. COST TREND",
-        "使用洞察": "INSIGHTS",
-        "Token 构成": "TOKEN MIX",
-        "按模型": "BY MODEL",
-        "按项目": "BY PROJECT"
+        L10n.text("等价成本趋势"): "EST. COST TREND",
+        L10n.text("使用洞察"): "INSIGHTS",
+        L10n.text("Token 构成"): "TOKEN MIX",
+        L10n.text("按模型"): "BY MODEL",
+        L10n.text("按项目"): "BY PROJECT"
     ]
 
     var body: some View {

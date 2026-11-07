@@ -107,7 +107,7 @@ private struct PrismSecondaryDisclosureStyle: DisclosureGroupStyle {
                 .padding(.vertical, 5).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(configuration.isExpanded ? "已展开" : "已折叠")
+            .accessibilityValue(configuration.isExpanded ? L10n.text("已展开") : L10n.text("已折叠"))
             if configuration.isExpanded { configuration.content.padding(.leading, 22).padding(.top, 8) }
         }
     }

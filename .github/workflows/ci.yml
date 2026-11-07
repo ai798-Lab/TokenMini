@@ -28,9 +28,10 @@ jobs:
       - name: Tests
         run: |
           ./scripts/test.sh
-          python3 -m unittest discover -s tests -p test_download_metrics.py
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          python3 scripts/check-localizations.py
       - name: Build app bundle
-        run: ./scripts/build.sh 0.14.1 24
+        run: ./scripts/build.sh 0.15.1 26
       - name: Verify bundle
         run: |
           test "$(lipo -archs dist/TokenMini.app/Contents/MacOS/MacPulse)" = "arm64"

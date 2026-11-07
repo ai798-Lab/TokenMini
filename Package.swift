@@ -8,13 +8,15 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.4")
     ],
     targets: [
+        .target(name: "CZstd", path: "Sources/CZstd", publicHeadersPath: "include"),
         .executableTarget(
             name: "MacPulse",
             dependencies: [
+                "CZstd",
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources/MacPulse",
-            resources: [.copy("AIUsage/CommunityPrices.json")],
+            resources: [.copy("AIUsage/CommunityPrices.json"), .copy("Localization/Translations.json")],
             linkerSettings: [
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("AppKit"),

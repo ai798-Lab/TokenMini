@@ -19,10 +19,10 @@ struct ClassicPopoverView: View {
         VStack(spacing: 0) {
             header
             Divider()
+            UpdateNoticeView()
             // 窗口尺寸定死(否则 MenuBarExtra(.window) 随内容重排,切换瞬间圆角闪失),超高内容滚动。
             ScrollView {
                 VStack(spacing: 0) {
-                    UpdateNoticeView()
                     if proMode {
                         proContent
                     } else {
@@ -49,7 +49,7 @@ struct ClassicPopoverView: View {
             Button {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { proMode.toggle() }
             } label: {
-                Label(proMode ? "简单" : "专业", systemImage: proMode ? "circle.grid.2x2" : "slider.horizontal.3")
+                Label(proMode ? L10n.text("简单") : L10n.text("专业"), systemImage: proMode ? "circle.grid.2x2" : "slider.horizontal.3")
                     .font(.caption)
             }
             .buttonStyle(.plain)
@@ -62,7 +62,7 @@ struct ClassicPopoverView: View {
     private var proContent: some View {
         VStack(spacing: 8) {
             Picker("", selection: $tab) {
-                ForEach(Tab.allCases) { t in Text(t.rawValue).tag(t) }
+                ForEach(Tab.allCases) { t in Text(L10n.lookup(t.rawValue)).tag(t) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -83,7 +83,7 @@ struct ClassicPopoverView: View {
                 NSWorkspace.shared.open(
                     URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
             } label: {
-                Label("活动监视器", systemImage: "gauge")
+                Label(L10n.text("活动监视器"), systemImage: "gauge")
                     .font(.caption)
             }
             .buttonStyle(.plain)
@@ -92,7 +92,7 @@ struct ClassicPopoverView: View {
             Spacer()
 
             if let t = usage.lastScan {
-                Text("AI 数据 \(t.formatted(date: .omitted, time: .shortened))")
+                Text(L10n.text("AI 数据 \(t.formatted(date: .omitted, time: .shortened))"))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -100,7 +100,7 @@ struct ClassicPopoverView: View {
             Button {
                 NSApp.terminate(nil)
             } label: {
-                Label("退出", systemImage: "power")
+                Label(L10n.text("退出"), systemImage: "power")
                     .font(.caption)
             }
             .buttonStyle(.plain)

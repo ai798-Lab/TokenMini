@@ -53,7 +53,7 @@ final class SkillManagerStore: ObservableObject {
     func uninstall(_ skill: SkillInfo) {
         guard !busy, pendingInstall == nil else { return }
         guard Self.isSafeInstalledSkillDirectory(skill.directory) else {
-            lastMessage = "卸载已取消:skill 路径未通过安全校验"
+            lastMessage = L10n.text("卸载已取消:skill 路径未通过安全校验")
             return
         }
         busy = true
@@ -61,9 +61,9 @@ final class SkillManagerStore: ObservableObject {
             var result: String
             do {
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: skill.directory), resultingItemURL: nil)
-                result = "已把「\(skill.name)」移到废纸篓(可恢复)"
+                result = L10n.text("已把「\(skill.name)」移到废纸篓(可恢复)")
             } catch {
-                result = "卸载失败:\(error.localizedDescription)"
+                result = L10n.text("卸载失败:\(error.localizedDescription)")
             }
             Task { @MainActor in
                 guard let self else { return }
@@ -87,8 +87,8 @@ final class SkillManagerStore: ObservableObject {
                 guard let self else { return }
                 self.busy = false
                 self.lastMessage = result == nil
-                    ? "已复制「\(skill.name)」到 \(targetTool.label)"
-                    : "复制失败:\(result!)"
+                    ? L10n.text("已复制「\(skill.name)」到 \(targetTool.label)")
+                    : L10n.text("复制失败:\(result!)")
                 self.refresh()
             }
         }
@@ -98,17 +98,17 @@ final class SkillManagerStore: ObservableObject {
 
     func installFromFolder(to tools: [ToolKind]) {
         guard !busy, pendingInstall == nil else { return }
-        guard !tools.isEmpty else { lastMessage = "请至少选择一个安装目标"; return }
+        guard !tools.isEmpty else { lastMessage = L10n.text("请至少选择一个安装目标"); return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.message = "选择一个包含 SKILL.md 的 skill 文件夹"
-        panel.prompt = "安装"
+        panel.message = L10n.text("选择一个包含 SKILL.md 的 skill 文件夹")
+        panel.prompt = L10n.text("安装")
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
         guard FileManager.default.fileExists(atPath: url.path + "/SKILL.md") else {
-            lastMessage = "该文件夹里没有 SKILL.md,不是有效的 skill"
+            lastMessage = L10n.text("该文件夹里没有 SKILL.md,不是有效的 skill")
             return
         }
         install(dirs: [(url.lastPathComponent, url.path)], to: tools, cleanup: nil)
@@ -118,11 +118,11 @@ final class SkillManagerStore: ObservableObject {
 
     func installFromGitHub(_ input: String, to tools: [ToolKind]) {
         guard !busy, pendingInstall == nil else { return }
-        guard !tools.isEmpty else { lastMessage = "请至少选择一个安装目标"; return }
+        guard !tools.isEmpty else { lastMessage = L10n.text("请至少选择一个安装目标"); return }
         let spec = Self.parseRepoSpec(input)
-        guard let spec else { lastMessage = "无法识别:请输入 owner/repo 或 GitHub 链接"; return }
+        guard let spec else { lastMessage = L10n.text("无法识别:请输入 owner/repo 或 GitHub 链接"); return }
         busy = true
-        lastMessage = "正在从 \(spec.owner)/\(spec.repo) 拉取…"
+        lastMessage = L10n.text("正在从 \(spec.owner)/\(spec.repo) 拉取…")
         let toolsCopy = tools
         queue.async { [weak self] in
             let tmp = NSTemporaryDirectory() + "macpulse-skill-\(UUID().uuidString)"
@@ -143,13 +143,13 @@ final class SkillManagerStore: ObservableObject {
                 git.waitUntilExit()
                 timeout.cancel()
             } catch {
-                Task { @MainActor in self?.busy = false; self?.lastMessage = "git 启动失败" }
+                Task { @MainActor in self?.busy = false; self?.lastMessage = L10n.text("git 启动失败") }
                 return
             }
             guard git.terminationStatus == 0 else {
                 Task { @MainActor in
                     self?.busy = false
-                    self?.lastMessage = "拉取失败:仓库不存在或网络不通"
+                    self?.lastMessage = L10n.text("拉取失败:仓库不存在或网络不通")
                 }
                 try? FileManager.default.removeItem(atPath: tmp)
                 return
@@ -162,7 +162,7 @@ final class SkillManagerStore: ObservableObject {
                 self.busy = false
                 switch candidates.count {
                 case 0:
-                    self.lastMessage = "仓库里没找到 SKILL.md"
+                    self.lastMessage = L10n.text("仓库里没找到 SKILL.md")
                     try? FileManager.default.removeItem(atPath: tmp)
                 case 1:
                     self.install(dirs: candidates, to: toolsCopy, cleanup: tmp)
@@ -181,7 +181,7 @@ final class SkillManagerStore: ObservableObject {
         pendingInstall = nil
         if selected.isEmpty || tools.isEmpty {
             try? FileManager.default.removeItem(atPath: pending.tempRoot)
-            if !selected.isEmpty { lastMessage = "请至少选择一个安装目标" }
+            if !selected.isEmpty { lastMessage = L10n.text("请至少选择一个安装目标") }
             return
         }
         install(dirs: selected, to: tools, cleanup: pending.tempRoot)
@@ -192,7 +192,7 @@ final class SkillManagerStore: ObservableObject {
     private func install(dirs: [(name: String, path: String)], to tools: [ToolKind], cleanup: String?) {
         guard !tools.isEmpty else {
             if let cleanup { try? FileManager.default.removeItem(atPath: cleanup) }
-            lastMessage = "请至少选择一个安装目标"
+            lastMessage = L10n.text("请至少选择一个安装目标")
             return
         }
         busy = true
@@ -211,8 +211,8 @@ final class SkillManagerStore: ObservableObject {
                 guard let self else { return }
                 self.busy = false
                 self.lastMessage = errors.isEmpty
-                    ? "已安装 \(installed) 个 skill"
-                    : "完成 \(installed) 个,失败:\(errors.first ?? "未知错误")"
+                    ? L10n.text("已安装 \(installed) 个 skill")
+                    : L10n.text("完成 \(installed) 个,失败:\(errors.first ?? "未知错误")")
                 self.refresh()
             }
         }
@@ -221,14 +221,14 @@ final class SkillManagerStore: ObservableObject {
     /// 拷贝 skill 目录到目标根;同名已存在则拒绝(避免覆盖用户本地修改)。返回错误描述或 nil。
     nonisolated private static func copySkillDir(from src: String, intoRoot root: String) -> String? {
         let fm = FileManager.default
-        guard isSafeSkillSource(src) else { return "来源目录包含不安全的符号链接或缺少 SKILL.md" }
-        guard isSafeSkillRoot(root) else { return "目标 skills 目录是符号链接或路径异常" }
+        guard isSafeSkillSource(src) else { return L10n.text("来源目录包含不安全的符号链接或缺少 SKILL.md") }
+        guard isSafeSkillRoot(root) else { return L10n.text("目标 skills 目录是符号链接或路径异常") }
         let name = (src as NSString).lastPathComponent
-        guard !name.isEmpty, name != ".", name != ".." else { return "skill 目录名无效" }
+        guard !name.isEmpty, name != ".", name != ".." else { return L10n.text("skill 目录名无效") }
         let dst = root + "/" + name
         do {
             try fm.createDirectory(atPath: root, withIntermediateDirectories: true)
-            if fm.fileExists(atPath: dst) { return "「\(name)」已存在(先卸载旧的)" }
+            if fm.fileExists(atPath: dst) { return L10n.text("「\(name)」已存在(先卸载旧的)") }
             try fm.copyItem(atPath: src, toPath: dst)
             return nil
         } catch {

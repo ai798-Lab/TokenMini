@@ -4,8 +4,8 @@ import Foundation
 enum QuotaKind: String, Sendable {
     case fiveHour       // 5 小时滚动
     case weekly         // 每周
-    var label: String { self == .fiveHour ? "5 小时额度" : "本周额度" }
-    var shortLabel: String { self == .fiveHour ? "5小时" : "每周" }
+    var label: String { self == .fiveHour ? L10n.text("5 小时额度") : L10n.text("本周额度") }
+    var shortLabel: String { self == .fiveHour ? L10n.text("5小时") : L10n.text("每周") }
 }
 
 /// 一个额度窗口的当前状态
@@ -26,8 +26,8 @@ struct QuotaWindow: Sendable, Identifiable {
 
     /// 给非技术用户看的"还能用多久":已重置=满额;否则剩余时间
     func headline(now: Date) -> String {
-        if hasReset(now: now) { return "满额可用" }
-        return "还能用 " + QuotaFormat.duration(remaining(now: now))
+        if hasReset(now: now) { return L10n.text("满额可用") }
+        return L10n.text("还能用 ") + QuotaFormat.duration(remaining(now: now))
     }
 
     /// 有效已用百分比(已重置视为 0)
@@ -51,11 +51,11 @@ enum QuotaFormat {
     /// 3660 秒 → "1h1m";86400+ → "1天2h";< 60s → "<1m"
     static func duration(_ seconds: TimeInterval) -> String {
         let s = Int(max(0, seconds))
-        if s < 60 { return "<1分钟" }
+        if s < 60 { return L10n.text("<1分钟") }
         let d = s / 86400, h = (s % 86400) / 3600, m = (s % 3600) / 60
-        if d > 0 { return "\(d)天\(h)小时" }
-        if h > 0 { return "\(h)小时\(m)分" }
-        return "\(m)分钟"
+        if d > 0 { return L10n.text("\(d)天\(h)小时") }
+        if h > 0 { return L10n.text("\(h)小时\(m)分") }
+        return L10n.text("\(m)分钟")
     }
 
     /// 重置时刻 → 本地"07-07 01:00"

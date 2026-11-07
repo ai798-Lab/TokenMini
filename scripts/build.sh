@@ -16,8 +16,8 @@ DISPLAY_NAME="TokenMini"
 BUNDLE_ID="com.liangheping.macpulse"
 BUILD_DIR=".build/release"
 APP_DIR="dist/${APP_NAME}.app"
-VERSION="${1:-0.14.1}"
-BUILD_NUMBER="${2:-24}"
+VERSION="${1:-0.15.1}"
+BUILD_NUMBER="${2:-26}"
 SITE_URL="${MACPULSE_SITE_URL:-https://tokenmini.cc}"
 UPDATE_FEED_URL="${MACPULSE_UPDATE_FEED_URL:-${SITE_URL}/appcast.xml}"
 SOURCE_URL="${MACPULSE_SOURCE_URL:-https://github.com/ai798-Lab/TokenMini}"
@@ -86,6 +86,9 @@ cat > "${APP_DIR}/Contents/Info.plist" << PLIST
     <key>CFBundleIdentifier</key><string>${BUNDLE_ID}</string>
     <key>CFBundleName</key><string>${APP_NAME}</string>
     <key>CFBundleDisplayName</key><string>${DISPLAY_NAME}</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array><string>zh-Hans</string><string>en</string><string>zh-Hant</string><string>ja</string><string>ko</string><string>ar</string></array>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundleVersion</key><string>${BUILD_NUMBER}</string>
@@ -163,6 +166,8 @@ cp "Resources/Prism/PrismCore.png" "${APP_DIR}/Contents/Resources/"
 
 ditto "${BUILD_DIR}/MacPulse_MacPulse.bundle" "${APP_DIR}/Contents/Resources/MacPulse_MacPulse.bundle"
 ditto "Resources/ThirdParty" "${APP_DIR}/Contents/Resources/ThirdParty"
+mkdir -p "${APP_DIR}/Contents/Resources/Integrations"
+cp "Resources/Integrations/README.md" "Resources/Integrations/tokenmini_deepseek.py" "${APP_DIR}/Contents/Resources/Integrations/"
 
 # Keep the unstripped executable in the ignored build directory for private dSYM.
 # Object-file debug records include build-machine paths and must not be shipped.

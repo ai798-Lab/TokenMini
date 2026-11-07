@@ -96,7 +96,8 @@ final class PricingSnapshot: @unchecked Sendable {
 @MainActor
 final class ModelCatalogStore: ObservableObject {
     static let shared = ModelCatalogStore()
-    @Published private(set) var status = "使用内置模型目录"
+    @Published private var statusMessage: LocalizedMessage = "使用内置模型目录"
+    var status: String { L10n.text(statusMessage) }
     @Published private(set) var checking = false
     @Published private(set) var lastSuccess: Date?
     private(set) var catalog: ModelCatalog?
@@ -121,7 +122,7 @@ final class ModelCatalogStore: ObservableObject {
         self.endpoint = endpoint; self.publicKey = publicKey; self.cache = cache; self.fetch = fetch
         if let bytes = try? Data(contentsOf: cache),
            let loaded = try? ModelCatalog.decode(bytes, publicKey: publicKey, minimumRevision: 0) {
-            catalog = loaded; status = "远程目录 v\(loaded.revision) · 已缓存"
+            catalog = loaded; statusMessage = "远程目录 v\(loaded.revision) · 已缓存"
         }
     }
 
@@ -171,12 +172,13 @@ final class ModelCatalogStore: ObservableObject {
             let changed = value.revision != catalog?.revision
             catalog = value; lastSuccess = Date(); failures = 0
             nextAttempt = Date().addingTimeInterval(refreshInterval)
-            status = "远程目录 v\(value.revision) · 已自动同步"
+            statusMessage = "远程目录 v\(value.revision) · 已自动同步"
             if changed { onChange?() }
         } catch {
             failures = min(failures + 1, 7)
             nextAttempt = Date().addingTimeInterval(min(6 * 3600, 60 * pow(2, Double(failures))))
-            status = catalog.map { "同步暂不可用 · 保留目录 v\($0.revision)" } ?? "远程目录暂不可用 · 使用内置价格"
+            statusMessage = catalog.map { value -> LocalizedMessage in "同步暂不可用 · 保留目录 v\(value.revision)" }
+                ?? "远程目录暂不可用 · 使用内置价格"
         }
     }
 }

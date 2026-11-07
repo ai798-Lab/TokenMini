@@ -17,9 +17,9 @@ struct PrismDashboardBanner: View {
                 let layout = PrismHeroLayout(width: proxy.size.width)
                 ZStack(alignment: .topLeading) {
                     Prism.bg
-                    Text("TOKENMINI  /  用量总览")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .tracking(1).foregroundStyle(Prism.secondary)
+                    Text(L10n.text("TOKENMINI  /  用量总览"))
+                        .font(.system(size: 10, weight: .bold, design: AppLanguage.monospacedDesign))
+                        .localizedTracking(1).foregroundStyle(Prism.secondary)
                         .padding(.leading, 20).padding(.top, 12)
 
                     backdrop(textWidth: layout.textWidth)
@@ -47,7 +47,7 @@ struct PrismDashboardBanner: View {
                     .foregroundStyle(Prism.bg.opacity(0.72))
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Text(total)
-                    .font(.system(size: 62, weight: .heavy)).tracking(-2)
+                    .font(.system(size: 62, weight: .heavy)).localizedTracking(-2)
                     .monospacedDigit().foregroundStyle(Prism.bg)
                     .lineLimit(1).minimumScaleFactor(0.4)
                     .contentTransition(.numericText())
@@ -61,12 +61,12 @@ struct PrismDashboardBanner: View {
                     .foregroundStyle(Prism.secondary)
                 Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 8) {
                     GridRow {
-                        metric("输入", value: input)
-                        metric("输出", value: output)
+                        metric(L10n.text("输入"), value: input)
+                        metric(L10n.text("输出"), value: output)
                     }
                     GridRow {
-                        metric("缓存写", value: cacheWrite)
-                        metric("缓存读", value: cacheRead)
+                        metric(L10n.text("缓存写"), value: cacheWrite)
+                        metric(L10n.text("缓存读"), value: cacheRead)
                     }
                 }
             }
@@ -75,7 +75,7 @@ struct PrismDashboardBanner: View {
         }
         .overlay(alignment: .bottomLeading) {
             HStack {
-                Text("总量 = 输入 + 输出 + 缓存写 + 缓存读")
+                Text(L10n.text("总量 = 输入 + 输出 + 缓存写 + 缓存读"))
                     .font(.system(size: 9, weight: .semibold)).lineLimit(1)
                 Spacer(minLength: 0)
             }
@@ -151,8 +151,8 @@ struct PrismTokenHero: View {
                     Prism.panel
                     Rectangle().fill(Prism.silver).frame(height: 32)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("TODAY / 今日 Token")
-                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        Text(L10n.text("TODAY / 今日 Token"))
+                            .font(.system(size: 9, weight: .semibold, design: AppLanguage.monospacedDesign))
                             .foregroundStyle(Prism.bg)
                             .frame(height: 32)
                         Text(value)
@@ -161,7 +161,7 @@ struct PrismTokenHero: View {
                             .contentTransition(.numericText())
                             .lineLimit(1).minimumScaleFactor(0.4)
                             .frame(width: 130, height: 54, alignment: .leading)
-                        Text("输入、输出与缓存的合计")
+                        Text(L10n.text("输入、输出与缓存的合计"))
                             .font(.system(size: 9)).foregroundStyle(Prism.secondary)
                             .lineLimit(1)
                     }

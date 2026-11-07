@@ -11,8 +11,9 @@ import Darwin
 ///                  内置价格表 + 归一化后的精确匹配。
 @MainActor
 final class UsageStore: ObservableObject {
-    // 弹窗/菜单栏"今日一瞥"字段,恒为今日/本月/7天,与 filter 解耦
+    // 弹窗概览固定时间窗口,与监控台 filter 解耦;今日汇总仍供菜单栏/提醒等使用。
     @Published var today = UsagePeriodSummary()
+    @Published var last24Hours = UsagePeriodSummary()
     @Published var thisMonth = UsagePeriodSummary()
     @Published var last7Days: [DailyUsage] = []
     @Published var burnRatePerHourUSD: Double = 0     // 最近 1 小时实际花费
@@ -147,7 +148,13 @@ final class UsageStore: ObservableObject {
                     let additional = additionalScanner.scanAll()
                     statuses = [ToolKind.claude, .codex].map { tool in
                         let count = events.filter { $0.sourceApp == tool.rawValue }.count
-                        return ToolSourceStatus(tool: tool, count: count, detail: count > 0 ? "本地记录 · 自动更新" : "近 90 天未发现可读取用量")
+                        if tool == .codex {
+                            var detail = L10n.text("本地记录与计量账本 · 已读取 \(codexScanner.compressedFiles) 个压缩文件")
+                            if codexScanner.readFailures > 0 { detail += L10n.text("；\(codexScanner.readFailures) 个文件读取失败，保留已核实记录") }
+                            if codexScanner.historyPersistenceFailed { detail += L10n.text("；计量账本保存异常，请保留原会话") }
+                            return ToolSourceStatus(tool: tool, count: count, detail: detail)
+                        }
+                        return ToolSourceStatus(tool: tool, count: count, detail: count > 0 ? L10n.text("本地记录 · 自动更新") : L10n.text("近 90 天未发现可读取用量"))
                     } + additional.statuses
                     events.append(contentsOf: additional.events)
                 }
@@ -167,6 +174,7 @@ final class UsageStore: ObservableObject {
                 self.sourceStatuses = scanResult.statuses
                 self.recentActivity = scanResult.recentActivity
                 self.today = scanResult.summary.today
+                self.last24Hours = scanResult.summary.last24Hours
                 self.thisMonth = scanResult.summary.thisMonth
                 self.last7Days = scanResult.summary.last7Days
                 self.burnRatePerHourUSD = scanResult.summary.burnRate
@@ -221,6 +229,7 @@ final class UsageStore: ObservableObject {
 
     struct AggregateResult {
         var today = UsagePeriodSummary()
+        var last24Hours = UsagePeriodSummary()
         var thisMonth = UsagePeriodSummary()
         var last7Days: [DailyUsage] = []
         var burnRate: Double = 0
@@ -235,6 +244,9 @@ final class UsageStore: ObservableObject {
             return AggregateResult()
         }
         let hourAgo = now.addingTimeInterval(-3600)
+        // 与监控台同为精确 24 小时 [起点, 当前时刻),跨午夜和夏令时仍保持 86400 秒。
+        // 每次定时扫描都按新的 now 重新计算,没有新增日志时旧事件也会移出窗口。
+        let (rollingStart, rollingEnd) = UsageAggregator.timeBounds(.last24h, now: now, cal: cal)
         // 7 天窗口下界必须和图表桶同源用日历运算,固定 6×86400 秒在 DST 时区会差 1 小时
         let windowStart = cal.date(byAdding: .day, value: -6, to: todayStart)
             ?? todayStart.addingTimeInterval(-6 * 86400)
@@ -256,6 +268,9 @@ final class UsageStore: ObservableObject {
                 cost *= snapshot?.fastMultiplier(for: e.model, at: e.timestamp) ?? PricingTable.fastMultiplier(for: e.model)
             }
 
+            if e.timestamp >= rollingStart && e.timestamp < rollingEnd {
+                add(&result.last24Hours, e, cost)
+            }
             if e.timestamp >= todayStart {
                 add(&result.today, e, cost)
             }

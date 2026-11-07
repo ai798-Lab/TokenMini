@@ -8,11 +8,11 @@ enum MenuBarTokenFormatter {
         let rounded = (value / pow(10, floor(log10(value)) - 2)).rounded()
             * pow(10, floor(log10(value)) - 2)
         let unit: (Double, String)
-        if rounded >= 1e16 { unit = (1e16, "京") }
-        else if rounded >= 1e12 { unit = (1e12, "万亿") }
-        else if rounded >= 1e7 { unit = (1e8, "亿") }
-        else if rounded >= 1e4 { unit = (1e4, "万") }
-        else { unit = (1e3, "千") }
+        if rounded >= 1e16 { unit = (1e16, L10n.text("京")) }
+        else if rounded >= 1e12 { unit = (1e12, L10n.text("万亿")) }
+        else if rounded >= 1e7 { unit = (1e8, L10n.text("亿")) }
+        else if rounded >= 1e4 { unit = (1e4, L10n.text("万")) }
+        else { unit = (1e3, L10n.text("千")) }
         let scaled = rounded / unit.0
         let decimals = max(0, 2 - Int(floor(log10(scaled))))
         var number = String(format: "%.*f", locale: Locale(identifier: "en_US_POSIX"), decimals, scaled)

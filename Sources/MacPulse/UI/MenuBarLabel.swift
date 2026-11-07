@@ -25,7 +25,7 @@ struct MenuBarLabel: View {
         if settings.showCPUInMenuBar { result.append(("cpu", "\(cpuPercent)", 45)) }
         if settings.showMemoryInMenuBar { result.append(("memorychip", "\(memoryPercent)", 45)) }
         if settings.showCostInMenuBar { result.append((nil, costText, 64)) }
-        if let remainingQuota { result.append((nil, remainingQuota >= 0 ? "余\(remainingQuota)%" : "余--%", 51)) }
+        if let remainingQuota { result.append((nil, remainingQuota >= 0 ? L10n.text("余\(remainingQuota)%") : L10n.text("余--%"), 51)) }
         return result
     }
 
@@ -55,12 +55,12 @@ struct MenuBarLabel: View {
 
     private var accessibilityText: String {
         var text = "TokenMini"
-        if settings.showTokensInMenuBar { text += "，今日 Token " + (usage.lastScan == nil ? "加载中" : MenuBarTokenFormatter.string(usage.today.totalTokens)) }
+        if settings.showTokensInMenuBar { text += L10n.text("，今日 Token ") + (usage.lastScan == nil ? L10n.text("加载中") : MenuBarTokenFormatter.string(usage.today.totalTokens)) }
         if settings.showCPUInMenuBar { text += "，CPU \(cpuPercent)%" }
-        if settings.showMemoryInMenuBar { text += "，内存 \(memoryPercent)%" }
-        if settings.showCostInMenuBar { text += "，今日 API 等价费用预估 \(costText)，不代表订阅实际扣款" }
+        if settings.showMemoryInMenuBar { text += L10n.text("，内存 \(memoryPercent)%") }
+        if settings.showCostInMenuBar { text += L10n.text("，今日 API 等价费用预估 \(costText)，不代表订阅实际扣款") }
         if let remainingQuota {
-            text += remainingQuota >= 0 ? "，最紧张额度剩余 \(remainingQuota)%" : "，额度数据加载中"
+            text += remainingQuota >= 0 ? L10n.text("，最紧张额度剩余 \(remainingQuota)%") : L10n.text("，额度数据加载中")
         }
         return text
     }
@@ -143,10 +143,10 @@ struct MenuBarLabel: View {
             switch value {
             case ..<9.95: return String(format: "¥%.1f", value)
             case ..<9_999.5: return String(format: "¥%.0f", value)
-            case ..<99_500: return String(format: "¥%.1f万", value / 10_000)
-            case ..<9_995_000: return String(format: "¥%.0f万", value / 10_000)
-            case ..<995_000_000: return String(format: "¥%.1f亿", value / 100_000_000)
-            default: return String(format: "¥%.0f亿", min(value / 100_000_000, 999))
+            case ..<99_500: return String(format: L10n.text("¥%.1f万"), value / 10_000)
+            case ..<9_995_000: return String(format: L10n.text("¥%.0f万"), value / 10_000)
+            case ..<995_000_000: return String(format: L10n.text("¥%.1f亿"), value / 100_000_000)
+            default: return String(format: L10n.text("¥%.0f亿"), min(value / 100_000_000, 999))
             }
         }
 

@@ -25,13 +25,13 @@ struct LeaderboardView: View {
         .task(id: leaderboard.metric) { await leaderboard.load() }
         .onAppear { bringToFront() }
         .onDisappear { NSApp.setActivationPolicy(.accessory) }
-        .alert("退出排行榜？", isPresented: $confirmLeave) {
-            Button("取消", role: .cancel) {}
-            Button("退出并删除榜单数据", role: .destructive) {
+        .alert(L10n.text("退出排行榜？"), isPresented: $confirmLeave) {
+            Button(L10n.text("取消"), role: .cancel) {}
+            Button(L10n.text("退出并删除榜单数据"), role: .destructive) {
                 Task { await leaderboard.leave() }
             }
         } message: {
-            Text("退出后会停止同步并删除公开排行榜数据；TokenMini 的全部本地监控功能仍可正常使用。")
+            Text(L10n.text("退出后会停止同步并删除公开排行榜数据；TokenMini 的全部本地监控功能仍可正常使用。"))
         }
     }
 
@@ -47,16 +47,16 @@ struct LeaderboardView: View {
         HStack(spacing: 10) {
             Circle().fill(leaderboard.isJoined ? success : muted).frame(width: 7, height: 7)
             VStack(alignment: .leading, spacing: 2) {
-                Text("社区排行")
+                Text(L10n.text("社区排行"))
                     .font(titleFont)
                     .foregroundStyle(primary)
-                Text(leaderboard.isJoined ? "已加入 · 每日汇总自动同步" : "无需登录也能浏览")
+                Text(leaderboard.isJoined ? L10n.text("已加入 · 每日汇总自动同步") : L10n.text("无需登录也能浏览"))
                     .font(captionFont)
                     .foregroundStyle(muted)
             }
             Spacer()
             Button { NSWorkspace.shared.open(AppInfo.rankings) } label: {
-                Label("网页榜单", systemImage: "arrow.up.right")
+                Label(L10n.text("网页榜单"), systemImage: "arrow.up.right")
             }
             .modifier(PrismSecondaryAction())
             .font(captionFont).foregroundStyle(accent)
@@ -79,15 +79,15 @@ struct LeaderboardView: View {
     private var joinContent: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack {
-                Label("登录后自动加入", systemImage: "person.crop.circle.badge.plus")
+                Label(L10n.text("登录后自动加入"), systemImage: "person.crop.circle.badge.plus")
                     .font(sectionFont)
                     .foregroundStyle(primary)
                 Spacer()
-                Text("默认打码")
+                Text(L10n.text("默认打码"))
                     .font(captionFont)
                     .foregroundStyle(accent)
             }
-            Text("Google 登录成功后直接加入 Token 与 API 等价费用两个榜单。只同步上海时区每日总量、价格表版本和 App 版本；不上传会话正文、项目名、路径、模型明细或 AI 凭证。")
+            Text(L10n.text("Google 登录成功后直接加入 Token 与 API 等价费用两个榜单。只同步上海时区每日总量、价格表版本和 App 版本；不上传会话正文、项目名、路径、模型明细或 AI 凭证。"))
                 .font(bodyFont)
                 .foregroundStyle(muted)
                 .lineSpacing(3)
@@ -95,7 +95,7 @@ struct LeaderboardView: View {
                 primaryJoinButton
                 if leaderboard.signingIn { ProgressView().controlSize(.small) }
                 Spacer()
-                Text("不登录不影响任何本地功能")
+                Text(L10n.text("不登录不影响任何本地功能"))
                     .font(captionFont)
                     .foregroundStyle(faint)
             }
@@ -105,25 +105,25 @@ struct LeaderboardView: View {
     @ViewBuilder
     private var primaryJoinButton: some View {
         if settings.isPrism {
-            Button(leaderboard.signingIn ? "正在登录…" : "使用 Google 登录并加入") {
+            Button(leaderboard.signingIn ? L10n.text("正在登录…") : L10n.text("使用 Google 登录并加入")) {
                 Task { await leaderboard.signInAndJoin() }
             }
             .buttonStyle(PrismButtonStyle(prominent: true, size: 12))
             .disabled(leaderboard.signingIn)
         } else if settings.isHUD {
-            Button(leaderboard.signingIn ? "正在登录…" : "使用 Google 登录并加入") {
+            Button(leaderboard.signingIn ? L10n.text("正在登录…") : L10n.text("使用 Google 登录并加入")) {
                 Task { await leaderboard.signInAndJoin() }
             }
             .buttonStyle(HUDButtonStyle(size: 11))
             .disabled(leaderboard.signingIn)
         } else if settings.isLED {
-            Button(leaderboard.signingIn ? "正在登录…" : "使用 Google 登录并加入") {
+            Button(leaderboard.signingIn ? L10n.text("正在登录…") : L10n.text("使用 Google 登录并加入")) {
                 Task { await leaderboard.signInAndJoin() }
             }
             .buttonStyle(LEDGhostButtonStyle(size: 11, prominent: true))
             .disabled(leaderboard.signingIn)
         } else {
-            Button(leaderboard.signingIn ? "正在登录…" : "使用 Google 登录并加入") {
+            Button(leaderboard.signingIn ? L10n.text("正在登录…") : L10n.text("使用 Google 登录并加入")) {
                 Task { await leaderboard.signInAndJoin() }
             }
             .buttonStyle(.borderedProminent)
@@ -135,39 +135,39 @@ struct LeaderboardView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(leaderboard.profile?.displayedName ?? "已加入")
+                    Text(leaderboard.profile?.displayedName ?? L10n.text("已加入"))
                         .font(sectionFont).foregroundStyle(primary)
-                    Text("本周 · UTC+8")
+                    Text(L10n.text("本周 · UTC+8"))
                         .font(captionFont).foregroundStyle(muted)
                 }
                 Spacer()
                 if leaderboard.syncing {
-                    Label("同步中", systemImage: "arrow.triangle.2.circlepath")
+                    Label(L10n.text("同步中"), systemImage: "arrow.triangle.2.circlepath")
                         .font(captionFont).foregroundStyle(accent)
                 } else if let date = leaderboard.lastSyncAt {
-                    Text("同步于 " + date.formatted(date: .omitted, time: .shortened))
+                    Text(L10n.text("同步于 ") + date.formatted(date: .omitted, time: .shortened))
                         .font(captionFont).foregroundStyle(faint)
                 }
             }
             HStack(spacing: 10) {
-                standing("Token 名次", leaderboard.me?.tokens, metric: .tokens)
-                standing("费用名次", leaderboard.me?.cost, metric: .cost)
+                standing(L10n.text("Token 名次"), leaderboard.me?.tokens, metric: .tokens)
+                standing(L10n.text("费用名次"), leaderboard.me?.cost, metric: .cost)
             }
             Toggle(isOn: Binding(
                 get: { leaderboard.profile?.displayMode == "public" },
                 set: { value in Task { await leaderboard.setPublicName(value) } })) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("公开显示完整昵称").font(bodyFont).foregroundStyle(primary)
-                    Text("关闭时只保留昵称最后一个字，例如 ＊＊＊平")
+                    Text(L10n.text("公开显示完整昵称")).font(bodyFont).foregroundStyle(primary)
+                    Text(L10n.text("关闭时只保留昵称最后一个字，例如 ＊＊＊平"))
                         .font(captionFont).foregroundStyle(muted)
                 }
             }
             .toggleStyle(PrismSecondaryToggleStyle(isSwitch: true))
             HStack {
-                Button("立即同步") { Task { await leaderboard.syncIfNeeded(force: true) } }
+                Button(L10n.text("立即同步")) { Task { await leaderboard.syncIfNeeded(force: true) } }
                     .modifier(PrismSecondaryAction()).font(captionFont).foregroundStyle(accent)
                 Spacer()
-                Button("退出排行榜", role: .destructive) { confirmLeave = true }
+                Button(L10n.text("退出排行榜"), role: .destructive) { confirmLeave = true }
                     .modifier(PrismSecondaryAction()).font(captionFont).foregroundStyle(danger)
             }
         }
@@ -180,7 +180,7 @@ struct LeaderboardView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(captionFont).foregroundStyle(muted)
-            Text(value?.rank.map { "#\($0)" } ?? "暂未上榜")
+            Text(value?.rank.map { "#\($0)" } ?? L10n.text("暂未上榜"))
                 .font(.system(size: 21, weight: .bold, design: .rounded))
                 .foregroundStyle(value?.rank == nil ? muted : accent)
             Text(format(value?.value ?? 0, metric: metric))
@@ -198,7 +198,7 @@ struct LeaderboardView: View {
         GlassCard(padding: 0) {
             VStack(spacing: 0) {
                 HStack {
-                    Text(leaderboard.metric.label + " · 本周")
+                    Text(leaderboard.metric.label + L10n.text(" · 本周"))
                         .font(sectionFont).foregroundStyle(primary)
                     Spacer()
                     ThemedSegmented(items: RankingMetric.allCases.map { ($0, $0.label) },
@@ -207,7 +207,7 @@ struct LeaderboardView: View {
                 .padding(15)
                 Divider().opacity(settings.isDarkSkin ? 0.2 : 1)
                 if leaderboard.loading {
-                    stateView("正在读取榜单…", progress: true)
+                    stateView(L10n.text("正在读取榜单…"), progress: true)
                 } else if let error = leaderboard.rankingError {
                     rankingErrorView(error)
                 } else if let entries = leaderboard.ranking?.entries, !entries.isEmpty {
@@ -218,10 +218,10 @@ struct LeaderboardView: View {
                         }
                     }
                 } else {
-                    stateView("还没有人上榜。登录后你可以成为第一位。", progress: false)
+                    stateView(L10n.text("还没有人上榜。登录后你可以成为第一位。"), progress: false)
                 }
                 if leaderboard.metric == .cost {
-                    Text("费用为按公开模型价格计算的 API 等价预估，不代表订阅实际扣款。")
+                    Text(L10n.text("费用为按公开模型价格计算的 API 等价预估，不代表订阅实际扣款。"))
                         .font(captionFont).foregroundStyle(faint)
                         .padding(.horizontal, 15).padding(.bottom, 14)
                 }
@@ -243,7 +243,7 @@ struct LeaderboardView: View {
         }
         .padding(.horizontal, 15).padding(.vertical, 11)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("第 \(entry.rank) 名，\(entry.name)，\(format(entry.value, metric: leaderboard.metric))")
+        .accessibilityLabel(L10n.text("第 \(entry.rank) 名，\(entry.name)，\(format(entry.value, metric: leaderboard.metric))"))
     }
 
     private func stateView(_ text: String, progress: Bool) -> some View {
@@ -258,9 +258,9 @@ struct LeaderboardView: View {
     private func rankingErrorView(_ text: String) -> some View {
         VStack(spacing: 10) {
             Text(text).font(bodyFont).foregroundStyle(muted)
-            Button("重新加载") { Task { await leaderboard.load() } }
+            Button(L10n.text("重新加载")) { Task { await leaderboard.load() } }
                 .modifier(PrismSecondaryAction()).font(captionFont).foregroundStyle(accent)
-            Text("本地监控不受影响")
+            Text(L10n.text("本地监控不受影响"))
                 .font(captionFont).foregroundStyle(faint)
         }
         .frame(maxWidth: .infinity)
@@ -292,7 +292,7 @@ struct LeaderboardView: View {
         DispatchQueue.main.async {
             NSApp.activate(ignoringOtherApps: true)
             let window = NSApp.windows.first {
-                $0.identifier?.rawValue == "leaderboard" || $0.title == "社区排行"
+                $0.identifier?.rawValue == "leaderboard" || $0.title == L10n.text("社区排行")
             }
             window?.makeKeyAndOrderFront(nil)
             window?.orderFrontRegardless()
@@ -311,7 +311,7 @@ struct LeaderboardView: View {
     private var sectionFont: Font { settings.isPrism ? Prism.label(13, .semibold) : settings.isLED ? LED.display(13, .bold) : (settings.isHUD ? HUD.mono(12, .bold) : .headline) }
     private var bodyFont: Font { settings.isPrism ? Prism.label(12) : settings.isLED ? LED.display(11, .medium) : (settings.isHUD ? HUD.mono(10) : .body) }
     private var captionFont: Font { settings.isPrism ? Prism.label(11) : settings.isLED ? LED.mono(9) : (settings.isHUD ? HUD.mono(8.5) : .caption) }
-    private var rankFont: Font { settings.isPrism ? Prism.label(13, .semibold) : settings.isLED ? LED.mono(12, .bold) : (settings.isHUD ? HUD.mono(11, .bold) : .system(size: 12, weight: .semibold, design: .monospaced)) }
+    private var rankFont: Font { settings.isPrism ? Prism.label(13, .semibold) : settings.isLED ? LED.mono(12, .bold) : (settings.isHUD ? HUD.mono(11, .bold) : .system(size: 12, weight: .semibold, design: AppLanguage.monospacedDesign)) }
 
     @ViewBuilder private var divider: some View {
         if settings.isDarkSkin {

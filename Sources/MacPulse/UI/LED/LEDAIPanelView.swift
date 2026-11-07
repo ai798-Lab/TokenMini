@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-/// LED 主题·AI 用量页签:今日花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
+/// LED 主题·AI 用量页签:24 小时花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
 /// 整页统一琥珀色 —— 按 LED 配色规则,金钱/token/用量归琥珀,红只留给系统负载。
 struct LEDAIPanelView: View {
     @EnvironmentObject var usage: UsageStore
@@ -14,7 +14,7 @@ struct LEDAIPanelView: View {
             trendChart
             modelBreakdown
             openDashboardButton
-            Text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算")
+            Text(L10n.text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算"))
                 .font(.system(size: 8))
                 .foregroundStyle(LED.faint)
         }
@@ -22,20 +22,20 @@ struct LEDAIPanelView: View {
         .padding(.vertical, 6)
     }
 
-    // MARK: 今日花费大屏(本页主角:全 app 最大的读数)
+    // MARK: 24 小时花费大屏(本页主角:全 app 最大的读数)
 
     private var headline: some View {
         LEDPanel(tint: LED.amber, padding: 14) {
             VStack(spacing: 9) {
                 VStack(spacing: 3) {
-                    LEDCaption(text: "TODAY · COST", tint: LED.amber)
-                    Text("今日花费")
+                    LEDCaption(text: "24H · COST", tint: LED.amber)
+                    Text(L10n.text("24 小时花费"))
                         .font(LED.display(10, .semibold))
                         .foregroundStyle(LED.dim)
                 }
-                SevenSegmentText(text: settings.currencyStr(usage.today.totalCostUSD),
+                SevenSegmentText(text: settings.currencyStr(usage.last24Hours.totalCostUSD),
                                  height: 40, color: LED.amber)
-                Text("\(settings.tokens(usage.today.totalTokens)) tok · \(usage.today.eventCount) 次")
+                Text(L10n.text("\(settings.tokens(usage.last24Hours.totalTokens)) tok · \(usage.last24Hours.eventCount) 次"))
                     .font(LED.mono(8))
                     .foregroundStyle(LED.dim)
                 HStack(spacing: 8) {
@@ -45,11 +45,11 @@ struct LEDAIPanelView: View {
                 }
                 Rectangle().fill(LED.amber.opacity(0.18)).frame(height: 1)
                 HStack(spacing: 0) {
-                    stat("近 1 小时", "RATE/H", settings.currencyStr(usage.burnRatePerHourUSD))
+                    stat(L10n.text("近 1 小时"), "RATE/H", settings.currencyStr(usage.burnRatePerHourUSD))
                     divider
-                    stat("本月已用", "MTD", settings.currencyStr(usage.thisMonth.totalCostUSD))
+                    stat(L10n.text("本月已用"), "MTD", settings.currencyStr(usage.thisMonth.totalCostUSD))
                     divider
-                    stat("整月预估", "PROJ", settings.currencyStr(usage.monthProjectionUSD))
+                    stat(L10n.text("整月预估"), "PROJ", settings.currencyStr(usage.monthProjectionUSD))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -65,18 +65,18 @@ struct LEDAIPanelView: View {
     // 计量单位 / 货币 设置(齿轮菜单)
     private var settingsMenu: some View {
         Menu {
-            Picker("Token 单位", selection: $settings.tokenUnit) {
+            Picker(L10n.text("Token 单位"), selection: $settings.tokenUnit) {
                 ForEach(TokenUnitMode.allCases) { Text($0.label).tag($0) }
             }
-            Picker("货币", selection: $settings.currency) {
+            Picker(L10n.text("货币"), selection: $settings.currency) {
                 ForEach(CurrencyMode.allCases) { Text($0.label).tag($0) }
             }
             if settings.currency == .cny {
                 Divider()
-                Text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY")
-                Button("汇率 7.0") { settings.usdToCny = 7.0 }
-                Button("汇率 7.2") { settings.usdToCny = 7.2 }
-                Button("汇率 7.4") { settings.usdToCny = 7.4 }
+                Text(L10n.text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY"))
+                Button(L10n.text("汇率 7.0")) { settings.usdToCny = 7.0 }
+                Button(L10n.text("汇率 7.2")) { settings.usdToCny = 7.2 }
+                Button(L10n.text("汇率 7.4")) { settings.usdToCny = 7.4 }
             }
         } label: {
             Image(systemName: "slider.horizontal.3").font(.caption)
@@ -106,7 +106,7 @@ struct LEDAIPanelView: View {
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 6) {
                     LEDCaption(text: "LAST 7 DAYS", tint: LED.amber)
-                    Text("近 7 天")
+                    Text(L10n.text("近 7 天"))
                         .font(LED.display(9, .medium))
                         .foregroundStyle(LED.faint)
                 }
@@ -115,7 +115,7 @@ struct LEDAIPanelView: View {
                     HStack(spacing: 6) {
                         Spacer()
                         ProgressView().controlSize(.small)
-                        Text("正在扫描本地会话…")
+                        Text(L10n.text("正在扫描本地会话…"))
                             .font(LED.mono(8))
                             .foregroundStyle(LED.faint)
                         Spacer()
@@ -131,8 +131,8 @@ struct LEDAIPanelView: View {
     private var chartBody: some View {
         Chart(usage.last7Days) { d in
                 BarMark(
-                    x: .value("日期", String(d.day.suffix(5))),
-                    y: .value("花费", d.costUSD),
+                    x: .value(L10n.text("日期"), String(d.day.suffix(5))),
+                    y: .value(L10n.text("花费"), d.costUSD),
                     width: .ratio(0.55)
                 )
                 .foregroundStyle(
@@ -175,7 +175,7 @@ struct LEDAIPanelView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
                         LEDCaption(text: "BY MODEL · MTD", tint: LED.amber)
-                        Text("本月按模型")
+                        Text(L10n.text("本月按模型"))
                             .font(LED.display(9, .medium))
                             .foregroundStyle(LED.faint)
                     }
@@ -217,7 +217,7 @@ struct LEDAIPanelView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.doc.horizontal").font(.system(size: 11, weight: .bold))
-                Text("打开监控台")
+                Text(L10n.text("打开监控台"))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)

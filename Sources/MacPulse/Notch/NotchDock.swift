@@ -83,7 +83,7 @@ final class NotchDock {
 
         let host = NSHostingView(rootView: NotchDockView(
             system: system, usage: usage, quota: quota, state: state,
-            notchSize: screen.notchSize ?? NSSize(width: 180, height: 32)))
+            notchSize: screen.notchSize ?? NSSize(width: 180, height: 32)).localizedInterface())
         host.frame = NSRect(origin: .zero, size: p.frame.size)
         host.autoresizingMask = [.width, .height]
         p.contentView = host

@@ -28,18 +28,18 @@ struct HUDSystemPanelView: View {
         .onAppear {
             if !cleanup.hasScanned && !cleanup.scanning { cleanup.scan() }
         }
-        .alert("结束进程", isPresented: Binding(
+        .alert(L10n.text("结束进程"), isPresented: Binding(
             get: { procToKill != nil },
             set: { if !$0 { procToKill = nil } })
         ) {
-            Button("取消", role: .cancel) { procToKill = nil }
-            Button("结束", role: .destructive) {
+            Button(L10n.text("取消"), role: .cancel) { procToKill = nil }
+            Button(L10n.text("结束"), role: .destructive) {
                 if let p = procToKill { actions.terminate(p, system: system) }
                 procToKill = nil
             }
         } message: {
             if let p = procToKill {
-                Text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。")
+                Text(L10n.text("将请求「\(p.name)」退出。请先保存工作；后台进程可能立即结束，不能保证自动保存。"))
             }
         }
     }
@@ -55,8 +55,8 @@ struct HUDSystemPanelView: View {
                 Sparkline(values: system.cpuHistory, color: HUD.cyan)
                     .frame(height: 36)
                 HStack(spacing: 12) {
-                    legend("系统", String(format: "%.1f%%", system.cpu.systemUsage * 100), HUD.pink)
-                    legend("用户", String(format: "%.1f%%", system.cpu.userUsage * 100), HUD.cyan)
+                    legend(L10n.text("系统"), String(format: "%.1f%%", system.cpu.systemUsage * 100), HUD.pink)
+                    legend(L10n.text("用户"), String(format: "%.1f%%", system.cpu.userUsage * 100), HUD.cyan)
                     Spacer()
                 }
             }
@@ -81,17 +81,17 @@ struct HUDSystemPanelView: View {
     private var memorySection: some View {
         HUDPanel(padding: 9, accent: memColor) {
             VStack(alignment: .leading, spacing: 5) {
-                HUDSectionHeader(cn: "内存", code: "SYS.MEM", accent: memColor,
+                HUDSectionHeader(cn: L10n.text("内存"), code: "SYS.MEM", accent: memColor,
                                  trailing: AnyView(
                                     Text("\(ByteFormat.memory(system.memory.used)) / \(ByteFormat.memory(system.memory.total))")
                                         .font(HUD.mono(10, .bold))
                                         .foregroundStyle(HUD.text)))
                 HUDGauge(ratio: system.memory.usageRatio, color: memColor)
                 HStack(spacing: 12) {
-                    legend("系统保留", ByteFormat.memory(system.memory.wired), HUD.amber)
-                    legend("已压缩", ByteFormat.memory(system.memory.compressed), HUD.violet)
+                    legend(L10n.text("系统保留"), ByteFormat.memory(system.memory.wired), HUD.amber)
+                    legend(L10n.text("已压缩"), ByteFormat.memory(system.memory.compressed), HUD.violet)
                     Spacer()
-                    Button("管理内存") {
+                    Button(L10n.text("管理内存")) {
                         cleanup.page = .memory
                         openWindow(id: "maintenance")
                         NSApp.activate(ignoringOtherApps: true)
@@ -118,13 +118,13 @@ struct HUDSystemPanelView: View {
                              l2: "↑ \(ByteFormat.string(system.network.txPerSec))/s")
                     Rectangle().fill(HUD.gridline).frame(width: 1, height: 26)
                     rateCell(icon: "internaldrive", title: "I/O",
-                             l1: "读 \(ByteFormat.string(system.disk.readPerSec))/s",
-                             l2: "写 \(ByteFormat.string(system.disk.writePerSec))/s")
+                             l1: L10n.text("读 \(ByteFormat.string(system.disk.readPerSec))/s"),
+                             l2: L10n.text("写 \(ByteFormat.string(system.disk.writePerSec))/s"))
                 }
-                HUDSectionHeader(cn: "磁盘空间", code: "SYS.DISK",
+                HUDSectionHeader(cn: L10n.text("磁盘空间"), code: "SYS.DISK",
                                  accent: system.diskSpace.usedRatio > 0.9 ? HUD.red : HUD.cyan,
                                  trailing: AnyView(
-                                    Text("可用 \(ByteFormat.memory(system.diskSpace.free)) / \(ByteFormat.memory(system.diskSpace.total))")
+                                    Text(L10n.text("可用 \(ByteFormat.memory(system.diskSpace.free)) / \(ByteFormat.memory(system.diskSpace.total))"))
                                         .font(HUD.mono(8))
                                         .foregroundStyle(HUD.dim)))
                 HUDGauge(ratio: system.diskSpace.usedRatio,
@@ -160,7 +160,7 @@ struct HUDSystemPanelView: View {
                     legend("GPU", String(format: "%.0f°C", g), HUD.mint)
                 }
                 ForEach(system.sensors.fans) { fan in
-                    legend("风扇\(fan.index + 1)", String(format: "%.0f rpm", fan.currentRPM), HUD.ice)
+                    legend(L10n.text("风扇\(fan.index + 1)"), String(format: "%.0f rpm", fan.currentRPM), HUD.ice)
                 }
                 Spacer()
             }
@@ -174,7 +174,7 @@ struct HUDSystemPanelView: View {
         if system.battery.present {
             HUDPanel(padding: 9, accent: HUD.green) {
                 HStack(spacing: 12) {
-                    HUDSectionHeader(cn: "电池", code: "SYS.PWR", accent: HUD.green,
+                    HUDSectionHeader(cn: L10n.text("电池"), code: "SYS.PWR", accent: HUD.green,
                                      trailing: AnyView(batteryReadout))
                 }
             }
@@ -188,13 +188,13 @@ struct HUDSystemPanelView: View {
                 Text("\(p)%").font(HUD.mono(10, .bold)).foregroundStyle(HUD.text)
             }
             if let h = system.battery.healthPercent {
-                legend("健康", "\(h)%", h >= 80 ? HUD.green : HUD.amber)
+                legend(L10n.text("健康"), "\(h)%", h >= 80 ? HUD.green : HUD.amber)
             }
             if let c = system.battery.cycleCount {
-                legend("循环", "\(c)", HUD.dim)
+                legend(L10n.text("循环"), "\(c)", HUD.dim)
             }
             if let t = system.battery.temperatureC {
-                legend("温度", String(format: "%.0f°C", t), HUD.dim)
+                legend(L10n.text("温度"), String(format: "%.0f°C", t), HUD.dim)
             }
         }
     }
@@ -209,7 +209,7 @@ struct HUDSystemPanelView: View {
     private var processSection: some View {
         HUDPanel(padding: 9, accent: HUD.violet) {
             VStack(alignment: .leading, spacing: 4) {
-                HUDSectionHeader(cn: "占用最高", code: "PROC.TOP", accent: HUD.violet)
+                HUDSectionHeader(cn: L10n.text("占用最高"), code: "PROC.TOP", accent: HUD.violet)
                 ForEach(Array(system.topProcesses.enumerated()), id: \.element.id) { i, p in
                     HStack(spacing: 6) {
                         Text(String(format: "%02d", i + 1))
@@ -233,7 +233,7 @@ struct HUDSystemPanelView: View {
                                 .background(CutCorner(cut: 3).fill(Color.white.opacity(0.06)))
                         }
                         .buttonStyle(.plain)
-                        .help("请求退出该进程，请先保存工作")
+                        .help(L10n.text("请求退出该进程，请先保存工作"))
                         .disabled(actions.pendingPID != nil || ProcessKiller.isProtected(pid: p.pid, name: p.name))
                     }
                     .padding(.vertical, 1)
@@ -248,7 +248,7 @@ struct HUDSystemPanelView: View {
     private var junkSection: some View {
         HUDPanel(padding: 9, accent: HUD.amber) {
             VStack(alignment: .leading, spacing: 6) {
-                HUDSectionHeader(cn: "垃圾清理", code: "SYS.JUNK", accent: HUD.amber,
+                HUDSectionHeader(cn: L10n.text("垃圾清理"), code: "SYS.JUNK", accent: HUD.amber,
                                  trailing: AnyView(junkHeaderTrailing))
 
                 CleanupStatusView()
@@ -298,7 +298,7 @@ struct HUDSystemPanelView: View {
                     } label: {
                         HStack(spacing: 4) {
                             if cleanup.cleaning { ProgressView().controlSize(.mini) }
-                            Text(cleanup.cleaning ? "清理中…" : "预览清理")
+                            Text(cleanup.cleaning ? L10n.text("清理中…") : L10n.text("预览清理"))
                         }
                     }
                     .buttonStyle(HUDButtonStyle(accent: HUD.amber, filled: true, size: 10))
@@ -316,7 +316,7 @@ struct HUDSystemPanelView: View {
                 Text(cleanup.scanStatus).font(HUD.mono(8)).foregroundStyle(HUD.dim)
             }
         } else {
-            Button("重新扫描") { cleanup.scan() }
+            Button(L10n.text("重新扫描")) { cleanup.scan() }
                 .buttonStyle(HUDButtonStyle(accent: HUD.amber, size: 8))
                 .disabled(cleanup.cleaning)
         }

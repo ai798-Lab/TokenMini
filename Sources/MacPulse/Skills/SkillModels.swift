@@ -7,8 +7,8 @@ enum SkillScope: Equatable, Sendable {
 
     var label: String {
         switch self {
-        case .global: return "全局"
-        case .project(let name): return "项目 · \(name)"
+        case .global: return L10n.text("全局")
+        case .project(let name): return L10n.text("项目 · \(name)")
         }
     }
     var isGlobal: Bool { if case .global = self { return true }; return false }

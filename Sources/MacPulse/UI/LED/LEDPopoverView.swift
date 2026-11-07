@@ -43,10 +43,10 @@ struct LEDPopoverView: View {
         VStack(spacing: 0) {
             header
             hairline
+            UpdateNoticeView()
             // 窗口尺寸定死(否则 MenuBarExtra(.window) 随内容重排,切换瞬间圆角闪失),超高内容滚动。
             HUDScrollView(accent: LED.amber) {
                 VStack(spacing: 0) {
-                    UpdateNoticeView()
                     if proMode {
                         proContent
                     } else {
@@ -88,7 +88,7 @@ struct LEDPopoverView: View {
                 Text("TOKENMINI")
                     .font(LED.display(15, .bold))
                     .foregroundStyle(LED.text)
-                Text(proMode ? "专业模式" : "系统监控器")
+                Text(proMode ? L10n.text("专业模式") : L10n.text("系统监控器"))
                     .font(LED.display(9.5, .medium))
                     .foregroundStyle(LED.dim)
             }
@@ -98,7 +98,7 @@ struct LEDPopoverView: View {
             Button {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { proMode.toggle() }
             } label: {
-                Text(proMode ? "简单" : "专业")
+                Text(proMode ? L10n.text("简单") : L10n.text("专业"))
             }
             .buttonStyle(LEDGhostButtonStyle(size: 10))
         }
@@ -139,7 +139,7 @@ struct LEDPopoverView: View {
                     HStack(spacing: 5) {
                         Image(systemName: t.icon)
                             .font(.system(size: 11, weight: .semibold))
-                        Text(t.rawValue)
+                        Text(L10n.lookup(t.rawValue))
                             .font(LED.display(11.5, selected ? .bold : .medium))
                     }
                     // 选中:近黑字压在实色灯面上(真 LED 的反差);未选中:白字裸在底上
@@ -171,7 +171,7 @@ struct LEDPopoverView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "gauge").font(.system(size: 9))
-                    Text("活动监视器").font(LED.mono(9))
+                    Text(L10n.text("活动监视器")).font(LED.mono(9))
                 }
                 .foregroundStyle(LED.dim)
             }
@@ -193,7 +193,7 @@ struct LEDPopoverView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "power").font(.system(size: 9))
-                    Text("退出").font(LED.mono(9))
+                    Text(L10n.text("退出")).font(LED.mono(9))
                 }
                 .foregroundStyle(LED.dim)
             }

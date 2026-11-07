@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.1 (26)
+
+- Recover Codex usage from compressed and archived sessions. Persist verified metering across source rotation and application restarts, and deduplicate overlapping copies.
+- Show per-day token totals in trend details. Add the rolling 24-hour view and six interface languages.
+- Add opt-in DeepSeek official balance and model discovery, and ingest request-level API usage from connected projects and agents.
+- Update model pricing for GPT-6.1 Sol and Terra, Claude Sonnet and Haiku 5.5, Kimi K3.1 Pro and DeepSeek Flash.
+
 ## 0.14.1 (24)
 
 - 修复菜单栏短数值（如“1亿”）仍占用长数值宽度的问题，图标与数值按实际内容紧凑排列。

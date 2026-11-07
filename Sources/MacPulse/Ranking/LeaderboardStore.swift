@@ -83,7 +83,7 @@ final class LeaderboardStore: ObservableObject {
         do {
             let config = try await api.config()
             guard config.authReady, let clientID = config.googleDesktopClientID, !clientID.isEmpty else {
-                throw RankingAPIError.configuration("排行榜登录尚未开放")
+                throw RankingAPIError.configuration(L10n.text("排行榜登录尚未开放"))
             }
             let idToken = try await GoogleOAuthClient().signIn(clientID: clientID)
             let auth = try await api.googleLogin(idToken: idToken, appVersion: AppInfo.displayVersion)
@@ -163,7 +163,7 @@ final class LeaderboardStore: ObservableObject {
             }
         } catch {
             // 排行榜故障不影响本地监控；错误仅在排行榜页中展示。
-            if message == nil { message = "排行榜同步暂时不可用，本地监控不受影响" }
+            if message == nil { message = L10n.text("排行榜同步暂时不可用，本地监控不受影响") }
         }
         syncing = false
     }
@@ -236,7 +236,7 @@ final class LeaderboardStore: ObservableObject {
     private func readable(_ error: Swift.Error) -> String {
         if let localized = error as? LocalizedError,
            let description = localized.errorDescription { return description }
-        return "服务暂时不可用，请稍后重试"
+        return L10n.text("服务暂时不可用，请稍后重试")
     }
 }
 
@@ -331,7 +331,7 @@ private struct RankingAPIClient {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         components?.path = path
         components?.queryItems = query.isEmpty ? nil : query
-        guard let url = components?.url else { throw RankingAPIError.configuration("服务地址无效") }
+        guard let url = components?.url else { throw RankingAPIError.configuration(L10n.text("服务地址无效")) }
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -346,7 +346,7 @@ private struct RankingAPIClient {
         if http.statusCode == 401 { throw RankingAPIError.unauthorized }
         guard (200..<300).contains(http.statusCode) else {
             let server = try? decoder.decode(ServerErrorBody.self, from: data)
-            throw RankingAPIError.server(server?.message ?? "服务暂时不可用", http.statusCode)
+            throw RankingAPIError.server(server?.message ?? L10n.text("服务暂时不可用"), http.statusCode)
         }
         if Response.self == EmptyResponse.self {
             return EmptyResponse() as! Response
@@ -376,11 +376,11 @@ private enum RankingAPIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized: return "登录已失效，请重新使用 Google 登录"
-        case .invalidResponse: return "排行榜服务返回了无法识别的数据"
+        case .unauthorized: return L10n.text("登录已失效，请重新使用 Google 登录")
+        case .invalidResponse: return L10n.text("排行榜服务返回了无法识别的数据")
         case .server(let message, _): return message
         case .configuration(let message): return message
-        case .keychain: return "无法把登录状态安全保存到钥匙串"
+        case .keychain: return L10n.text("无法把登录状态安全保存到钥匙串")
         }
     }
 }

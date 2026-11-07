@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-/// AI 用量页签(弹窗一瞥):今日花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
+/// AI 用量页签(弹窗一瞥):24 小时花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
 struct HUDAIPanelView: View {
     /// The Prism shell already owns appearance settings and dashboard navigation.
     var showsStandaloneControls = true
@@ -15,7 +15,7 @@ struct HUDAIPanelView: View {
             trendChart
             modelBreakdown
             if showsStandaloneControls { openDashboardButton }
-            Text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算")
+            Text(L10n.text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算"))
                 .font(.system(size: 8.5))
                 .foregroundStyle(HUD.faint)
         }
@@ -29,7 +29,7 @@ struct HUDAIPanelView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.doc.horizontal").font(.system(size: 10))
-                Text("打开监控台")
+                Text(L10n.text("打开监控台"))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 3)
@@ -37,31 +37,31 @@ struct HUDAIPanelView: View {
         .buttonStyle(HUDButtonStyle(filled: true, size: 11))
     }
 
-    // MARK: 今日(大读数 + 三格跑道)
+    // MARK: 24 小时(大读数 + 三格跑道)
 
     private var headline: some View {
         HUDPanel(padding: 10) {
             VStack(alignment: .leading, spacing: 8) {
-                HUDSectionHeader(cn: "今日花费", code: "AI.COST // TODAY",
+                HUDSectionHeader(cn: L10n.text("24 小时花费"), code: "AI.COST // 24H",
                                  trailing: showsStandaloneControls ? AnyView(settingsMenu) : nil)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(settings.currencyStr(usage.today.totalCostUSD))
+                    Text(settings.currencyStr(usage.last24Hours.totalCostUSD))
                         .font(HUD.mono(26, .bold))
                         .foregroundStyle(HUD.cyan)
                         .shadow(color: HUD.cyan.opacity(0.35), radius: 8)
                         .contentTransition(.numericText())
-                        .animation(.spring(duration: 0.4), value: usage.today.totalCostUSD)
-                    Text("\(settings.tokens(usage.today.totalTokens)) tok · \(usage.today.eventCount) 次")
+                        .animation(.spring(duration: 0.4), value: usage.last24Hours.totalCostUSD)
+                    Text(L10n.text("\(settings.tokens(usage.last24Hours.totalTokens)) tok · \(usage.last24Hours.eventCount) 次"))
                         .font(HUD.mono(8))
                         .foregroundStyle(HUD.dim)
                 }
                 Rectangle().fill(HUD.gridline).frame(height: 1)
                 HStack(spacing: 0) {
-                    stat("近 1 小时", "RATE/H", settings.currencyStr(usage.burnRatePerHourUSD))
+                    stat(L10n.text("近 1 小时"), "RATE/H", settings.currencyStr(usage.burnRatePerHourUSD))
                     Rectangle().fill(HUD.gridline).frame(width: 1, height: 24)
-                    stat("本月已用", "MTD", settings.currencyStr(usage.thisMonth.totalCostUSD))
+                    stat(L10n.text("本月已用"), "MTD", settings.currencyStr(usage.thisMonth.totalCostUSD))
                     Rectangle().fill(HUD.gridline).frame(width: 1, height: 24)
-                    stat("整月预估", "PROJ", settings.currencyStr(usage.monthProjectionUSD))
+                    stat(L10n.text("整月预估"), "PROJ", settings.currencyStr(usage.monthProjectionUSD))
                 }
             }
         }
@@ -74,18 +74,18 @@ struct HUDAIPanelView: View {
 
     private var nativeSettingsMenu: some View {
         Menu {
-            Picker("Token 单位", selection: $settings.tokenUnit) {
+            Picker(L10n.text("Token 单位"), selection: $settings.tokenUnit) {
                 ForEach(TokenUnitMode.allCases) { Text($0.label).tag($0) }
             }
-            Picker("货币", selection: $settings.currency) {
+            Picker(L10n.text("货币"), selection: $settings.currency) {
                 ForEach(CurrencyMode.allCases) { Text($0.label).tag($0) }
             }
             if settings.currency == .cny {
                 Divider()
-                Text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY")
-                Button("汇率 7.0") { settings.usdToCny = 7.0 }
-                Button("汇率 7.2") { settings.usdToCny = 7.2 }
-                Button("汇率 7.4") { settings.usdToCny = 7.4 }
+                Text(L10n.text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY"))
+                Button(L10n.text("汇率 7.0")) { settings.usdToCny = 7.0 }
+                Button(L10n.text("汇率 7.2")) { settings.usdToCny = 7.2 }
+                Button(L10n.text("汇率 7.4")) { settings.usdToCny = 7.4 }
             }
         } label: {
             Image(systemName: "slider.horizontal.3").font(.caption)
@@ -112,13 +112,13 @@ struct HUDAIPanelView: View {
     private var trendChart: some View {
         HUDPanel(padding: 10, accent: HUD.violet) {
             VStack(alignment: .leading, spacing: 6) {
-                HUDSectionHeader(cn: "近 7 天", code: "TREND.7D", accent: HUD.violet)
+                HUDSectionHeader(cn: L10n.text("近 7 天"), code: "TREND.7D", accent: HUD.violet)
                 if usage.last7Days.isEmpty {
                     // 冷启动全量解析约 30~40 秒,期间给占位而不是空图
                     HStack(spacing: 6) {
                         Spacer()
                         ProgressView().controlSize(.small)
-                        Text("正在扫描本地会话…")
+                        Text(L10n.text("正在扫描本地会话…"))
                             .font(HUD.mono(8))
                             .foregroundStyle(HUD.faint)
                         Spacer()
@@ -134,8 +134,8 @@ struct HUDAIPanelView: View {
     private var chartBody: some View {
         Chart(usage.last7Days) { d in
                 BarMark(
-                    x: .value("日期", String(d.day.suffix(5))),
-                    y: .value("花费", d.costUSD),
+                    x: .value(L10n.text("日期"), String(d.day.suffix(5))),
+                    y: .value(L10n.text("花费"), d.costUSD),
                     width: .ratio(0.55)
                 )
                 .foregroundStyle(
@@ -175,7 +175,7 @@ struct HUDAIPanelView: View {
         if !models.isEmpty {
             HUDPanel(padding: 10, accent: HUD.mint) {
                 VStack(alignment: .leading, spacing: 4) {
-                    HUDSectionHeader(cn: "本月按模型", code: "MODEL.MTD", accent: HUD.mint)
+                    HUDSectionHeader(cn: L10n.text("本月按模型"), code: "MODEL.MTD", accent: HUD.mint)
                     ForEach(Array(models), id: \.key) { name, m in
                         HStack {
                             Rectangle().fill(SeriesColor.color(for: name))

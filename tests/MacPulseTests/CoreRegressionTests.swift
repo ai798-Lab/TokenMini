@@ -274,6 +274,8 @@ final class CoreRegressionTests: XCTestCase {
         XCTAssertNotNil(data.insight.peakLabel)
         XCTAssertEqual(Set(data.quality.sources), Set([.claude, .codex]))
         XCTAssertEqual(data.quality.unknownModels, ["future-model"])
+        XCTAssertEqual(data.trend.reduce(0) { $0 + $1.tokens }, data.overview.totalTokens,
+                       "Trend details must include tokens even for models without a price")
     }
 
     func testCostAlertThresholdDecisions() {

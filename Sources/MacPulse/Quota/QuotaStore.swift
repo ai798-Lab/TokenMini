@@ -41,6 +41,12 @@ final class QuotaStore: ObservableObject {
     @Published private(set) var quotas: [ToolQuota] = []
     @Published private(set) var lastRefresh: Date?
     @Published private(set) var claudeAccessEnabled: Bool
+    @Published private(set) var deepSeekAccessEnabled: Bool
+    @Published private(set) var deepSeekBalance: DeepSeekBalance?
+    @Published private(set) var deepSeekModels: [String] = []
+    @Published private(set) var deepSeekError: String?
+    @Published private(set) var deepSeekRefreshing = false
+    private var deepSeekGeneration = 0
 
     /// 供预览/离屏渲染注入现成数据
     func injectForPreview(_ q: [ToolQuota]) { quotas = q; lastRefresh = Date() }
@@ -73,6 +79,7 @@ final class QuotaStore: ObservableObject {
         self.defaults = defaults
         self.confirmClaudeAccess = confirmClaudeAccess
         self.fetchClaude = fetchClaude
+        deepSeekAccessEnabled = defaults.bool(forKey: "macpulse.deepSeekBalanceAccessEnabled")
         // 新用户默认关闭；旧版仅打开开关不等于同意读取账号凭证。
         claudeAccessEnabled = defaults.bool(forKey: Self.claudeAccessKey)
             && defaults.bool(forKey: Self.claudeConsentKey)
@@ -85,11 +92,12 @@ final class QuotaStore: ObservableObject {
         guard codexTimer == nil else { return }
         refreshCodex()
         if claudeAccessEnabled { refreshClaude() }
+        if deepSeekAccessEnabled { refreshDeepSeek() }
         let ct = Timer(timeInterval: Self.codexInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshCodex() }
         }
         let clt = Timer(timeInterval: Self.claudeInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refreshClaude() }
+            Task { @MainActor in self?.refreshClaude(); self?.refreshDeepSeek() }
         }
         ct.tolerance = 15; clt.tolerance = 30
         RunLoop.main.add(ct, forMode: .common)
@@ -100,6 +108,42 @@ final class QuotaStore: ObservableObject {
     func stop() {
         codexTimer?.invalidate(); codexTimer = nil
         claudeTimer?.invalidate(); claudeTimer = nil
+    }
+
+    func setDeepSeekAccessEnabled(_ enabled: Bool) {
+        guard deepSeekAccessEnabled != enabled else { return }
+        deepSeekGeneration &+= 1
+        deepSeekAccessEnabled = enabled
+        defaults.set(enabled, forKey: "macpulse.deepSeekBalanceAccessEnabled")
+        deepSeekRefreshing = false
+        if enabled { refreshDeepSeek() }
+        else { deepSeekBalance = nil; deepSeekModels = []; deepSeekError = nil }
+    }
+
+    func refreshDeepSeek() {
+        guard deepSeekAccessEnabled, !deepSeekRefreshing else { return }
+        deepSeekRefreshing = true
+        let generation = deepSeekGeneration
+        Task { [weak self] in
+            guard let self else { return }
+            defer { if generation == self.deepSeekGeneration { self.deepSeekRefreshing = false } }
+            do {
+                let key = try DeepSeekAccountReader.credential()
+                let balance = try await DeepSeekAccountReader.fetchBalance(key: key)
+                guard self.deepSeekAccessEnabled, generation == self.deepSeekGeneration else { return }
+                self.deepSeekBalance = balance
+                self.deepSeekError = nil
+                do {
+                    let models = try await DeepSeekAccountReader.fetchModels(key: key)
+                    guard self.deepSeekAccessEnabled, generation == self.deepSeekGeneration else { return }
+                    self.deepSeekModels = models
+                }
+                catch { if generation == self.deepSeekGeneration { self.deepSeekError = L10n.text("余额已更新，模型列表暂时未更新。") } }
+            } catch {
+                guard self.deepSeekAccessEnabled, generation == self.deepSeekGeneration else { return }
+                self.deepSeekError = error.localizedDescription
+            }
+        }
     }
 
     /// Claude 额度依赖用户已有的 Claude Code 凭证与实验性端点，必须由用户主动开启。
@@ -165,8 +209,8 @@ final class QuotaStore: ObservableObject {
                     warnedCycles.insert(cycle)
                     NotchController.shared.flash(
                         NotchAlert(icon: "eye.fill",
-                                   title: "快到边啦，我帮你盯着",
-                                   subtitle: "\(q.tool.label) 还剩约 \(QuotaFormat.duration(w.remaining(now: now)))，先写最重要的",
+                                   title: L10n.text("快到边啦，我帮你盯着"),
+                                   subtitle: L10n.text("\(q.tool.label) 还剩约 \(QuotaFormat.duration(w.remaining(now: now)))，先写最重要的"),
                                    tint: .orange),
                         duration: 6, sound: true)
                 }
@@ -183,8 +227,8 @@ final class QuotaStore: ObservableObject {
         for w in resetWindows {
             NotchController.shared.flash(
                 NotchAlert(icon: "checkmark.circle.fill",
-                           title: "满血回来啦，可以继续了 🎉",
-                           subtitle: "\(w.tool.label) · \(w.kind.label)已经恢复",
+                           title: L10n.text("满血回来啦，可以继续了 🎉"),
+                           subtitle: L10n.text("\(w.tool.label) · \(w.kind.label)已经恢复"),
                            tint: .green),
                 duration: 7, sound: true)
         }

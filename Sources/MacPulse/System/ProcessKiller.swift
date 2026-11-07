@@ -11,15 +11,15 @@ enum ProcessKiller {
 
     @MainActor
     static func requestTermination(pid: Int32, expectedName: String) -> String? {
-        guard !isProtected(pid: pid, name: expectedName) else { return "系统关键进程或 TokenMini 自身不能在这里结束" }
+        guard !isProtected(pid: pid, name: expectedName) else { return L10n.text("系统关键进程或 TokenMini 自身不能在这里结束") }
         guard !expectedName.isEmpty, ProcessReader.name(of: pid) == expectedName else {
-            return "进程已退出或身份发生变化，请刷新列表"
+            return L10n.text("进程已退出或身份发生变化，请刷新列表")
         }
         if let app = NSRunningApplication(processIdentifier: pid), app.activationPolicy == .regular {
-            return app.terminate() ? nil : "应用拒绝了退出请求，请切换到应用检查保存对话框"
+            return app.terminate() ? nil : L10n.text("应用拒绝了退出请求，请切换到应用检查保存对话框")
         }
         guard kill(pid, SIGTERM) == 0 else {
-            return errno == EPERM ? "没有权限结束此进程" : "退出请求失败：\(String(cString: strerror(errno)))"
+            return errno == EPERM ? L10n.text("没有权限结束此进程") : L10n.text("退出请求失败：\(String(cString: strerror(errno)))")
         }
         return nil
     }

@@ -24,12 +24,12 @@ enum ProjectName {
             hash ^= UInt64(byte)
             hash &*= 1_099_511_628_211
         }
-        return String(format: "项目 %04X", hash & 0xFFFF)
+        return String(format: L10n.text("项目 %04X"), hash & 0xFFFF)
     }
 }
 
 enum ToolKind: String, Sendable, CaseIterable, Identifiable, Codable {
-    case claude, codex, kimi, cursor, trae, traeWork, gemini, opencode
+    case claude, codex, kimi, cursor, trae, traeWork, gemini, opencode, deepseekAPI
     case windsurf, copilot, cline, rooCode, kiloCode, qoder, workbuddy, antigravity, other
     var id: String { rawValue }
     var label: String {
@@ -42,6 +42,7 @@ enum ToolKind: String, Sendable, CaseIterable, Identifiable, Codable {
         case .traeWork: return "Trae Work / SOLO"
         case .gemini: return "Gemini CLI"
         case .opencode: return "OpenCode"
+        case .deepseekAPI: return "DeepSeek API / Agent"
         case .windsurf: return "Windsurf"
         case .copilot: return "GitHub Copilot"
         case .cline: return "Cline"
@@ -50,7 +51,7 @@ enum ToolKind: String, Sendable, CaseIterable, Identifiable, Codable {
         case .qoder: return "Qoder / QoderWork"
         case .workbuddy: return "WorkBuddy"
         case .antigravity: return "Antigravity"
-        case .other: return "其他工具"
+        case .other: return L10n.text("其他工具")
         }
     }
     var localScanner: Bool { [.claude, .codex, .kimi, .gemini, .opencode].contains(self) }
@@ -62,10 +63,10 @@ enum TokenType: String, Sendable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .input: return "输入"
-        case .output: return "输出"
-        case .cacheWrite: return "缓存写"
-        case .cacheRead: return "缓存读"
+        case .input: return L10n.text("输入")
+        case .output: return L10n.text("输出")
+        case .cacheWrite: return L10n.text("缓存写")
+        case .cacheRead: return L10n.text("缓存读")
         }
     }
 }
@@ -176,22 +177,22 @@ struct UsageFilter: Equatable, Sendable {
 
         var label: String {
             switch self {
-            case .last24h: return "24 小时"
-            case .today: return "今日"
-            case .last7Days: return "7 天"
-            case .last30Days: return "30 天"
-            case .custom: return "自定义"
+            case .last24h: return L10n.text("24 小时")
+            case .today: return L10n.text("今日")
+            case .last7Days: return L10n.text("7 天")
+            case .last30Days: return L10n.text("30 天")
+            case .custom: return L10n.text("自定义")
             }
         }
 
         /// 环比必须明确基准,否则裸百分比会被误读。
         var comparisonLabel: String {
             switch self {
-            case .last24h: return "较前 24 小时"
-            case .today: return "较昨日同期"
-            case .last7Days: return "较前 7 天"
-            case .last30Days: return "较前 30 天"
-            case .custom: return "较前一同长周期"
+            case .last24h: return L10n.text("较前 24 小时")
+            case .today: return L10n.text("较昨日同期")
+            case .last7Days: return L10n.text("较前 7 天")
+            case .last30Days: return L10n.text("较前 30 天")
+            case .custom: return L10n.text("较前一同长周期")
             }
         }
     }
@@ -238,6 +239,7 @@ struct TrendPoint: Identifiable, Sendable {
     let label: String
     let date: Date
     var costUSD: Double = 0
+    var tokens: Int = 0
     var byModel: [String: Double] = [:]   // 该桶各模型成本(按模型堆叠用)
     var byType = CostBreakdown()          // 该桶四类成本(按 token 类型堆叠用)
 }

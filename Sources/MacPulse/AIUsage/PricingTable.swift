@@ -6,7 +6,7 @@ import Foundation
 enum PricingTable {
 
     /// 随排行榜日汇总一起上报，便于后台识别不同版本价格表造成的估值差异。
-    static let snapshotVersion = "2026-09-23"
+    static let snapshotVersion = "2026-11-07"
 
     // 计价热路径:每次 pricing(for:) 都做 normalize(多个正则)+ 前缀匹配,
     // 而 distinct 模型只有几十个。memo 把十几万次调用降到几十次实算。
@@ -27,7 +27,7 @@ enum PricingTable {
     /// 数据来源:Anthropic 官方页 —— Opus 5/4.8 fast $10/$50(2x),Opus 4.7 fast $30/$150(6x,2026-07-24 移除)。
     static func fastMultiplier(for model: String) -> Double {
         let m = normalize(model)
-        if ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"].contains(m) { return 2.0 }
+        if ["gpt-6-astra", "gpt-6.1-sol", "gpt-6.1-terra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"].contains(m) { return 2.0 }
         if ["claude-opus-5-5", "claude-opus-5", "claude-opus-4-8"].contains(m) { return 2.0 }
         if m == "claude-opus-4-7" { return 6.0 }
         return 1.0
@@ -92,7 +92,7 @@ enum PricingTable {
         m.replace(#/[-@](?:20\d{6}|20\d{2}-\d{2}-\d{2}).*$/#, with: "")
         m.replace(#/-v\d+(:\d+)?$/#, with: "")
         m.replace(#/-(latest|preview)$/#, with: "")
-        let aliases = ["claude-fable-5.1": "claude-fable-5-1", "claude-mythos-5.1": "claude-mythos-5-1", "k3": "kimi-k3", "deepseek-v4-flash 正式版": "deepseek-v4-flash", "deepseek-v4-pro 正式版": "deepseek-v4-pro"]
+        let aliases = ["claude-fable-5.1": "claude-fable-5-1", "claude-mythos-5.1": "claude-mythos-5-1", "k3": "kimi-k3", "k3.1-pro": "kimi-k3.1-pro", "k3.1-pro-highspeed": "kimi-k3.1-pro-highspeed", "deepseek-v4-flash 正式版": "deepseek-v4-flash", "deepseek-v4-pro 正式版": "deepseek-v4-pro", "deepseek-v4.1-flash-1017": "deepseek-flash", "deepseek-v4-flash-vision-exp": "deepseek-flash", "deepseek-v4-pro-0813": "deepseek-v4-pro"]
         return aliases[m] ?? m
     }
 
@@ -110,6 +110,21 @@ enum PricingTable {
     /// cacheRead = 0.1x 输入。Claude Code 的缓存写入以 1h 为主,两档必须分开计。
     /// OpenAI 常规模型 / Gemini 无 cache 写入费；GPT-5.6 的延长缓存写入按官方倍率单列。
     static let table: [String: ModelPricing] = [
+        // Verified 2026-11-07, official standard USD / MTok. Sources in docs/monitoring-2026-11-07.md.
+        "gpt-6.1-sol": ModelPricing(inputPerMTok: 2, outputPerMTok: 10, cacheWritePerMTok: 2.5, cacheReadPerMTok: 0.1,
+                                   fullRequestThreshold: 272000, fullRequestInputMultiplier: 2, fullRequestOutputMultiplier: 1.5),
+        "gpt-6.1-terra": ModelPricing(inputPerMTok: 1, outputPerMTok: 5, cacheWritePerMTok: 1.25, cacheReadPerMTok: 0.05,
+                                     fullRequestThreshold: 272000, fullRequestInputMultiplier: 2, fullRequestOutputMultiplier: 1.5),
+        "claude-sonnet-5-5": ModelPricing(inputPerMTok: 2, outputPerMTok: 10, cacheWritePerMTok: 2.5,
+                                          cacheReadPerMTok: 0.1, cacheWrite1hPerMTok: 4),
+        "claude-haiku-5-5": ModelPricing(inputPerMTok: 0.1, outputPerMTok: 0.5, cacheWritePerMTok: 0.125,
+                                         cacheReadPerMTok: 0.01, cacheWrite1hPerMTok: 0.2,
+                                         fullRequestThreshold: 100000, fullRequestInputMultiplier: 5, fullRequestOutputMultiplier: 5),
+        "deepseek-flash": ModelPricing(inputPerMTok: 0.3, outputPerMTok: 1.2, cacheWritePerMTok: 0, cacheReadPerMTok: 0.006),
+        "kimi-k3.1-pro": ModelPricing(inputPerMTok: 2, outputPerMTok: 10, cacheWritePerMTok: 2,
+                                      cacheReadPerMTok: 0.2, cacheWrite1hPerMTok: 4),
+        "kimi-k3.1-pro-highspeed": ModelPricing(inputPerMTok: 4, outputPerMTok: 20, cacheWritePerMTok: 4,
+                                                cacheReadPerMTok: 0.2, cacheWrite1hPerMTok: 8),
         // Official standard rates verified 2026-09-23:
         // https://developers.openai.com/api/docs/pricing
         // https://platform.claude.com/docs/en/models/opus-5-5/whats-new-opus-5-5

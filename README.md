@@ -30,7 +30,7 @@
 ![TokenMini brand](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.11.0 public beta** is the new name and visual identity of MacPulse. Existing settings and local data remain compatible. Download the signed DMG from Releases. The interface is Chinese-first; the documentation language switch does not change the app language.
+> **TokenMini 0.15.1** restores metering from compressed Codex sessions and adds opt-in DeepSeek balance monitoring. The app supports English, Simplified Chinese, Traditional Chinese, Japanese, Korean and Arabic. Download the signed installer from Releases.
 
 ## Why TokenMini
 
@@ -79,7 +79,8 @@ All app screenshots above were captured from the built macOS app with privacy mo
 <details open>
 <summary><strong>AI usage and quotas</strong></summary>
 
-- Reads local Claude Code (`~/.claude/projects`) and Codex (`~/.codex/sessions`) JSONL files.
+- Reads Claude Code logs and Codex sessions, including archived and Zstandard-compressed rollouts. A local ledger preserves previously observed Codex usage.
+- Enable official DeepSeek balance and model queries in Data Sources. For per-request token tracking, connect the project's response usage using the [local integration guide](Resources/Integrations/README.md).
 - Daily and monthly API-equivalent estimates, recent burn rate, seven-day trends, model/project drill-down, and cache reuse.
 - Global `messageId:requestId` de-duplication aligned with ccusage semantics when both identifiers exist.
 - Claude OAuth quota access is optional and disabled by default; Codex quota is derived from local rollout events.

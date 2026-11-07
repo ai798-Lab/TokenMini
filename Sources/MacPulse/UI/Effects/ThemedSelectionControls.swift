@@ -16,7 +16,7 @@ struct ThemedCheckToggleStyle: ToggleStyle {
             }.contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityValue(Text(configuration.isOn ? "已选" : "未选"))
+        .accessibilityValue(Text(configuration.isOn ? L10n.text("已选") : L10n.text("未选")))
         .accessibilityAddTraits(configuration.isOn ? .isSelected : [])
         }
     }
@@ -32,7 +32,7 @@ struct ThemedChoiceRow: View {
             HStack(spacing: 10) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(selected ? themeAccent() : Color.secondary)
-                Text(title).foregroundStyle(settings.isPrism ? Prism.silver : .primary)
+                Text(L10n.lookup(title)).foregroundStyle(settings.isPrism ? Prism.silver : .primary)
                 Spacer(minLength: 0)
             }
             .font(.system(size: 12, weight: selected ? .semibold : .regular))
@@ -61,7 +61,7 @@ struct ThemedSearchField: View {
             }
             if !text.isEmpty {
                 Button { text = "" } label: { Image(systemName: "xmark.circle.fill") }
-                    .buttonStyle(.plain).accessibilityLabel("清除搜索")
+                    .buttonStyle(.plain).accessibilityLabel(L10n.text("清除搜索"))
             }
         }
         .font(.system(size: 12)).padding(9)
@@ -83,7 +83,7 @@ struct ThemedActionMenu: View {
                 .buttonStyle(.plain).modifier(ThemedMenuChrome())
                 .popover(isPresented: $presented, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(title).font(.system(size: 11, weight: .semibold))
+                        Text(L10n.lookup(title)).font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Prism.secondary).padding(8)
                         ForEach(actions.indices, id: \.self) { index in
                             Button { presented = false; actions[index].1() } label: {

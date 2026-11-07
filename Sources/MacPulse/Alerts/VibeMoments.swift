@@ -58,8 +58,8 @@ final class VibeMoments {
             if now.timeIntervalSince1970 - last > breakInterval {
                 d.set(now.timeIntervalSince1970, forKey: kBreak)
                 NotchController.shared.flash(
-                    NotchAlert(icon: "figure.walk.motion", title: "你已经很投入了",
-                               subtitle: "喝口水、看看远处，我替你守着进度", tint: .teal),
+                    NotchAlert(icon: "figure.walk.motion", title: L10n.text("你已经很投入了"),
+                               subtitle: L10n.text("喝口水、看看远处，我替你守着进度"), tint: .teal),
                     duration: 6)
             }
         }
@@ -71,8 +71,8 @@ final class VibeMoments {
             if now.timeIntervalSince1970 - last > healthInterval {
                 d.set(now.timeIntervalSince1970, forKey: kHealth)
                 NotchController.shared.flash(
-                    NotchAlert(icon: "thermometer.high", title: "电脑也累了",
-                               subtitle: h.detail + " · 先让它喘口气", tint: .red),
+                    NotchAlert(icon: "thermometer.high", title: L10n.text("电脑也累了"),
+                               subtitle: h.detail + L10n.text(" · 先让它喘口气"), tint: .red),
                     duration: 6, sound: true)
             }
         }

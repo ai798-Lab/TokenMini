@@ -13,7 +13,7 @@ import Foundation
 final class CodexScanner: @unchecked Sendable {
     static let maxEventAge: TimeInterval = 90 * 86400
 
-    private struct ParsedLine {
+    private struct ParsedLine: Codable {
         let timestamp: Date
         let model: String
         let inputTokens: Int       // 非缓存输入
@@ -21,9 +21,10 @@ final class CodexScanner: @unchecked Sendable {
         let outputTokens: Int
         let cacheWriteTokens: Int
         let speed: String?
+        let identity: String
     }
 
-    private struct FileCache {
+    private struct FileCache: Codable {
         let size: Int64
         let mtime: Date
         let events: [ParsedLine]
@@ -74,22 +75,44 @@ final class CodexScanner: @unchecked Sendable {
     private let decoder = JSONDecoder()
 
     private let baseDirectories: [URL]
-    init(baseDirectories: [URL]? = nil) {
+    private let ledgerURL: URL?
+    private var loadedLedger = false
+    private var ledgerUnreadable = false
+    private(set) var historyPersistenceFailed = false
+    init(baseDirectories: [URL]? = nil, ledgerURL: URL? = nil) {
         let home = ProcessInfo.processInfo.environment["CODEX_HOME"] ?? NSHomeDirectory() + "/.codex"
         self.baseDirectories = baseDirectories ?? ["sessions", "archived_sessions"].map { URL(fileURLWithPath: home).appendingPathComponent($0) }
+        self.ledgerURL = ledgerURL ?? (baseDirectories == nil ? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("TokenMini/metering/codex-v1.plist") : nil)
     }
 
-    func scanAll() -> [UsageEvent] {
-        let cutoff = Date().addingTimeInterval(-Self.maxEventAge)
-        var newCache: [String: FileCache] = [:]
+    private(set) var readFailures = 0
+    private(set) var compressedFiles = 0
+
+    func scanAll(now: Date = Date()) -> [UsageEvent] {
+        if !loadedLedger {
+            loadedLedger = true
+            if let ledgerURL, FileManager.default.fileExists(atPath: ledgerURL.path) {
+                do { cache = try PropertyListDecoder().decode([String: FileCache].self, from: Data(contentsOf: ledgerURL)) }
+                catch { historyPersistenceFailed = true; ledgerUnreadable = true }
+            }
+        }
+        let cutoff = now.addingTimeInterval(-Self.maxEventAge)
+        readFailures = 0
+        compressedFiles = 0
+        // Metering is an independent local ledger. Source rotation, compaction or cleanup
+        // must never retract previously observed usage. UI still selects the last 90 days.
+        var newCache = cache
+        var changed = false
         for baseURL in baseDirectories {
         guard let en = FileManager.default.enumerator(
             at: baseURL,
             includingPropertiesForKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles]) else { continue }
 
-        for case let url as URL in en where url.lastPathComponent.hasPrefix("rollout-") && url.pathExtension == "jsonl" {
+        for case let url as URL in en where Self.isRollout(url) {
             let path = url.path
+            if url.pathExtension == "zst" { compressedFiles += 1 }
             guard let rv = try? url.resourceValues(
                 forKeys: [.isRegularFileKey, .fileSizeKey, .contentModificationDateKey]),
                   rv.isRegularFile == true else { continue }
@@ -98,14 +121,42 @@ final class CodexScanner: @unchecked Sendable {
             if let hit = cache[path], hit.size == size, hit.mtime == mtime {
                 newCache[path] = hit; continue
             }
-            newCache[path] = parseFile(at: url, cutoff: cutoff)
+            do {
+                let parsed = try parseFile(at: url, cutoff: cutoff)
+                var merged = parsed.events
+                if let previous = cache[path] {
+                    let ids = Set(merged.map(\.identity))
+                    merged.append(contentsOf: previous.events.filter { !ids.contains($0.identity) })
+                }
+                newCache[path] = FileCache(size: parsed.size, mtime: parsed.mtime, events: merged,
+                    project: parsed.project, session: parsed.session)
+                changed = true
+            }
+            catch {
+                readFailures += 1
+                // Keep last verified usage during an interrupted compression/write.
+                if let previous = cache[path] { newCache[path] = previous }
+            }
         }
         }
         cache = newCache
+        if changed || historyPersistenceFailed, let ledgerURL, !ledgerUnreadable {
+            do {
+                let directory = ledgerURL.deletingLastPathComponent()
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
+                    attributes: [.posixPermissions: 0o700])
+                let encoder = PropertyListEncoder(); encoder.outputFormat = .binary
+                try encoder.encode(cache).write(to: ledgerURL, options: .atomic)
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: ledgerURL.path)
+                historyPersistenceFailed = false
+            } catch { historyPersistenceFailed = true }
+        }
 
         var events: [UsageEvent] = []
-        for (_, file) in cache {
+        var seen = Set<String>()
+        for (_, file) in cache.sorted(by: { $0.key < $1.key }) {
             for e in file.events where e.timestamp >= cutoff {
+                guard seen.insert(file.session + "|" + e.identity).inserted else { continue }
                 events.append(UsageEvent(
                     timestamp: e.timestamp,
                     model: e.model,
@@ -128,15 +179,11 @@ final class CodexScanner: @unchecked Sendable {
     private static let markers: [Data] = ["token_count", "turn_context", "session_meta"].map { Data($0.utf8) }
     private static let maxJSONLineBytes = 32 * 1024 * 1024
 
-    private func parseFile(at url: URL, cutoff: Date) -> FileCache {
+    private func parseFile(at url: URL, cutoff: Date) throws -> FileCache {
         let rv = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
         let size = Int64(rv?.fileSize ?? 0)
         let mtime = rv?.contentModificationDate ?? .distantPast
-        let session = url.deletingPathExtension().lastPathComponent
-
-        guard let data = try? Data(contentsOf: url, options: .alwaysMapped), !data.isEmpty else {
-            return FileCache(size: size, mtime: mtime, events: [], project: "unknown", session: session)
-        }
+        let session = Self.sessionName(url)
 
         var events: [ParsedLine] = []
         var model = "unknown"                 // 默认;首个 turn_context 会覆盖
@@ -174,23 +221,27 @@ final class CodexScanner: @unchecked Sendable {
                 guard nonCached + cached + write + output > 0, when >= cutoff else { return }
                 events.append(ParsedLine(timestamp: when, model: model,
                                          inputTokens: nonCached, cacheReadTokens: cached,
-                                         outputTokens: output, cacheWriteTokens: write, speed: speed))
+                                         outputTokens: output, cacheWriteTokens: write, speed: speed,
+                                         identity: "\(ts)|\(model)|\(input)|\(cached)|\(write)|\(output)"))
             default: break
             }
         }
 
-        var start = data.startIndex
-        while let newline = data[start...].firstIndex(of: 0x0A) {
-            if newline > start, newline - start <= Self.maxJSONLineBytes {
-                autoreleasepool { handleLine(data[start..<newline]) }
-            }
-            start = data.index(after: newline)
-        }
-        if start < data.endIndex, data.endIndex - start <= Self.maxJSONLineBytes {
-            autoreleasepool { handleLine(data[start..<data.endIndex]) }
+        try UsageLogReader.forEachLine(at: url) { data in
+            autoreleasepool { handleLine(data) }
         }
 
         return FileCache(size: size, mtime: mtime, events: events, project: project, session: session)
+    }
+
+    static func isRollout(_ url: URL) -> Bool {
+        url.lastPathComponent.hasPrefix("rollout-") &&
+            (url.lastPathComponent.hasSuffix(".jsonl") || url.lastPathComponent.hasSuffix(".jsonl.zst"))
+    }
+
+    static func sessionName(_ url: URL) -> String {
+        let plain = url.pathExtension == "zst" ? url.deletingPathExtension() : url
+        return plain.deletingPathExtension().lastPathComponent
     }
 
     /// 项目名 = cwd 的最后一段目录名(与 Claude 的项目维度口径对齐为人类可读名)

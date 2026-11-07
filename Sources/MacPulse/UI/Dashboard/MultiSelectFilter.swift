@@ -11,7 +11,7 @@ struct MultiSelectFilter: View {
 
     private var visibleOptions: [(key: String, label: String)] {
         let known = Set(options.map(\.key))
-        return (options + selection.subtracting(known).sorted().map { ($0, "\($0) · 当前范围无数据") })
+        return (options + selection.subtracting(known).sorted().map { ($0, L10n.text("\($0) · 当前范围无数据")) })
             .filter { query.isEmpty || $0.label.localizedCaseInsensitiveContains(query) || $0.key.localizedCaseInsensitiveContains(query) }
     }
 
@@ -27,17 +27,17 @@ struct MultiSelectFilter: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title).font(.system(size: 14, weight: .semibold))
-                    Text("\(options.count) 项").font(.system(size: 10, weight: .medium))
+                    Text(L10n.text("\(options.count) 项")).font(.system(size: 10, weight: .medium))
                         .padding(.horizontal, 6).padding(.vertical, 3)
                         .background(themeAccent().opacity(0.12), in: RoundedRectangle(cornerRadius: 3))
                         .foregroundStyle(themeAccent())
                     Spacer()
-                    Button("完成") { presented = false }
+                    Button(L10n.text("完成")) { presented = false }
                         .buttonStyle(ThemedToolbarButtonStyle())
                         .keyboardShortcut(.defaultAction)
                 }
-                ThemedSearchField(title: "搜索\(title)", text: $query)
-                ThemedChoiceRow(title: "全部\(title)", selected: selection.isEmpty) { selection = [] }
+                ThemedSearchField(title: L10n.text("搜索\(title)"), text: $query)
+                ThemedChoiceRow(title: L10n.text("全部\(title)"), selected: selection.isEmpty) { selection = [] }
                 Divider()
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 4) {
@@ -52,10 +52,10 @@ struct MultiSelectFilter: View {
                             .background(selection.contains(option.key) ? themeAccent().opacity(0.10) : .clear,
                                         in: RoundedRectangle(cornerRadius: 4))
                         }
-                        if visibleOptions.isEmpty { Text("没有匹配项").foregroundStyle(.secondary).padding(9) }
+                        if visibleOptions.isEmpty { Text(L10n.text("没有匹配项")).foregroundStyle(.secondary).padding(9) }
                     }
                 }.frame(maxHeight: 270)
-                Text(selection.isEmpty ? "全部 \(options.count) 项 · 可多选" : "已选 \(selection.count) 项 · 点击外部即可收起")
+                Text(selection.isEmpty ? L10n.text("全部 \(options.count) 项 · 可多选") : L10n.text("已选 \(selection.count) 项 · 点击外部即可收起"))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
             }.padding(16).frame(width: 320)
                 .foregroundStyle(settings.isPrism ? Prism.silver : .primary)

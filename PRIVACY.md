@@ -1,13 +1,14 @@
 # TokenMini 隐私说明
 
-更新日期：2026-09-24
+更新日期 2026-11-07
 
 TokenMini 是本地优先的开源 macOS 菜单栏应用。默认状态下没有用户账号，不发送产品分析、广告数据或自动崩溃报告。用户可以分别选择加入产品统计或社区排行榜；两项功能互相独立，默认均不上传相关数据。只有主动使用 Google 登录加入社区排行榜后，才会启用下文说明的排行榜账号与汇总同步。
 
 ## 本地读取的数据
 
 - 系统指标：CPU、内存、网络、磁盘、电池、温度、风扇与进程信息。
-- AI 会话统计：只读扫描 `~/.claude` 与 `~/.codex/sessions` 中的 JSONL，提取时间、模型、token 数、项目标识和额度字段用于本地聚合。
+- AI 会话统计支持本机 Claude Code 日志及 Codex 的普通、归档与压缩会话。Codex 计量账本保存在 `~/Library/Application Support/TokenMini/metering/`，记录时间、模型、token 数、项目简称、会话标识以及用于识别源文件的路径和文件状态。会话正文留在原会话文件中。
+- 项目或 Agent 可把 DeepSeek 的请求标识和实际用量写入本机接入目录。TokenMini 对记录去重并存入本机用量账本。
 - Skills：在用户主动使用管理功能时读取或修改 Claude/Codex Skills 目录。
 
 会话正文不会被上传。项目名只在本机显示；启用“隐私模式”后会替换成稳定别名。
@@ -44,6 +45,10 @@ Google ID token 会发送到 TokenMini 服务端验签；TokenMini 的访问令�
 - token 只在请求期间存在于内存，不写入文件、UserDefaults 或日志。
 - TokenMini 不保存凭证副本，也不要求用户把 token 粘贴进应用。
 - 该端点并非稳定公开 API；请求失败只会让 Claude 额度显示不可用，不影响其他功能。
+
+## DeepSeek 官方余额与模型（可选）
+
+此开关默认为关闭。开启后，TokenMini 读取环境变量 `DEEPSEEK_API_KEY` 或本机 DeepSeek Harness 保存的 API 密钥，以 Bearer 认证方式向 `api.deepseek.com` 的 `/user/balance` 和 `/models` 查询余额与模型。密钥仅在内存中用于访问这两个官方接口。查询每 5 分钟执行一次，关闭开关即可停止后续查询。逐次 token 统计来自接入项目写入本机的实际用量记录。
 
 ## 会发生的网络请求
 

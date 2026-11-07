@@ -71,6 +71,7 @@ enum UsageAggregator {
 
                 if let bi = plan.bucketIndex(for: e.timestamp), bi >= 0, bi < trend.count {
                     trend[bi].costUSD += selCost
+                    trend[bi].tokens += e.tokens(types)
                     trend[bi].byModel[e.model, default: 0] += selCost
                     trend[bi].byType += filteredBreakdown(e.cost, types)
                 }

@@ -6,7 +6,8 @@ import Foundation
 final class CodexQuotaReader: @unchecked Sendable {
 
     func read() -> ToolQuota? {
-        let base = (NSHomeDirectory() as NSString).appendingPathComponent(".codex/sessions")
+        let home = ProcessInfo.processInfo.environment["CODEX_HOME"] ?? NSHomeDirectory() + "/.codex"
+        let base = (home as NSString).appendingPathComponent("sessions")
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: base, isDirectory: &isDir), isDir.boolValue else { return nil }
 
@@ -25,7 +26,7 @@ final class CodexQuotaReader: @unchecked Sendable {
             options: [.skipsHiddenFiles]) else { return [] }
         var out: [FileEntry] = []
         for case let url as URL in en
-        where url.lastPathComponent.hasPrefix("rollout-") && url.pathExtension == "jsonl" {
+        where CodexScanner.isRollout(url) {
             let m = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
             out.append(FileEntry(url: url, mtime: m))
         }
@@ -34,6 +35,15 @@ final class CodexQuotaReader: @unchecked Sendable {
 
     /// 从单个文件里取"最后一条"非空 rate_limits(文件是追加写,越靠后越新)
     static func latestRateLimits(in url: URL) -> ToolQuota? {
+        if url.pathExtension == "zst" {
+            var latest: ToolQuota?
+            do {
+                try UsageLogReader.forEachLine(at: url) { line in
+                    if let quota = quotaFromLine(line), quota.asOf >= (latest?.asOf ?? .distantPast) { latest = quota }
+                }
+            } catch { return nil }
+            return latest
+        }
         // rollout 可能几十到几百 MB;额度在最近的 token_count 行里,只读文件尾部。
         let maxTailBytes: UInt64 = 2 * 1024 * 1024
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
@@ -49,18 +59,21 @@ final class CodexQuotaReader: @unchecked Sendable {
         }
         guard let text = String(data: data, encoding: .utf8) else { return nil }
         for line in text.split(separator: "\n").reversed() {
-            guard line.contains("rate_limits"),
-                  let d = String(line).data(using: .utf8),
-                  let obj = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+            if let quota = quotaFromLine(Data(line.utf8)) { return quota }
+        }
+        return nil
+    }
+
+    private static func quotaFromLine(_ data: Data) -> ToolQuota? {
+            guard data.range(of: Data("rate_limits".utf8)) != nil,
+                  let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let payload = obj["payload"] as? [String: Any],
                   payload["type"] as? String == "token_count",
                   let rl = (payload["rate_limits"] as? [String: Any])
                     ?? ((payload["info"] as? [String: Any])?["rate_limits"] as? [String: Any]),
-                  !rl.isEmpty else { continue }
+                  !rl.isEmpty else { return nil }
             let ts = (obj["timestamp"] as? String).flatMap(Self.parseTS) ?? Date()
             return Self.build(rateLimits: rl, asOf: ts)
-        }
-        return nil
     }
 
     /// 跨会话按 rate_limits 事件时间选最新快照。如果同时存在带套餐身份与无身份快照,

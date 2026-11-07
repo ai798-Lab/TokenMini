@@ -19,7 +19,7 @@ final class CleanupStore: ObservableObject {
     @Published private(set) var cleaning = false
     @Published private(set) var hasScanned = false
     @Published private(set) var lastReport: CleanupReport?
-    @Published private(set) var scanStatus = "尚未扫描"
+    @Published private(set) var scanStatus = L10n.text("尚未扫描")
     @Published private(set) var lastScan: Date?
     @Published var excludedPaths: Set<String> = []
     @Published private(set) var pendingPlan: [CleanupScanResult]?
@@ -39,9 +39,9 @@ final class CleanupStore: ObservableObject {
     var issues: [CleanupIssue] { results.flatMap(\.issues) }
     var selectionSummary: String {
         if scanning { return scanStatus }
-        if !hasScanned { return "请先扫描" }
-        if selectedItems.isEmpty { return issues.isEmpty ? "请选择要清理的项目" : "部分目录不可读，请查看详情" }
-        return "已选 \(selectedItems.count) 项 · \(ByteFormat.memory(UInt64(max(0, selectedBytes))))"
+        if !hasScanned { return L10n.text("请先扫描") }
+        if selectedItems.isEmpty { return issues.isEmpty ? L10n.text("请选择要清理的项目") : L10n.text("部分目录不可读，请查看详情") }
+        return L10n.text("已选 \(selectedItems.count) 项 · \(ByteFormat.memory(UInt64(max(0, selectedBytes))))")
     }
 
     func toggle(_ category: CleanupCategory) {
@@ -67,7 +67,7 @@ final class CleanupStore: ObservableObject {
     func scan(resetReport: Bool = true) {
         guard !scanning, !cleaning, pendingPlan == nil else { return }
         scanning = true
-        scanStatus = "准备扫描…"
+        scanStatus = L10n.text("准备扫描…")
         if resetReport { lastReport = nil }
         let flag = ScanCancellation()
         cancellation = flag
@@ -76,24 +76,24 @@ final class CleanupStore: ObservableObject {
             let r = scanner.scan(cancelled: { flag.cancelled }, progress: { category in
                 Task { @MainActor [weak self] in
                     guard let self, self.scanning, !flag.cancelled else { return }
-                    self.scanStatus = "正在扫描\(category.title)…"
+                    self.scanStatus = L10n.text("正在扫描\(category.title)…")
                 }
             })
             Task { @MainActor in
                 guard let self else { return }
                 self.scanning = false
                 self.cancellation = nil
-                if flag.cancelled { self.scanStatus = "已取消扫描，保留上次结果"; return }
+                if flag.cancelled { self.scanStatus = L10n.text("已取消扫描，保留上次结果"); return }
                 self.results = r
                 self.excludedPaths = []
                 self.hasScanned = true
                 self.lastScan = Date()
-                self.scanStatus = self.issues.isEmpty ? "扫描完成" : "扫描完成，\(self.issues.count) 项无法读取"
+                self.scanStatus = self.issues.isEmpty ? L10n.text("扫描完成") : L10n.text("扫描完成，\(self.issues.count) 项无法读取")
             }
         }
     }
 
-    func cancelScan() { cancellation?.cancel(); scanStatus = "正在取消…" }
+    func cancelScan() { cancellation?.cancel(); scanStatus = L10n.text("正在取消…") }
 
     /// 确认时展示并冻结同一份具体文件列表，避免确认后再读取变化的勾选状态。
     func prepareCleanup() {

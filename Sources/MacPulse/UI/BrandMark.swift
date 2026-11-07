@@ -47,6 +47,7 @@ struct BrandLockup: View {
                 .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(lineWidth: 0.8))
         }
         .fixedSize()
+        .environment(\.layoutDirection, .leftToRight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("TokenMini Beta")
     }

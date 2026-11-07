@@ -47,16 +47,16 @@ struct HUDSkillsPanelView: View {
         .padding(.horizontal, settings.isPrism ? Prism.contentInset : 12)
         .padding(.vertical, 6)
         .onAppear { if store.skills.isEmpty { store.refresh() } }
-        .alert("卸载 Skill", isPresented: Binding(
+        .alert(L10n.text("卸载 Skill"), isPresented: Binding(
             get: { toUninstall != nil }, set: { if !$0 { toUninstall = nil } })) {
-            Button("取消", role: .cancel) { toUninstall = nil }
-            Button("移到废纸篓", role: .destructive) {
+            Button(L10n.text("取消"), role: .cancel) { toUninstall = nil }
+            Button(L10n.text("移到废纸篓"), role: .destructive) {
                 if let s = toUninstall { store.uninstall(s) }
                 toUninstall = nil
             }
         } message: {
             if let s = toUninstall {
-                Text("将把「\(s.name)」的整个文件夹移到废纸篓(可从废纸篓恢复)。")
+                Text(L10n.text("将把「\(s.name)」的整个文件夹移到废纸篓(可从废纸篓恢复)。"))
             }
         }
         .sheet(item: $store.pendingInstall) { pending in
@@ -84,7 +84,7 @@ struct HUDSkillsPanelView: View {
 
     private var controls: some View {
         VStack(spacing: 6) {
-            ThemedSearchField(title: "搜索 skill 名字或描述…", text: $search)
+            ThemedSearchField(title: L10n.text("搜索 skill 名字或描述…"), text: $search)
             if settings.isPrism {
                 ThemedSegmented(items: ToolFilter.allCases.map { ($0, $0.rawValue) }, selection: $toolFilter, fillsWidth: true)
             } else {
@@ -94,7 +94,7 @@ struct HUDSkillsPanelView: View {
                     Button {
                         toolFilter = f
                     } label: {
-                        Text(f.rawValue)
+                        Text(L10n.lookup(f.rawValue))
                             .font(HUD.mono(9, selected ? .bold : .medium))
                             .foregroundStyle(selected ? HUD.cyan : HUD.dim)
                             .frame(maxWidth: .infinity)
@@ -121,10 +121,10 @@ struct HUDSkillsPanelView: View {
     @ViewBuilder
     private var skillList: some View {
         if store.scanning && store.skills.isEmpty {
-            HStack { Spacer(); ProgressView().controlSize(.small); Text("扫描中…").font(HUD.mono(8)).foregroundStyle(HUD.faint); Spacer() }
+            HStack { Spacer(); ProgressView().controlSize(.small); Text(L10n.text("扫描中…")).font(HUD.mono(8)).foregroundStyle(HUD.faint); Spacer() }
                 .frame(height: 60)
         } else if filtered.isEmpty {
-            Text(search.isEmpty ? "还没有安装任何 skill" : "没有匹配「\(search)」的 skill")
+            Text(search.isEmpty ? L10n.text("还没有安装任何 skill") : L10n.text("没有匹配「\(search)」的 skill"))
                 .font(.caption).foregroundStyle(HUD.faint)
                 .frame(maxWidth: .infinity, minHeight: 50)
         } else {
@@ -165,7 +165,7 @@ struct HUDSkillsPanelView: View {
                             .lineLimit(4).fixedSize(horizontal: false, vertical: true)
                     }
                     if !s.triggerHint.isEmpty {
-                        Text("触发:\(s.triggerHint)").font(.system(size: 9)).foregroundStyle(HUD.faint)
+                        Text(L10n.text("触发:\(s.triggerHint)")).font(.system(size: 9)).foregroundStyle(HUD.faint)
                             .lineLimit(2)
                     }
                     HStack(spacing: 10) {
@@ -175,12 +175,12 @@ struct HUDSkillsPanelView: View {
                         Button("Finder") { store.revealInFinder(s) }
                             .font(HUD.mono(9)).buttonStyle(.plain).foregroundStyle(HUD.cyan)
                         if s.scope.isGlobal {
-                            Button("复制到 \(s.tool == .claude ? "Codex" : "Claude")") {
+                            Button(L10n.text("复制到 \(s.tool == .claude ? "Codex" : "Claude")")) {
                                 store.copyToOtherTool(s)
                             }
                             .font(HUD.mono(9)).buttonStyle(.plain).foregroundStyle(HUD.cyan)
                         }
-                        Button("卸载") { toUninstall = s }
+                        Button(L10n.text("卸载")) { toUninstall = s }
                             .font(HUD.mono(9)).buttonStyle(.plain).foregroundStyle(HUD.red)
                     }
                 }
@@ -208,22 +208,22 @@ struct HUDSkillsPanelView: View {
 
     private var installSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HUDSectionHeader(cn: "安装新 Skill", code: "SKL.INSTALL", accent: HUD.green)
+            HUDSectionHeader(cn: L10n.text("安装新 Skill"), code: "SKL.INSTALL", accent: HUD.green)
             HStack(spacing: 6) {
-                ThemedSearchField(title: "owner/repo 或 GitHub 链接", text: $repoInput)
+                ThemedSearchField(title: L10n.text("owner/repo 或 GitHub 链接"), text: $repoInput)
                     .disabled(store.busy)
-                installMenu(label: store.busy ? "…" : "安装") { tools in
+                installMenu(label: store.busy ? "…" : L10n.text("安装")) { tools in
                     store.installFromGitHub(repoInput, to: tools)
                 }
                 .disabled(store.busy || repoInput.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             HStack {
-                installMenu(label: "本地文件夹…") { tools in
+                installMenu(label: L10n.text("本地文件夹…")) { tools in
                     store.installFromFolder(to: tools)
                 }
                 .disabled(store.busy)
                 Spacer()
-                Link("浏览 skills.sh", destination: URL(string: "https://skills.sh")!)
+                Link(L10n.text("浏览 skills.sh"), destination: URL(string: "https://skills.sh")!)
                     .font(HUD.mono(8)).foregroundStyle(HUD.dim)
             }
         }
@@ -232,9 +232,9 @@ struct HUDSkillsPanelView: View {
     /// 安装目标选择菜单(Claude / Codex / 两者)
     private func installMenu(label: String, action: @escaping ([ToolKind]) -> Void) -> some View {
         ThemedActionMenu(title: label, actions: [
-            ("装到 Claude Code", { action([.claude]) }),
-            ("装到 Codex", { action([.codex]) }),
-            ("两个都装", { action([.claude, .codex]) })
+            (L10n.text("装到 Claude Code"), { action([.claude]) }),
+            (L10n.text("装到 Codex"), { action([.codex]) }),
+            (L10n.text("两个都装"), { action([.claude, .codex]) })
         ])
 
     }
@@ -249,9 +249,9 @@ private struct MultiSkillPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("\(pending.repoLabel) 里有 \(pending.candidates.count) 个 skill")
+            Text(L10n.text("\(pending.repoLabel) 里有 \(pending.candidates.count) 个 skill"))
                 .font(.headline)
-            Text("勾选要安装的:").font(.caption).foregroundStyle(.secondary)
+            Text(L10n.text("勾选要安装的:")).font(.caption).foregroundStyle(.secondary)
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(pending.candidates, id: \.path) { c in
@@ -263,15 +263,15 @@ private struct MultiSkillPicker: View {
                 }
             }
             .frame(maxHeight: 180)
-            ThemedSegmented(items: [(0, "Claude"), (1, "Codex"), (2, "两者")], selection: Binding(
+            ThemedSegmented(items: [(0, "Claude"), (1, "Codex"), (2, L10n.text("两者"))], selection: Binding(
                 get: { target.count == 2 ? 2 : (target.first == .claude ? 0 : 1) },
                 set: { v in target = v == 2 ? [.claude, .codex] : (v == 0 ? [.claude] : [.codex]) }), fillsWidth: true)
             HStack {
-                Button("取消") {
+                Button(L10n.text("取消")) {
                     store.completePendingInstall(pending, selected: [], to: [])
                 }
                 Spacer()
-                Button("安装 \(selected.count) 个") {
+                Button(L10n.text("安装 \(selected.count) 个")) {
                     let chosen = pending.candidates.filter { selected.contains($0.path) }
                     store.completePendingInstall(pending, selected: chosen, to: target)
                 }

@@ -63,10 +63,10 @@ struct HUDPopoverView: View {
         VStack(spacing: 0) {
             header
             accentDivider
+            UpdateNoticeView()
             // 窗口尺寸定死(否则 MenuBarExtra(.window) 随内容重排,切换瞬间圆角闪失),超高内容滚动。
             HUDScrollView {
                 VStack(spacing: 0) {
-                    UpdateNoticeView()
                     if proMode {
                         proContent
                     } else {
@@ -102,9 +102,9 @@ struct HUDPopoverView: View {
                     .font(HUD.mono(12, .bold))
                     .kerning(2.5)
                     .foregroundStyle(HUD.text)
-                Text(proMode ? "PRO.CONSOLE // 专业模式" : "SYS.MONITOR // 监控器")
+                Text(proMode ? L10n.text("PRO.CONSOLE // 专业模式") : L10n.text("SYS.MONITOR // 监控器"))
                     .font(HUD.mono(7.5, .medium))
-                    .kerning(1.2)
+                    .localizedKerning(1.2)
                     .foregroundStyle(HUD.faint)
             }
             Spacer()
@@ -114,7 +114,7 @@ struct HUDPopoverView: View {
             Button {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { proMode.toggle() }
             } label: {
-                Text(proMode ? "简单" : "专业")
+                Text(proMode ? L10n.text("简单") : L10n.text("专业"))
             }
             .buttonStyle(HUDButtonStyle(size: 9))
         }
@@ -181,7 +181,7 @@ struct HUDPopoverView: View {
                             .font(HUD.mono(7, .semibold))
                             .kerning(0.8)
                             .foregroundStyle(selected ? HUD.cyan.opacity(0.75) : HUD.faint)
-                        Text(t.rawValue)
+                        Text(L10n.lookup(t.rawValue))
                             .font(.system(size: 11, weight: selected ? .bold : .medium))
                             .foregroundStyle(selected ? HUD.text : HUD.dim)
                     }
@@ -217,7 +217,7 @@ struct HUDPopoverView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "gauge").font(.system(size: 9))
-                    Text("活动监视器").font(HUD.mono(9))
+                    Text(L10n.text("活动监视器")).font(HUD.mono(9))
                 }
                 .foregroundStyle(HUD.dim)
             }
@@ -237,7 +237,7 @@ struct HUDPopoverView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "power").font(.system(size: 9))
-                    Text("退出").font(HUD.mono(9))
+                    Text(L10n.text("退出")).font(HUD.mono(9))
                 }
                 .foregroundStyle(HUD.dim)
             }

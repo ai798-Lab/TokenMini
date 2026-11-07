@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-/// 经典主题·AI 用量页签:今日花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
+/// 经典主题·AI 用量页签:24 小时花费 / 本月与预估 / 7 天趋势 / 按模型明细 + 打开监控台
 struct ClassicAIPanelView: View {
     @EnvironmentObject var usage: UsageStore
     @ObservedObject private var settings = DisplaySettings.shared
@@ -14,7 +14,7 @@ struct ClassicAIPanelView: View {
             trendChart
             modelBreakdown
             openDashboardButton
-            Text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算")
+            Text(L10n.text("数据来自 Claude Code 与 Codex CLI 本地会话记录,费用按官方 API 定价估算"))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
@@ -26,30 +26,30 @@ struct ClassicAIPanelView: View {
         Button {
             openWindow(id: "dashboard")
         } label: {
-            Label("打开监控台", systemImage: "chart.bar.doc.horizontal")
+            Label(L10n.text("打开监控台"), systemImage: "chart.bar.doc.horizontal")
                 .frame(maxWidth: .infinity)
         }
         .controlSize(.large)
         .buttonStyle(.borderedProminent)
     }
 
-    // MARK: 今日
+    // MARK: 24 小时
 
     private var headline: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text("今日花费")
+                Text(L10n.text("24 小时花费"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 settingsMenu
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(settings.currencyStr(usage.today.totalCostUSD))
+                Text(settings.currencyStr(usage.last24Hours.totalCostUSD))
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .contentTransition(.numericText())
-                    .animation(.spring(duration: 0.4), value: usage.today.totalCostUSD)
-                Text("\(settings.tokens(usage.today.totalTokens)) tokens · \(usage.today.eventCount) 次调用")
+                    .animation(.spring(duration: 0.4), value: usage.last24Hours.totalCostUSD)
+                Text(L10n.text("\(settings.tokens(usage.last24Hours.totalTokens)) tokens · \(usage.last24Hours.eventCount) 次调用"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -59,18 +59,18 @@ struct ClassicAIPanelView: View {
     // 计量单位 / 货币 设置(齿轮菜单)
     private var settingsMenu: some View {
         Menu {
-            Picker("Token 单位", selection: $settings.tokenUnit) {
+            Picker(L10n.text("Token 单位"), selection: $settings.tokenUnit) {
                 ForEach(TokenUnitMode.allCases) { Text($0.label).tag($0) }
             }
-            Picker("货币", selection: $settings.currency) {
+            Picker(L10n.text("货币"), selection: $settings.currency) {
                 ForEach(CurrencyMode.allCases) { Text($0.label).tag($0) }
             }
             if settings.currency == .cny {
                 Divider()
-                Text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY")
-                Button("汇率 7.0") { settings.usdToCny = 7.0 }
-                Button("汇率 7.2") { settings.usdToCny = 7.2 }
-                Button("汇率 7.4") { settings.usdToCny = 7.4 }
+                Text(L10n.text("汇率 1 USD = \(String(format: "%.2f", settings.usdToCny)) CNY"))
+                Button(L10n.text("汇率 7.0")) { settings.usdToCny = 7.0 }
+                Button(L10n.text("汇率 7.2")) { settings.usdToCny = 7.2 }
+                Button(L10n.text("汇率 7.4")) { settings.usdToCny = 7.4 }
             }
         } label: {
             Image(systemName: "slider.horizontal.3").font(.caption)
@@ -82,18 +82,18 @@ struct ClassicAIPanelView: View {
 
     private var statsRow: some View {
         HStack(spacing: 0) {
-            stat("近 1 小时", settings.currencyStr(usage.burnRatePerHourUSD))
+            stat(L10n.text("近 1 小时"), settings.currencyStr(usage.burnRatePerHourUSD))
             Divider().frame(height: 24)
-            stat("本月已用", settings.currencyStr(usage.thisMonth.totalCostUSD))
+            stat(L10n.text("本月已用"), settings.currencyStr(usage.thisMonth.totalCostUSD))
             Divider().frame(height: 24)
-            stat("整月预估", settings.currencyStr(usage.monthProjectionUSD))
+            stat(L10n.text("整月预估"), settings.currencyStr(usage.monthProjectionUSD))
         }
     }
 
     private func stat(_ title: String, _ value: String) -> some View {
         VStack(spacing: 2) {
             Text(title).font(.caption2).foregroundStyle(.secondary)
-            Text(value).font(.system(.callout, design: .monospaced).weight(.semibold))
+            Text(value).font(.system(.callout, design: AppLanguage.monospacedDesign).weight(.semibold))
         }
         .frame(maxWidth: .infinity)
     }
@@ -103,7 +103,7 @@ struct ClassicAIPanelView: View {
     @ViewBuilder
     private var trendChart: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("近 7 天")
+            Text(L10n.text("近 7 天"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             if usage.last7Days.isEmpty {
@@ -111,7 +111,7 @@ struct ClassicAIPanelView: View {
                 HStack(spacing: 6) {
                     Spacer()
                     ProgressView().controlSize(.small)
-                    Text("正在扫描本地会话…")
+                    Text(L10n.text("正在扫描本地会话…"))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                     Spacer()
@@ -126,8 +126,8 @@ struct ClassicAIPanelView: View {
     private var chartBody: some View {
         Chart(usage.last7Days) { d in
                 BarMark(
-                    x: .value("日期", String(d.day.suffix(5))),
-                    y: .value("花费", d.costUSD)
+                    x: .value(L10n.text("日期"), String(d.day.suffix(5))),
+                    y: .value(L10n.text("花费"), d.costUSD)
                 )
                 .foregroundStyle(.blue.gradient)
                 .cornerRadius(3)
@@ -161,7 +161,7 @@ struct ClassicAIPanelView: View {
             .prefix(5)
         if !models.isEmpty {
             VStack(alignment: .leading, spacing: 3) {
-                Text("本月按模型")
+                Text(L10n.text("本月按模型"))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 ForEach(Array(models), id: \.key) { name, m in
@@ -170,11 +170,11 @@ struct ClassicAIPanelView: View {
                         Spacer()
                         Text(settings.tokens(m.inputTokens + m.outputTokens
                             + m.cacheCreationTokens + m.cacheReadTokens))
-                            .font(.system(.caption2, design: .monospaced))
+                            .font(.system(.caption2, design: AppLanguage.monospacedDesign))
                             .foregroundStyle(.tertiary)
                             .frame(width: 64, alignment: .trailing)
                         Text(settings.currencyStr(m.costUSD))
-                            .font(.system(.caption, design: .monospaced))
+                            .font(.system(.caption, design: AppLanguage.monospacedDesign))
                             .foregroundStyle(.secondary)
                             .frame(width: 72, alignment: .trailing)
                     }

@@ -9,9 +9,9 @@ enum TokenUnitMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .chinese: return "中文单位"
+        case .chinese: return L10n.text("中文单位")
         case .international: return "M / K"
-        case .auto: return "自动"
+        case .auto: return L10n.text("自动")
         }
     }
 }
@@ -21,7 +21,7 @@ enum CurrencyMode: String, CaseIterable, Identifiable {
     case cny            // ¥ 人民币
     case usd            // $ 美金
     var id: String { rawValue }
-    var label: String { self == .cny ? "¥ 人民币" : "$ 美金" }
+    var label: String { self == .cny ? L10n.text("¥ 人民币") : L10n.text("$ 美金") }
 }
 
 /// UI 主题:经典(系统原生风)/ HUD(影视包装 FUI 风)/ LED(复古健身器材仪表风)。
@@ -34,10 +34,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .prism: return "Prism 光核 · 官网同款"
-        case .classic: return "经典"
-        case .hud: return "HUD 科幻"
-        case .led: return "LED 仪表"
+        case .prism: return L10n.text("Prism 光核 · 官网同款")
+        case .classic: return L10n.text("经典")
+        case .hud: return L10n.text("HUD 科幻")
+        case .led: return L10n.text("LED 仪表")
         }
     }
 }
@@ -46,7 +46,7 @@ enum DashboardMode: String, CaseIterable, Identifiable {
     case overview
     case analysis
     var id: String { rawValue }
-    var label: String { self == .overview ? "一眼看懂" : "分析模式" }
+    var label: String { self == .overview ? L10n.text("一眼看懂") : L10n.text("分析模式") }
 }
 
 /// 全局显示设置(计量单位 / 货币 / 汇率),UserDefaults 持久化。
@@ -85,7 +85,7 @@ final class DisplaySettings: ObservableObject {
     private let kPrivacyMode = "macpulse.privacyMode"
 
     private init() {
-        tokenUnit = TokenUnitMode(rawValue: d.string(forKey: kUnit) ?? "") ?? .chinese
+        tokenUnit = TokenUnitMode(rawValue: d.string(forKey: kUnit) ?? "") ?? .auto
         currency = CurrencyMode(rawValue: d.string(forKey: kCurrency) ?? "") ?? .cny
         usdToCny = d.object(forKey: kRate) != nil ? d.double(forKey: kRate) : 7.2
         showTokensInMenuBar = d.object(forKey: "macpulse.menuBar.tokens") as? Bool ?? true
@@ -108,15 +108,17 @@ final class DisplaySettings: ObservableObject {
     /// 12_345_678 → 中文「1234.6万」/ 国际「12.3M」
     func tokens(_ n: Int) -> String {
         switch effectiveUnit {
-        case .chinese: return Self.chineseTokens(n)
+        case .chinese:
+            let value = Self.chineseTokens(n)
+            return AppLanguage.current == .traditionalChinese
+                ? value.replacingOccurrences(of: "万", with: "萬").replacingOccurrences(of: "亿", with: "億") : value
         default: return Self.intlTokens(n)
         }
     }
 
     private var effectiveUnit: TokenUnitMode {
         guard tokenUnit == .auto else { return tokenUnit }
-        let lang = Locale.preferredLanguages.first ?? "en"
-        return lang.hasPrefix("zh") ? .chinese : .international
+        return AppLanguage.current.rawValue.hasPrefix("zh") ? .chinese : .international
     }
 
     /// 中文大数单位:万(1e4)/ 亿(1e8)
@@ -139,6 +141,16 @@ final class DisplaySettings: ObservableObject {
 
     /// 传入原始美元金额,按当前货币设置输出("¥61.2" / "$8.50")
     func currencyStr(_ usd: Double) -> String {
+        if !AppLanguage.current.rawValue.hasPrefix("zh") {
+            let amount = currency == .cny ? usd * usdToCny : usd
+            let formatter = NumberFormatter()
+            formatter.locale = AppLanguage.current.locale
+            formatter.numberStyle = .decimal
+            formatter.minimumFractionDigits = amount >= 100 ? 0 : (amount >= 10 ? 1 : 2)
+            formatter.maximumFractionDigits = formatter.minimumFractionDigits
+            let number = formatter.string(from: NSNumber(value: amount)) ?? String(format: "%.2f", amount)
+            return "\u{2066}\(currency == .cny ? "CNY" : "USD") \(number)\u{2069}"
+        }
         switch currency {
         case .usd:
             return usd >= 100 ? "$" + Self.groupedWhole(usd)

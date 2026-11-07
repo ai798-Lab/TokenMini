@@ -48,16 +48,16 @@ struct LEDSkillsPanelView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .onAppear { if store.skills.isEmpty { store.refresh() } }
-        .alert("卸载 Skill", isPresented: Binding(
+        .alert(L10n.text("卸载 Skill"), isPresented: Binding(
             get: { toUninstall != nil }, set: { if !$0 { toUninstall = nil } })) {
-            Button("取消", role: .cancel) { toUninstall = nil }
-            Button("移到废纸篓", role: .destructive) {
+            Button(L10n.text("取消"), role: .cancel) { toUninstall = nil }
+            Button(L10n.text("移到废纸篓"), role: .destructive) {
                 if let s = toUninstall { store.uninstall(s) }
                 toUninstall = nil
             }
         } message: {
             if let s = toUninstall {
-                Text("将把「\(s.name)」的整个文件夹移到废纸篓(可从废纸篓恢复)。")
+                Text(L10n.text("将把「\(s.name)」的整个文件夹移到废纸篓(可从废纸篓恢复)。"))
             }
         }
         .sheet(item: $store.pendingInstall) { pending in
@@ -108,7 +108,7 @@ struct LEDSkillsPanelView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(LED.faint)
-                LEDTextField(placeholder: "搜索 skill 名字或描述…", text: $search)
+                LEDTextField(placeholder: L10n.text("搜索 skill 名字或描述…"), text: $search)
             }
             .padding(.horizontal, 10).padding(.vertical, 5)
             .background(Capsule().fill(LED.chrome))
@@ -121,7 +121,7 @@ struct LEDSkillsPanelView: View {
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { toolFilter = f }
                     } label: {
-                        Text(f.rawValue)
+                        Text(L10n.lookup(f.rawValue))
                             .font(LED.display(10.5, selected ? .bold : .medium))
                             .foregroundStyle(selected ? LED.bg : LED.text)
                             .padding(.horizontal, selected ? 11 : 2).padding(.vertical, 4)
@@ -149,12 +149,12 @@ struct LEDSkillsPanelView: View {
             HStack {
                 Spacer()
                 ProgressView().controlSize(.small)
-                Text("扫描中…").font(LED.mono(9)).foregroundStyle(LED.faint)
+                Text(L10n.text("扫描中…")).font(LED.mono(9)).foregroundStyle(LED.faint)
                 Spacer()
             }
             .frame(height: 60)
         } else if filtered.isEmpty {
-            Text(search.isEmpty ? "还没有安装任何 skill" : "没有匹配「\(search)」的 skill")
+            Text(search.isEmpty ? L10n.text("还没有安装任何 skill") : L10n.text("没有匹配「\(search)」的 skill"))
                 .font(LED.mono(10)).foregroundStyle(LED.faint)
                 .frame(maxWidth: .infinity, minHeight: 50)
         } else {
@@ -199,7 +199,7 @@ struct LEDSkillsPanelView: View {
                             .lineLimit(4).fixedSize(horizontal: false, vertical: true)
                     }
                     if !s.triggerHint.isEmpty {
-                        Text("触发:\(s.triggerHint)").font(LED.mono(9)).foregroundStyle(LED.faint)
+                        Text(L10n.text("触发:\(s.triggerHint)")).font(LED.mono(9)).foregroundStyle(LED.faint)
                             .lineLimit(2)
                     }
                     HStack(spacing: 10) {
@@ -209,12 +209,12 @@ struct LEDSkillsPanelView: View {
                         Button("Finder") { store.revealInFinder(s) }
                             .font(LED.mono(9)).buttonStyle(.plain).foregroundStyle(LED.green)
                         if s.scope.isGlobal {
-                            Button("复制到 \(s.tool == .claude ? "Codex" : "Claude")") {
+                            Button(L10n.text("复制到 \(s.tool == .claude ? "Codex" : "Claude")")) {
                                 store.copyToOtherTool(s)
                             }
                             .font(LED.mono(9)).buttonStyle(.plain).foregroundStyle(LED.green)
                         }
-                        Button("卸载") { toUninstall = s }
+                        Button(L10n.text("卸载")) { toUninstall = s }
                             .font(LED.mono(9)).buttonStyle(.plain).foregroundStyle(LED.red)
                     }
                 }
@@ -255,27 +255,27 @@ struct LEDSkillsPanelView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 7) {
                 LEDCaption(text: "INSTALL NEW", tint: LED.green)
-                Text("安装新 Skill")
+                Text(L10n.text("安装新 Skill"))
                     .font(LED.display(11, .semibold))
                     .foregroundStyle(LED.dim)
             }
             HStack(spacing: 6) {
-                LEDTextField(placeholder: "owner/repo 或 GitHub 链接", text: $repoInput)
+                LEDTextField(placeholder: L10n.text("owner/repo 或 GitHub 链接"), text: $repoInput)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(Capsule().fill(LED.chrome))
                     .disabled(store.busy)
-                installMenu(label: store.busy ? "…" : "安装", primary: true) { tools in
+                installMenu(label: store.busy ? "…" : L10n.text("安装"), primary: true) { tools in
                     store.installFromGitHub(repoInput, to: tools)
                 }
                 .disabled(store.busy || repoInput.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             HStack {
-                installMenu(label: "本地文件夹…", primary: false) { tools in
+                installMenu(label: L10n.text("本地文件夹…"), primary: false) { tools in
                     store.installFromFolder(to: tools)
                 }
                 .disabled(store.busy)
                 Spacer()
-                Link("浏览 skills.sh", destination: URL(string: "https://skills.sh")!)
+                Link(L10n.text("浏览 skills.sh"), destination: URL(string: "https://skills.sh")!)
                     .font(LED.mono(8)).foregroundStyle(LED.dim)
             }
         }
@@ -285,9 +285,9 @@ struct LEDSkillsPanelView: View {
     /// primary = 主 CTA(黄胶囊);Menu 用不了 ButtonStyle,胶囊由 LEDMenuLabel 自绘。
     private func installMenu(label: String, primary: Bool, action: @escaping ([ToolKind]) -> Void) -> some View {
         Menu {
-            Button("装到 Claude Code") { action([.claude]) }
-            Button("装到 Codex") { action([.codex]) }
-            Button("两个都装") { action([.claude, .codex]) }
+            Button(L10n.text("装到 Claude Code")) { action([.claude]) }
+            Button(L10n.text("装到 Codex")) { action([.codex]) }
+            Button(L10n.text("两个都装")) { action([.claude, .codex]) }
         } label: {
             LEDMenuLabel(text: label, primary: primary)
         }
@@ -340,11 +340,11 @@ private struct LEDMultiSkillPicker: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 LEDCaption(text: "SELECT SKILLS", tint: LED.green)
-                Text("\(pending.repoLabel) 里有 \(pending.candidates.count) 个 skill")
+                Text(L10n.text("\(pending.repoLabel) 里有 \(pending.candidates.count) 个 skill"))
                     .font(LED.display(13, .bold))
                     .foregroundStyle(LED.text)
             }
-            Text("勾选要安装的:").font(LED.mono(9)).foregroundStyle(LED.dim)
+            Text(L10n.text("勾选要安装的:")).font(LED.mono(9)).foregroundStyle(LED.dim)
 
             HUDScrollView(accent: LED.amber) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -356,7 +356,7 @@ private struct LEDMultiSkillPicker: View {
             .frame(maxHeight: 180)
 
             HStack(spacing: 6) {
-                Text("装到").font(LED.mono(9)).foregroundStyle(LED.dim)
+                Text(L10n.text("装到")).font(LED.mono(9)).foregroundStyle(LED.dim)
                 ForEach(targetOptions.indices, id: \.self) { i in
                     let opt = targetOptions[i]
                     let on = target == opt.tools
@@ -370,12 +370,12 @@ private struct LEDMultiSkillPicker: View {
             }
 
             HStack {
-                Button("取消") {
+                Button(L10n.text("取消")) {
                     store.completePendingInstall(pending, selected: [], to: [])
                 }
                 .buttonStyle(LEDGhostButtonStyle(size: 11))
                 Spacer()
-                Button("安装 \(selected.count) 个") {
+                Button(L10n.text("安装 \(selected.count) 个")) {
                     let chosen = pending.candidates.filter { selected.contains($0.path) }
                     store.completePendingInstall(pending, selected: chosen, to: target)
                 }
@@ -390,7 +390,7 @@ private struct LEDMultiSkillPicker: View {
 
     /// 与 HUD/经典版 segmented picker 等价的三档:Claude / Codex / 两者
     private var targetOptions: [(label: String, tools: [ToolKind])] {
-        [("Claude", [.claude]), ("Codex", [.codex]), ("两者", [.claude, .codex])]
+        [("Claude", [.claude]), ("Codex", [.codex]), (L10n.text("两者"), [.claude, .codex])]
     }
 
     /// 勾选行:灯珠式 checkmark(替代 Toggle,绑定语义不变)

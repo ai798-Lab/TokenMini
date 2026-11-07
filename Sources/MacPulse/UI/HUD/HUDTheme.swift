@@ -36,7 +36,7 @@ enum HUD {
     static var gridline: Color { prism ? Prism.line.opacity(0.55) : Color.white.opacity(0.05) }
 
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .system(size: prism ? max(10, size) : size, weight: weight, design: prism ? .default : .monospaced)
+        .system(size: prism ? max(10, size) : size, weight: weight, design: prism ? .default : AppLanguage.monospacedDesign)
     }
 
     /// 负载语义色:低=青,中=琥珀,高=红(阈值与旧版红黄绿一致)

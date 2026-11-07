@@ -44,7 +44,7 @@ struct ThemedSegmented<T: Hashable>: View {
             ForEach(items, id: \.value) { item in
                 let selected = selection == item.value
                 Button { selection = item.value } label: {
-                    Text(item.label).lineLimit(1)
+                    Text(L10n.lookup(item.label)).lineLimit(1)
                         .frame(maxWidth: fillsWidth ? .infinity : nil)
                 }
                 .buttonStyle(PrismButtonStyle(prominent: selected, accent: tint, size: size, subtle: level == .secondary))
@@ -56,7 +56,7 @@ struct ThemedSegmented<T: Hashable>: View {
 
     private var native: some View {
         Picker("", selection: $selection) {
-            ForEach(items, id: \.value) { Text($0.label).tag($0.value) }
+            ForEach(items, id: \.value) { Text(L10n.lookup($0.label)).tag($0.value) }
         }
         .pickerStyle(.segmented)
         .labelsHidden()
@@ -74,7 +74,7 @@ struct ThemedSegmented<T: Hashable>: View {
                     if reduceMotion { selection = item.value }
                     else { withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { selection = item.value } }
                 } label: {
-                    Text(item.label)
+                    Text(L10n.lookup(item.label))
                         .font(settings.isLED ? LED.display(size, on ? .bold : .medium)
                                              : HUD.mono(size, on ? .bold : .medium))
                         .foregroundStyle(labelColor(on))
@@ -196,7 +196,7 @@ struct ThemedChartLegend: View {
             ForEach(series, id: \.self) { s in
                 HStack(spacing: 5) {
                     marker(SeriesColor.color(for: s))
-                    Text(s)
+                    Text(L10n.lookup(s))
                         .font(settings.isLED ? LED.din(11)
                               : (settings.isHUD ? HUD.mono(9) : .caption2))
                         .foregroundStyle(settings.isLED ? LED.dim

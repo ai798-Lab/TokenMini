@@ -100,8 +100,8 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
         for q in quotas {
             for w in q.windows where w.resetsAt > now {
                 let content = UNMutableNotificationContent()
-                content.title = "\(q.tool.label) · \(w.kind.label)已重置"
-                content.body = "满血复活,可以继续了 🎉"
+                content.title = L10n.text("\(q.tool.label) · \(w.kind.label)已重置")
+                content.body = L10n.text("满血复活,可以继续了 🎉")
                 content.sound = .default
                 content.interruptionLevel = .timeSensitive   // 无 entitlement 时自动降级为 .active,不崩
                 content.userInfo = ["tool": q.tool.rawValue, "kind": w.kind.rawValue]
@@ -147,13 +147,13 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
                                topProject: String?, bucket: Int) {
         let settings = DisplaySettings.shared
         let amount = settings.currencyStr(kind == .hourly ? hourlyUSD : todayUSD)
-        let scope = kind == .hourly ? "过去 1 小时" : "今天"
+        let scope = kind == .hourly ? L10n.text("过去 1 小时") : L10n.text("今天")
         let threshold = settings.currencyStr(kind == .hourly ? hourlyThresholdUSD : dailyThresholdUSD)
-        let project = topProject.map { " · 主要来自 \($0)" } ?? ""
+        let project = topProject.map { L10n.text(" · 主要来自 \($0)") } ?? ""
 
         let content = UNMutableNotificationContent()
-        content.title = "AI 等价成本提醒 · \(scope) \(amount)"
-        content.body = "已达到你设置的 \(threshold) 阈值\(project)"
+        content.title = L10n.text("AI 等价成本提醒 · \(scope) \(amount)")
+        content.body = L10n.text("已达到你设置的 \(threshold) 阈值\(project)")
         content.sound = .default
         content.interruptionLevel = .active
         let identifier = "\(costPrefix)\(kind.rawValue)-\(bucket)"
@@ -162,8 +162,8 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
 
         NotchController.shared.flash(
             NotchAlert(icon: "exclamationmark.triangle.fill",
-                       title: "AI 等价成本 · \(scope) \(amount)",
-                       subtitle: "达到 \(threshold) 提醒线\(project)",
+                       title: L10n.text("AI 等价成本 · \(scope) \(amount)"),
+                       subtitle: L10n.text("达到 \(threshold) 提醒线\(project)"),
                        tint: .orange),
             duration: 6, sound: true)
     }

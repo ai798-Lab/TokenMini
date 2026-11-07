@@ -84,7 +84,7 @@ final class NotchController {
             onFinished: { [weak self] in
                 guard let self, self.gen == myGen else { return }  // 已被新提醒取代则不关
                 self.panel?.orderOut(nil)
-            }))
+            }).localizedInterface())
         host.frame = NSRect(origin: .zero, size: frame.size)
         p.contentView = host
         p.orderFrontRegardless()

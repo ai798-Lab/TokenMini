@@ -28,7 +28,7 @@ struct LEDSimpleHomeView: View {
             HStack(spacing: 8) {
                 if quota.lastRefresh == nil { ProgressView().controlSize(.small) }
                 else { Image(systemName: "exclamationmark.circle").foregroundStyle(LED.amber) }
-                Text(quota.lastRefresh == nil ? "正在读取额度…" : "未读取到额度,稍后自动重试")
+                Text(quota.lastRefresh == nil ? L10n.text("正在读取额度…") : L10n.text("未读取到额度,稍后自动重试"))
                     .font(LED.display(11, .medium)).foregroundStyle(LED.dim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -46,9 +46,9 @@ struct LEDSimpleHomeView: View {
         LEDPanel(tint: LED.amber, padding: 12) {
             VStack(spacing: 8) {
                 HStack(spacing: 0) {
-                    spendCell("TODAY", "今日花费", settings.currencyStr(usage.today.totalCostUSD))
+                    spendCell("24H", L10n.text("24 小时花费"), settings.currencyStr(usage.last24Hours.totalCostUSD))
                     Rectangle().fill(LED.amber.opacity(0.28)).frame(width: 1, height: 42)
-                    spendCell("THIS MONTH", "本月花费", settings.currencyStr(usage.thisMonth.totalCostUSD))
+                    spendCell("THIS MONTH", L10n.text("本月花费"), settings.currencyStr(usage.thisMonth.totalCostUSD))
                 }
                 LEDChevrons(pointingRight: true, count: 5, tint: LED.amber, size: 6)
             }
@@ -66,32 +66,21 @@ struct LEDSimpleHomeView: View {
     }
 }
 
-// MARK: - 中文时长 → 七段可显示的数字串
+// MARK: - 秒数 → 七段倒计时（显示数字不依赖界面语言）
 
-/// 七段数码管只认数字/冒号,而 QuotaFormat.duration 返回的是中文串("3小时20分")。
-/// 这里纯词法地把中文串拆成 (数值, 单位) 再拼成 "3:20":刻意复用 duration 的分档结果而不是自己算秒,
-/// 保证大读数与下面那行「还能用 X」永远是同一口径(QuotaFormat 是唯一真源,不改它)。
-private enum SegTime {
-    /// 解析不出可信数字(如 "<1分钟" 的 1 是个约数)返回 nil,调用方回退成圆体文字
-    static func parse(_ zh: String) -> (digits: String, unit: String)? {
-        guard !zh.contains("<") else { return nil }
-
-        var parts: [(value: Int, unit: Character)] = []
-        var num = ""
-        for c in zh {
-            if c.isNumber { num.append(c); continue }
-            if let v = Int(num) { parts.append((v, c)) }   // 数字后紧跟的第一个字就是单位首字
-            num = ""
+enum SegTime {
+    /// 与 QuotaFormat.duration 使用相同的分钟/小时/天分档；不足一分钟交给本地化文字。
+    static func from(seconds: TimeInterval) -> (digits: String, unit: String)? {
+        guard seconds.isFinite, seconds >= 60, seconds < Double(Int.max) else { return nil }
+        let total = Int(seconds)
+        let days = total / 86400, hours = (total % 86400) / 3600, minutes = (total % 3600) / 60
+        if days > 0 {
+            return (String(format: "%d:%02d", days, hours), L10n.text("天 : 小时"))
         }
-        guard let head = parts.first else { return nil }
-        let tail = parts.dropFirst().first?.value ?? 0
-
-        switch head.unit {
-        case "天": return (String(format: "%d:%02d", head.value, tail), "DAYS : HRS")
-        case "小": return (String(format: "%d:%02d", head.value, tail), "HRS : MIN")   // "小时"
-        case "分": return (String(head.value), "MINUTES")
-        default:  return nil
+        if hours > 0 {
+            return (String(format: "%d:%02d", hours, minutes), L10n.text("小时 : 分钟"))
         }
+        return (String(minutes), L10n.text("分钟"))
     }
 }
 
@@ -135,7 +124,7 @@ private struct LEDQuotaCard: View {
             }
             Spacer(minLength: 4)
             if !quota.authoritative {
-                Text("估算").font(LED.display(9, .medium)).foregroundStyle(LED.faint)
+                Text(L10n.text("估算")).font(LED.display(9, .medium)).foregroundStyle(LED.faint)
             }
         }
     }
@@ -155,7 +144,7 @@ private struct LEDQuotaBar: View {
             HStack {
                 Text(window.kind.label).font(LED.display(10, .medium)).foregroundStyle(LED.dim)
                 Spacer()
-                Text(isReset ? "满额可用" : "已用 \(Int(window.usedPercent))%")
+                Text(isReset ? L10n.text("满额可用") : L10n.text("已用 \(Int(window.usedPercent))%"))
                     .font(LED.mono(10, .bold))
                     .foregroundStyle(isReset ? LED.green : color)
             }
@@ -164,8 +153,8 @@ private struct LEDQuotaBar: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock.arrow.circlepath").font(.system(size: 8)).foregroundStyle(LED.faint)
                 Text(isReset
-                     ? "已重置,随时可用"
-                     : "还能用 \(QuotaFormat.duration(window.remaining(now: now))) · \(QuotaFormat.resetClock(window.resetsAt)) 重置")
+                     ? L10n.text("已重置,随时可用")
+                     : L10n.text("还能用 \(QuotaFormat.duration(window.remaining(now: now))) · \(QuotaFormat.resetClock(window.resetsAt)) 重置"))
                     .font(LED.display(9, .medium)).foregroundStyle(LED.dim)
             }
         }
@@ -174,24 +163,25 @@ private struct LEDQuotaBar: View {
     /// 主角读数。中文(满额可用 / <1分钟)七段管显示不了,回退成同色圆体大字 + 同款辉光。
     @ViewBuilder
     private var readout: some View {
-        let zh = QuotaFormat.duration(window.remaining(now: now))
+        let remaining = window.remaining(now: now)
+        let durationText = QuotaFormat.duration(remaining)
         Group {
             if isReset {
                 VStack(spacing: 4) {
-                    glowText("满额可用", size: 22, color: LED.green)
-                    LEDCaption(text: "READY", tint: LED.green, size: 7)
+                    glowText(L10n.text("满额可用"), size: 22, color: LED.green)
+                    LEDCaption(text: L10n.text("已就绪"), tint: LED.green, size: 7)
                 }
-            } else if let t = SegTime.parse(zh) {
+            } else if let t = SegTime.from(seconds: remaining) {
                 VStack(spacing: 5) {
-                    LEDCaption(text: "TIME REMAINING", tint: color.opacity(0.75), size: 7)
+                    LEDCaption(text: L10n.text("剩余时间"), tint: color.opacity(0.75), size: 7)
                     SevenSegmentText(text: t.digits, height: 34, color: color)
                         .frame(height: 34)
                     LEDCaption(text: t.unit, tint: color, size: 7)
                 }
             } else {
                 VStack(spacing: 4) {
-                    glowText(zh, size: 20, color: color)
-                    LEDCaption(text: "TIME REMAINING", tint: color, size: 7)
+                    glowText(durationText, size: 20, color: color)
+                    LEDCaption(text: L10n.text("剩余时间"), tint: color, size: 7)
                 }
             }
         }

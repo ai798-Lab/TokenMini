@@ -22,11 +22,11 @@ enum LED {
     static let faint  = Color(white: 0.66)
 
     static func mono(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
-        .system(size: size, weight: weight, design: .monospaced)
+        .system(size: size, weight: weight, design: AppLanguage.monospacedDesign)
     }
     /// 标题/胶囊用的圆体(iOS 味)
     static func display(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+        .system(size: size, weight: weight, design: AppLanguage.current.isRightToLeft ? .default : .rounded)
     }
 
     /// DIN —— 工业仪表/交通标识的经典字体,macOS 自带。
@@ -34,11 +34,12 @@ enum LED {
     /// 摆在七段数码管边上一眼就出戏;DIN 本来就是仪表盘上的字。
     /// 万一系统缺字体,fallback 回等宽,不至于整块读数塌掉。
     static func din(_ size: CGFloat, condensed: Bool = true) -> Font {
+        if AppLanguage.current.isRightToLeft { return .system(size: size, weight: .bold) }
         let name = condensed ? "DINCondensed-Bold" : "DINAlternate-Bold"
         if NSFont(name: name, size: size) != nil {
             return .custom(name, size: size)
         }
-        return .system(size: size, weight: .bold, design: .monospaced)
+        return .system(size: size, weight: .bold, design: AppLanguage.monospacedDesign)
     }
     /// 负载/占用语义色:绿→琥珀→红
     static func level(_ ratio: Double, warn: Double = 0.6, bad: Double = 0.85) -> Color {
@@ -117,14 +118,52 @@ struct SevenSegmentText: View {
     var ghost: Double = 0.10          // 未点亮段残影(真实 LED 的关键细节)
 
     var body: some View {
-        // 底对齐:单位符号要坐在数字基线上,居中会让 ¥ 飘在半空
-        HStack(alignment: .bottom, spacing: height * 0.13) {
-            ForEach(Array(text.enumerated()), id: \.offset) { _, ch in
-                charView(ch)
+        Group {
+            if Self.requiresJoinedRendering(text) {
+                // Arabic letters must be shaped as one run, never as individual digits.
+                Text(verbatim: text)
+                    .font(.system(size: height * 0.9, weight: .bold))
+                    .foregroundStyle(color)
+                    .lineLimit(1).minimumScaleFactor(0.45)
+                    .environment(\.layoutDirection, .rightToLeft)
+            } else {
+                HStack(alignment: .bottom, spacing: height * 0.13) {
+                    ForEach(Array(Self.displayCharacters(text).enumerated()), id: \.offset) { _, ch in
+                        charView(ch)
+                    }
+                }
+                // Direction controls cannot protect individual HStack children.
+                .environment(\.layoutDirection, .leftToRight)
             }
         }
         .shadow(color: color.opacity(0.9), radius: height * 0.10)
         .shadow(color: color.opacity(0.35), radius: height * 0.32)
+    }
+
+    static func requiresJoinedRendering(_ text: String) -> Bool {
+        text.unicodeScalars.contains { scalar in
+            let arabic = (0x0600...0x08FF).contains(scalar.value)
+                || (0xFB50...0xFDFF).contains(scalar.value)
+                || (0xFE70...0xFEFF).contains(scalar.value)
+            return arabic && CharacterSet.letters.contains(scalar)
+        }
+    }
+
+    /// 七段字形使用 ASCII 数字；方向标记不可变成占位的单位字形。
+    static func displayCharacters(_ text: String) -> [Character] {
+        text.compactMap { character in
+            if character.unicodeScalars.allSatisfy({ scalar in
+                [0x061C, 0x200E, 0x200F].contains(scalar.value)
+                    || (0x202A...0x202E).contains(scalar.value)
+                    || (0x2066...0x2069).contains(scalar.value)
+            }) { return nil }
+            if let digit = character.wholeNumberValue, (0...9).contains(digit) {
+                return Character(String(digit))
+            }
+            if character == "\u{066B}" { return "." }
+            if character == "\u{066C}" { return "," }
+            return character
+        }
     }
 
     @ViewBuilder
@@ -307,7 +346,7 @@ struct LEDCaption: View {
         // DIN 拉高一档字号:它是窄体,同号数视觉上比等宽小一圈
         Text(text)
             .font(LED.din(size * 1.25))
-            .kerning(size * 0.26)
+            .localizedKerning(size * 0.26)
             .foregroundStyle(tint)
             .shadow(color: tint.opacity(0.6), radius: 3)
             .lineLimit(1)

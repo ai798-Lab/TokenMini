@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct UsageSourcesView: View {
     @EnvironmentObject var usage: UsageStore
+    @EnvironmentObject var quota: QuotaStore
     @ObservedObject private var settings = DisplaySettings.shared
     @Environment(\.dismiss) private var dismiss
     @State private var showToolPicker = false
@@ -24,12 +25,12 @@ struct UsageSourcesView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
                     Image(systemName: "externaldrive.badge.plus").foregroundStyle(themeAccent())
-                    Text("工具与模型接入").font(.system(size: 20, weight: .bold))
+                    Text(L10n.text("工具与模型接入")).font(.system(size: 20, weight: .bold))
                     Spacer()
-                    Button("完成") { dismiss() }
+                    Button(L10n.text("完成")) { dismiss() }
                         .modifier(SourceActionChrome()).keyboardShortcut(.cancelAction)
                 }
-                Text("本地记录每 60 秒自动更新；导入数据截至文件所覆盖时间。以下为近 90 天的记录数。")
+                Text(L10n.text("本地记录每 60 秒自动更新；导入数据截至文件所覆盖时间。以下为近 90 天的记录数。"))
                     .font(.system(size: 11)).foregroundStyle(secondaryColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -52,7 +53,19 @@ struct UsageSourcesView: View {
 
     private var sections: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sourceSection("用量来源", icon: "externaldrive") {
+            sourceSection(L10n.text("DeepSeek 官方余额与模型"), icon: "creditcard") {
+                Toggle(L10n.text("读取本机 DeepSeek API 密钥并查询余额"), isOn: Binding(
+                    get: { quota.deepSeekAccessEnabled }, set: { quota.setDeepSeekAccessEnabled($0) }))
+                    .toggleStyle(PrismSecondaryToggleStyle(isSwitch: true)).font(.system(size: 12))
+                description(L10n.text("仅向 api.deepseek.com 查询余额和可用模型，每 5 分钟更新。使用已有密钥，不另存凭证，不传输聊天正文。"))
+                DeepSeekBalanceContent()
+                description(L10n.text("余额由官方返回；历史 Token 需要调用日志。项目或 Agent 可写入本机用量接入目录，监控台每 60 秒自动读取。"))
+                HStack {
+                    Button(L10n.text("打开用量接入目录")) { openAPIUsageDirectory() }.modifier(SourceActionChrome())
+                    Link(L10n.text("DeepSeek 官方用量"), destination: URL(string: "https://platform.deepseek.com/usage")!)
+                }
+            }
+            sourceSection(L10n.text("用量来源"), icon: "externaldrive") {
                 ForEach(usage.sourceStatuses) { source in
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: source.count > 0 ? "checkmark.circle.fill" : "circle.dashed")
@@ -62,56 +75,56 @@ struct UsageSourcesView: View {
                             Text(source.detail).font(.system(size: 10)).foregroundStyle(secondaryColor)
                         }
                         Spacer()
-                        Text("\(source.count) 条").font(.system(size: 11, weight: .medium))
+                        Text(L10n.text("\(source.count) 条")).font(.system(size: 11, weight: .medium))
                             .monospacedDigit().foregroundStyle(secondaryColor)
                     }
                     .padding(.vertical, 3)
                 }
             }
-            sourceSection("Trae Work 官方同步", icon: "arrow.triangle.2.circlepath") {
-                Toggle("允许读取本机 Trae Work CN 登录状态并查询官方用量", isOn: $traeEnabled)
+            sourceSection(L10n.text("Trae Work 官方同步"), icon: "arrow.triangle.2.circlepath") {
+                Toggle(L10n.text("允许读取本机 Trae Work CN 登录状态并查询官方用量"), isOn: $traeEnabled)
                     .toggleStyle(PrismSecondaryToggleStyle(isSwitch: true)).font(.system(size: 12))
-                description("仅向 api.trae.cn 查询近 30 天 Token 用量，凭证不落盘，不传输聊天正文。同步结果只保存在本机；关闭后保留已同步用量。")
+                description(L10n.text("仅向 api.trae.cn 查询近 30 天 Token 用量，凭证不落盘，不传输聊天正文。同步结果只保存在本机；关闭后保留已同步用量。"))
                 HStack {
-                    Button(syncingTrae ? "正在同步…" : "同步 Trae Work 用量") { syncTrae() }
+                    Button(syncingTrae ? L10n.text("正在同步…") : L10n.text("同步 Trae Work 用量")) { syncTrae() }
                         .modifier(SourceActionChrome()).disabled(!traeEnabled || syncingTrae)
                     Text(traeStatus).font(.caption).foregroundStyle(secondaryColor)
                 }
             }
-            sourceSection("导入工具用量", icon: "square.and.arrow.down") {
-                description("Cursor 可导入官网用量 CSV。其他工具需按模板提供 CSV / JSONL / JSON；仅导入 Token 与费用字段，不保存聊天正文。重复导入会去重。")
+            sourceSection(L10n.text("导入工具用量"), icon: "square.and.arrow.down") {
+                description(L10n.text("Cursor 可导入官网用量 CSV。其他工具需按模板提供 CSV / JSONL / JSON；仅导入 Token 与费用字段，不保存聊天正文。重复导入会去重。"))
                 HStack(spacing: 10) {
                     importToolPicker.frame(width: 230)
-                    Button(busy ? "正在导入…" : "选择用量文件") { importFile() }
+                    Button(busy ? L10n.text("正在导入…") : L10n.text("选择用量文件")) { importFile() }
                         .modifier(SourceActionChrome()).disabled(busy)
-                    Button("保存模板") { saveTemplate() }.modifier(SourceActionChrome())
+                    Button(L10n.text("保存模板")) { saveTemplate() }.modifier(SourceActionChrome())
                 }
                 if selectedTool == .cursor {
-                    Link("打开 Cursor 用量页面", destination: URL(string: "https://cursor.com/dashboard?tab=usage")!)
+                    Link(L10n.text("打开 Cursor 用量页面"), destination: URL(string: "https://cursor.com/dashboard?tab=usage")!)
                         .font(.system(size: 11)).foregroundStyle(themeAccent())
                 }
             }
-            sourceSection("模型目录", icon: "arrow.triangle.2.circlepath") {
+            sourceSection(L10n.text("模型目录"), icon: "arrow.triangle.2.circlepath") {
                 ModelCatalogStatusView()
             }
-            sourceSection("模型价格", icon: "dollarsign.circle") {
-                description("官方核价 \(PricingTable.table.count) 项 + 社区参考目录 \(PricingTable.communityPrices.count) 项（含渠道与版本，可能重叠），快照 \(PricingTable.snapshotVersion)。优先自定义价格，其次官方，最后社区参考。任何模型都可记录用量；未匹配或未适配的阶梯价格显示“待定价”。")
-                description("金额优先采用导入文件的费用；其余按当前标准 API 价格估算，包含社区参考价格，不代表订阅套餐扣款或历史账单。DeepSeek 采用高峰基准价，未计低谷优惠。")
+            sourceSection(L10n.text("模型价格"), icon: "dollarsign.circle") {
+                description(L10n.text("官方核价 \(PricingTable.table.count) 项 + 社区参考目录 \(PricingTable.communityPrices.count) 项（含渠道与版本，可能重叠），快照 \(PricingTable.snapshotVersion)。优先自定义价格，其次官方，最后社区参考。任何模型都可记录用量；未匹配或未适配的阶梯价格显示“待定价”。"))
+                description(L10n.text("金额优先采用导入文件的费用；其余按当前标准 API 价格估算，包含社区参考价格，不代表订阅套餐扣款或历史账单。DeepSeek 采用高峰基准价，未计低谷优惠。"))
                 if !usage.dashboard.quality.unknownModels.isEmpty {
-                    Text("当前待定价：" + usage.dashboard.quality.unknownModels.joined(separator: "、"))
+                    Text(L10n.text("当前待定价：") + usage.dashboard.quality.unknownModels.joined(separator: "、"))
                         .font(.caption).foregroundStyle(.orange).textSelection(.enabled)
                 }
-                sourceTextField("完整模型 ID（与用量记录一致）", text: $model)
+                sourceTextField(L10n.text("完整模型 ID（与用量记录一致）"), text: $model)
                 HStack(spacing: 12) {
-                    rateField("输入", text: $input)
-                    rateField("输出", text: $output)
-                    rateField("缓存读", text: $read)
-                    rateField("缓存写", text: $write)
+                    rateField(L10n.text("输入"), text: $input)
+                    rateField(L10n.text("输出"), text: $output)
+                    rateField(L10n.text("缓存读"), text: $read)
+                    rateField(L10n.text("缓存写"), text: $write)
                 }
                 HStack {
-                    description("单位：美元 / 百万 Token；保存后优先使用自定义价格。")
+                    description(L10n.text("单位：美元 / 百万 Token；保存后优先使用自定义价格。"))
                     Spacer()
-                    Button("保存价格") { savePrice() }.modifier(SourceActionChrome())
+                    Button(L10n.text("保存价格")) { savePrice() }.modifier(SourceActionChrome())
                 }
             }
             if !status.isEmpty {
@@ -168,10 +181,10 @@ struct UsageSourcesView: View {
                 }
             }
             .buttonStyle(PrismButtonStyle())
-            .accessibilityLabel("导入工具：" + selectedTool.label)
+            .accessibilityLabel(L10n.text("导入工具：") + selectedTool.label)
             .popover(isPresented: $showToolPicker, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("选择导入工具").font(Prism.label(12, .semibold)).foregroundStyle(Prism.secondary)
+                    Text(L10n.text("选择导入工具")).font(Prism.label(12, .semibold)).foregroundStyle(Prism.secondary)
                     HUDScrollView(accent: Prism.mint) {
                         VStack(spacing: 4) {
                             ForEach(ToolKind.allCases.filter { !$0.localScanner }) { tool in
@@ -192,7 +205,7 @@ struct UsageSourcesView: View {
                 .preferredColorScheme(.dark)
             }
         } else {
-            Picker("工具", selection: $selectedTool) {
+            Picker(L10n.text("工具"), selection: $selectedTool) {
                 ForEach(ToolKind.allCases.filter { !$0.localScanner }) { Text($0.label).tag($0) }
             }.modifier(ThemedMenuChrome())
         }
@@ -201,7 +214,7 @@ struct UsageSourcesView: View {
     private func rateField(_ label: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label).font(.caption).foregroundStyle(secondaryColor)
-            sourceTextField("0.00", text: text).accessibilityLabel(label + "价格")
+            sourceTextField("0.00", text: text).accessibilityLabel(label + L10n.text("价格"))
         }
     }
 
@@ -210,7 +223,7 @@ struct UsageSourcesView: View {
         panel.allowedContentTypes = [.commaSeparatedText, .json, .plainText, .data]
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        busy = true; status = "正在校验文件…"
+        busy = true; status = L10n.text("正在校验文件…")
         let tool = selectedTool
         Task {
             do {
@@ -221,22 +234,37 @@ struct UsageSourcesView: View {
                     let rows = try UsageImport.parse(data, format: url.pathExtension, tool: tool)
                     return try UsageImport.save(rows)
                 }.value
-                status = "已导入 \(count) 条新记录，重复记录自动跳过。"
+                status = L10n.text("已导入 \(count) 条新记录，重复记录自动跳过。")
                 usage.refresh()
-            } catch { status = "导入失败：" + error.localizedDescription }
+            } catch { status = L10n.text("导入失败：") + error.localizedDescription }
             busy = false
         }
     }
     private func syncTrae() {
-        syncingTrae = true; traeStatus = "正在查询官方用量…"
+        syncingTrae = true; traeStatus = L10n.text("正在查询官方用量…")
         Task {
             do {
                 let count = try await TraeUsageClient.fetchAndSave()
-                traeStatus = "已同步近 30 天 \(count) 个会话"
+                traeStatus = L10n.text("已同步近 30 天 \(count) 个会话")
                 usage.refresh()
             } catch { traeStatus = error.localizedDescription }
             syncingTrae = false
         }
+    }
+    private func openAPIUsageDirectory() {
+        do {
+            let directory = APIUsageScanner.directory()
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700])
+            for name in ["README.md", "tokenmini_deepseek.py"] {
+                if let source = Bundle.main.resourceURL?.appendingPathComponent("Integrations/" + name),
+                   FileManager.default.fileExists(atPath: source.path),
+                   !FileManager.default.fileExists(atPath: directory.appendingPathComponent(name).path) {
+                    try FileManager.default.copyItem(at: source, to: directory.appendingPathComponent(name))
+                }
+            }
+            NSWorkspace.shared.open(directory)
+        } catch { status = L10n.text("无法打开用量接入目录。") }
     }
     private func saveTemplate() {
         let panel = NSSavePanel()
@@ -244,19 +272,19 @@ struct UsageSourcesView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         let date = ISO8601DateFormatter().string(from: Date())
         let template = "timestamp,model,input,output,cacheRead,cacheWrite,costUSD,id,project,session\n\(date),your-model-id,100,20,0,0,,replace-with-request-id,Example,session-1\n"
-        do { try template.write(to: url, atomically: true, encoding: .utf8); status = "模板已保存。请用真实用量替换示例行再导入。" }
+        do { try template.write(to: url, atomically: true, encoding: .utf8); status = L10n.text("模板已保存。请用真实用量替换示例行再导入。") }
         catch { status = error.localizedDescription }
     }
     private func savePrice() {
         guard let i = Double(input), let o = Double(output), let r = Double(read), let w = Double(write),
               !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            status = "请填写完整模型 ID 和四项非负价格；免费项填 0。"; return
+            status = L10n.text("请填写完整模型 ID 和四项非负价格；免费项填 0。"); return
         }
         do {
             try PricingTable.saveCustomPrice(model: model, rate: .init(input: i, output: o, cacheWrite: w, cacheRead: r))
-            status = "已保存自定义价格，正在重新计算。"
+            status = L10n.text("已保存自定义价格，正在重新计算。")
             usage.refresh()
-        } catch { status = "价格无效：请填写有限的非负数字。" }
+        } catch { status = L10n.text("价格无效：请填写有限的非负数字。") }
     }
 }
 
