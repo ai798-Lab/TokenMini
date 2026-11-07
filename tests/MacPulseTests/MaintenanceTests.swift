@@ -16,6 +16,7 @@ final class MaintenanceTests: XCTestCase {
     }
 
     func testMissingRootsAreEmptyAndUnreadableRootIsReported() throws {
+        useInterfaceLanguage(.simplifiedChinese)
         let h = try home(); defer { try? FileManager.default.removeItem(at: h) }
         let scanner = CleanupScanner(homeDirectory: h.path)
         XCTAssertTrue(scanner.scan().allSatisfy { $0.items.isEmpty && $0.issues.isEmpty })
@@ -80,6 +81,7 @@ final class MaintenanceTests: XCTestCase {
 
     @MainActor
     func testConfirmationSnapshotRescanAndCancellation() async throws {
+        useInterfaceLanguage(.simplifiedChinese)
         let h = try home(); defer { try? FileManager.default.removeItem(at: h) }
         let deleted = try file(h, "Library/Logs/empty")
         let keep = try file(h, "Library/Logs/keep")
@@ -120,6 +122,7 @@ final class MaintenanceTests: XCTestCase {
 
     @MainActor
     func testExitRequestIsVerifiedUsingDisposableProcess() async throws {
+        useInterfaceLanguage(.simplifiedChinese)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sleep")
         task.arguments = ["30"]

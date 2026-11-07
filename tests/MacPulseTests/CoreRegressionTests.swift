@@ -112,6 +112,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testModelNameDisplayAndRecentActivityFreshness() {
+        useInterfaceLanguage(.simplifiedChinese)
         XCTAssertEqual(ModelName.display("openai/gpt-5.6-sol-2026-07-01"), "GPT-5.6 Sol")
         XCTAssertEqual(ModelName.display("claude-opus-5"), "Opus 5")
         XCTAssertEqual(ModelName.display("claude-opus-4-8-20260701"), "Opus 4.8")
@@ -142,6 +143,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testCompanionMoodKeepsRisksFirstAndAddsContext() {
+        useInterfaceLanguage(.simplifiedChinese)
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let late = date(2026, 7, 17, 23, calendar)
@@ -168,6 +170,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testVibeGreetingIncludesActualModelIdentity() {
+        useInterfaceLanguage(.simplifiedChinese)
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let morning = date(2026, 7, 17, 9, calendar)
@@ -196,6 +199,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testComparisonLabelsAndTodayUsesYesterdaySamePeriod() {
+        useInterfaceLanguage(.simplifiedChinese)
         XCTAssertEqual(UsageFilter.TimeRange.today.comparisonLabel, "较昨日同期")
         XCTAssertEqual(UsageFilter.TimeRange.last24h.comparisonLabel, "较前 24 小时")
         XCTAssertEqual(UsageFilter.TimeRange.last7Days.comparisonLabel, "较前 7 天")
@@ -244,6 +248,7 @@ final class CoreRegressionTests: XCTestCase {
     }
 
     func testPrivacyAliasIsStableAndDoesNotLeakProjectName() {
+        useInterfaceLanguage(.simplifiedChinese)
         let raw = "-Users-example-Documents-Sample-Project"
         let first = ProjectName.display(raw, privacy: true)
         XCTAssertEqual(first, ProjectName.display(raw, privacy: true))

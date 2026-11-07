@@ -1,6 +1,23 @@
 import XCTest
 @testable import MacPulse
 
+extension XCTestCase {
+    /// Scope literal UI-copy assertions to one language without changing any persistent preference.
+    func useInterfaceLanguage(_ language: AppLanguage) {
+        let domain = UserDefaults.argumentDomain
+        let key = AppLanguage.preferenceKey
+        var arguments = UserDefaults.standard.volatileDomain(forName: domain)
+        let previous = arguments[key] as? String
+        arguments[key] = language.rawValue
+        UserDefaults.standard.setVolatileDomain(arguments, forName: domain)
+        addTeardownBlock {
+            var restored = UserDefaults.standard.volatileDomain(forName: domain)
+            restored[key] = previous
+            UserDefaults.standard.setVolatileDomain(restored, forName: domain)
+        }
+    }
+}
+
 final class LocalizationTests: XCTestCase {
     func testSystemLanguageMatchingAndFallback() {
         XCTAssertEqual(AppLanguage.resolve(.system, preferred: ["zh-TW"]), .traditionalChinese)
@@ -45,16 +62,10 @@ final class LocalizationTests: XCTestCase {
     }
 
     func testReimportIdentityDoesNotDependOnDisplayLanguage() throws {
-        let defaults = UserDefaults.standard
-        let saved = defaults.object(forKey: AppLanguage.preferenceKey)
-        defer {
-            if let saved { defaults.set(saved, forKey: AppLanguage.preferenceKey) }
-            else { defaults.removeObject(forKey: AppLanguage.preferenceKey) }
-        }
         let data = Data(#"{"timestamp":"2026-09-22T00:00:00Z","model":"test-model","input":10,"output":5}"#.utf8)
-        defaults.set("zh-Hans", forKey: AppLanguage.preferenceKey)
+        useInterfaceLanguage(.simplifiedChinese)
         let chinese = try XCTUnwrap(UsageImport.parse(data, format: "jsonl", tool: .cursor).first)
-        defaults.set("ar", forKey: AppLanguage.preferenceKey)
+        useInterfaceLanguage(.arabic)
         let arabic = try XCTUnwrap(UsageImport.parse(data, format: "jsonl", tool: .cursor).first)
         XCTAssertEqual(chinese.id, arabic.id)
         XCTAssertEqual(chinese.project, arabic.project)

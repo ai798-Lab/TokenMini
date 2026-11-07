@@ -43,6 +43,7 @@ final class ModelCatalogTests: XCTestCase {
     }
     @MainActor
     func testAutomaticTimerAppliesNewCatalogRepricesAndSurvivesOfflineRestart() async throws {
+        useInterfaceLanguage(.simplifiedChinese)
         let first = try sign(fixture(1)), second = try sign(fixture(2, input: 4))
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
