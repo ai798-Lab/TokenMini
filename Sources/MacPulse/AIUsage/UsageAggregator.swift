@@ -99,7 +99,9 @@ enum UsageAggregator {
                                   writeTokens: cacheWriteTok, readTokens: cacheReadTok)
         data.burn = burnMetrics(monthCost: monthCost, burnCost: burnCost, now: now, cal: cal)
         data.block = currentBlock(events, filter: filter, now: now, cal: cal, types: types)
-        data.topSessions = sessions.values.sorted { $0.costUSD > $1.costUSD }.prefix(topN).map { $0 }
+        data.topSessions = sessions.values.sorted {
+            $0.costUSD != $1.costUSD ? $0.costUSD > $1.costUSD : $0.tokens > $1.tokens
+        }.prefix(topN).map { $0 }
         data.facets = Facets(
             tools: facetTools.sorted { $0.rawValue < $1.rawValue },
             projects: facetProjects.sorted(),
@@ -198,7 +200,7 @@ enum UsageAggregator {
             var s = s
             s.share = total > 0 ? s.costUSD / total : 0
             return s
-        }.sorted { $0.costUSD > $1.costUSD }
+        }.sorted { $0.costUSD != $1.costUSD ? $0.costUSD > $1.costUSD : $0.tokens > $1.tokens }
     }
 
     private static func burnMetrics(monthCost: Double, burnCost: Double,

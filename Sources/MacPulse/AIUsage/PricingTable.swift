@@ -6,7 +6,7 @@ import Foundation
 enum PricingTable {
 
     /// 随排行榜日汇总一起上报，便于后台识别不同版本价格表造成的估值差异。
-    static let snapshotVersion = "2026-11-07"
+    static let snapshotVersion = "2026-11-21"
 
     // 计价热路径:每次 pricing(for:) 都做 normalize(多个正则)+ 前缀匹配,
     // 而 distinct 模型只有几十个。memo 把十几万次调用降到几十次实算。
@@ -92,7 +92,39 @@ enum PricingTable {
         m.replace(#/[-@](?:20\d{6}|20\d{2}-\d{2}-\d{2}).*$/#, with: "")
         m.replace(#/-v\d+(:\d+)?$/#, with: "")
         m.replace(#/-(latest|preview)$/#, with: "")
-        let aliases = ["claude-fable-5.1": "claude-fable-5-1", "claude-mythos-5.1": "claude-mythos-5-1", "k3": "kimi-k3", "k3.1-pro": "kimi-k3.1-pro", "k3.1-pro-highspeed": "kimi-k3.1-pro-highspeed", "deepseek-v4-flash 正式版": "deepseek-v4-flash", "deepseek-v4-pro 正式版": "deepseek-v4-pro", "deepseek-v4.1-flash-1017": "deepseek-flash", "deepseek-v4-flash-vision-exp": "deepseek-flash", "deepseek-v4-pro-0813": "deepseek-v4-pro"]
+        let aliases = [
+            "claude-fable-5.1": "claude-fable-5-1", "claude-mythos-5.1": "claude-mythos-5-1",
+            "k3": "kimi-k3", "k3.1-pro": "kimi-k3.1-pro", "k3.1-pro-highspeed": "kimi-k3.1-pro-highspeed",
+            "deepseek-v4-flash 正式版": "deepseek-v4-flash", "deepseek-v4-pro 正式版": "deepseek-v4-pro",
+            "deepseek-v4.1-flash-1017": "deepseek-flash", "deepseek-v4-flash-vision-exp": "deepseek-flash",
+            "deepseek-v4-pro-0813": "deepseek-v4-pro",
+            // Antigravity / Gemini CLI 显式思考强度与档位别名（严格显式映射，绝不做泛化后缀剥离）
+            "gemini-4-neon-low": "gemini-4-neon", "gemini-4-neon-medium": "gemini-4-neon",
+            "gemini-4-neon-high": "gemini-4-neon", "gemini-4-neon-extra": "gemini-4-neon",
+            "gemini-4-neon-xhigh": "gemini-4-neon",
+            "gemini-4-hydrogen-low": "gemini-4-hydrogen", "gemini-4-hydrogen-medium": "gemini-4-hydrogen",
+            "gemini-4-hydrogen-high": "gemini-4-hydrogen", "gemini-4-hydrogen-extra": "gemini-4-hydrogen",
+            "gemini-4-hydrogen-xhigh": "gemini-4-hydrogen",
+            "gemini-4-hydrogen-tiered": "gemini-4-hydrogen",
+            "gemini-4-hydrogen-tiered-low": "gemini-4-hydrogen", "gemini-4-hydrogen-tiered-medium": "gemini-4-hydrogen",
+            "gemini-4-hydrogen-tiered-high": "gemini-4-hydrogen", "gemini-4-hydrogen-tiered-extra": "gemini-4-hydrogen",
+            "gemini-4-hydrogen-tiered-xhigh": "gemini-4-hydrogen",
+            "gemini-4-carbon-low": "gemini-4-carbon", "gemini-4-carbon-medium": "gemini-4-carbon",
+            "gemini-4-carbon-high": "gemini-4-carbon", "gemini-4-carbon-extra": "gemini-4-carbon",
+            "gemini-4-carbon-xhigh": "gemini-4-carbon",
+            "gemini-4-argon-low": "gemini-4-argon", "gemini-4-argon-medium": "gemini-4-argon",
+            "gemini-4-argon-high": "gemini-4-argon", "gemini-4-argon-extra": "gemini-4-argon",
+            "gemini-4-argon-xhigh": "gemini-4-argon",
+            "gemini-3.8-flash-low": "gemini-3.8-flash", "gemini-3.8-flash-medium": "gemini-3.8-flash",
+            "gemini-3.8-flash-high": "gemini-3.8-flash",
+            "gemini-3.7-flash-low": "gemini-3.7-flash", "gemini-3.7-flash-medium": "gemini-3.7-flash",
+            "gemini-3.7-flash-high": "gemini-3.7-flash",
+            "gemini-3.6-flash-low": "gemini-3.6-flash", "gemini-3.6-flash-medium": "gemini-3.6-flash",
+            "gemini-3.6-flash-high": "gemini-3.6-flash",
+            "gemini-3.1-pro-low": "gemini-3.1-pro", "gemini-3.1-pro-medium": "gemini-3.1-pro",
+            "gemini-3.1-pro-high": "gemini-3.1-pro",
+            "gemini-3.1-pro-preview-low": "gemini-3.1-pro", "gemini-3.1-pro-preview-high": "gemini-3.1-pro"
+        ]
         return aliases[m] ?? m
     }
 
@@ -281,6 +313,35 @@ enum PricingTable {
             cacheWritePerMTok: 0, cacheReadPerMTok: 0.50),
 
         // ---- Google Gemini(LiteLLM 里 gemini-3 系只有 -preview key,归一化会剥掉后缀落到这里)----
+        // Gemini 4 系列：官方 Global 标准付费价，仅隐式缓存（95% 折扣，无缓存写费用）。
+        // Carbon / Argon 使用标准价 $4/$20（首发优惠 $2/$10 于 2026-11-30 结束）。
+        "gemini-4-carbon": ModelPricing(
+            inputPerMTok: 4.00, outputPerMTok: 20.00,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.20),
+        "gemini-4-argon": ModelPricing(
+            inputPerMTok: 4.00, outputPerMTok: 20.00,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.20),
+        "gemini-4-neon": ModelPricing(
+            inputPerMTok: 3.00, outputPerMTok: 15.00,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.15),
+        "gemini-4-hydrogen": ModelPricing(
+            inputPerMTok: 1.50, outputPerMTok: 7.50,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.075),
+        // Gemini 3.x / 2.5 上一代主力模型（Gemini CLI / Antigravity 通用）
+        "gemini-3.5-flash": ModelPricing(
+            inputPerMTok: 1.50, outputPerMTok: 9.00,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.15),
+        "gemini-3.5-flash-lite": ModelPricing(
+            inputPerMTok: 0.30, outputPerMTok: 2.50,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.03),
+        "gemini-3.1-pro": ModelPricing(
+            inputPerMTok: 2.00, outputPerMTok: 12.00,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.20,
+            above200kInputPerMTok: 4.00, above200kOutputPerMTok: 18.00,
+            above200kCacheReadPerMTok: 0.40),
+        "gemini-3.1-flash-lite": ModelPricing(
+            inputPerMTok: 0.25, outputPerMTok: 1.50,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.025),
         "gemini-3-pro": ModelPricing(
             inputPerMTok: 2.00, outputPerMTok: 12.00,
             cacheWritePerMTok: 0, cacheReadPerMTok: 0.20,
@@ -297,6 +358,9 @@ enum PricingTable {
         "gemini-2.5-flash": ModelPricing(
             inputPerMTok: 0.30, outputPerMTok: 2.50,
             cacheWritePerMTok: 0, cacheReadPerMTok: 0.03),
+        "gemini-2.5-flash-lite": ModelPricing(
+            inputPerMTok: 0.10, outputPerMTok: 0.40,
+            cacheWritePerMTok: 0, cacheReadPerMTok: 0.01),
     ]
 }
 

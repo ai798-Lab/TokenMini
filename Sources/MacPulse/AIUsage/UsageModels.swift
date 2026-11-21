@@ -54,7 +54,7 @@ enum ToolKind: String, Sendable, CaseIterable, Identifiable, Codable {
         case .other: return L10n.text("其他工具")
         }
     }
-    var localScanner: Bool { [.claude, .codex, .kimi, .gemini, .opencode].contains(self) }
+    var localScanner: Bool { [.claude, .codex, .kimi, .gemini, .opencode, .antigravity].contains(self) }
     init?(sourceApp: String) { self.init(rawValue: sourceApp) }
 }
 

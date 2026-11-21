@@ -156,9 +156,7 @@ struct ClassicAIPanelView: View {
 
     @ViewBuilder
     private var modelBreakdown: some View {
-        let models = usage.thisMonth.byModel
-            .sorted { $0.value.costUSD > $1.value.costUSD }
-            .prefix(5)
+        let models = usage.thisMonth.topModels.prefix(5)
         if !models.isEmpty {
             VStack(alignment: .leading, spacing: 3) {
                 Text(L10n.text("本月按模型"))

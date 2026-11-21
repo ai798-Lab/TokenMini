@@ -169,9 +169,7 @@ struct HUDAIPanelView: View {
 
     @ViewBuilder
     private var modelBreakdown: some View {
-        let models = usage.thisMonth.byModel
-            .sorted { $0.value.costUSD > $1.value.costUSD }
-            .prefix(5)
+        let models = usage.thisMonth.topModels.prefix(5)
         if !models.isEmpty {
             HUDPanel(padding: 10, accent: HUD.mint) {
                 VStack(alignment: .leading, spacing: 4) {

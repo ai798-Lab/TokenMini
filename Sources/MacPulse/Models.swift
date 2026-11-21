@@ -434,6 +434,15 @@ struct UsagePeriodSummary: Sendable {
     var byModel: [String: ModelUsage] = [:]
 
     var totalTokens: Int { inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens }
+
+    /// 按费用降序排列模型明细；待定价（费用同为 0）时按 Token 总量降序，避免字典哈希顺序随机挤掉高用量模型。
+    var topModels: [(key: String, value: ModelUsage)] {
+        byModel.sorted {
+            if $0.value.costUSD != $1.value.costUSD { return $0.value.costUSD > $1.value.costUSD }
+            if $0.value.totalTokens != $1.value.totalTokens { return $0.value.totalTokens > $1.value.totalTokens }
+            return $0.key < $1.key
+        }
+    }
 }
 
 struct ModelUsage: Sendable {
@@ -443,6 +452,8 @@ struct ModelUsage: Sendable {
     var cacheCreationTokens: Int = 0
     var cacheReadTokens: Int = 0
     var eventCount: Int = 0
+
+    var totalTokens: Int { inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens }
 }
 
 /// 按天聚合(用于趋势图)
