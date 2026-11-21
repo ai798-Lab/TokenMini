@@ -4,29 +4,37 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>TokenMini</title>
         <item>
-            <title>0.14.1</title>
-            <pubDate>Thu, 24 Sep 2026 14:37:01 +0800</pubDate>
+            <title>0.15.2</title>
+            <pubDate>Sat, 21 Nov 2026 15:42:24 +0800</pubDate>
             <link>https://tokenmini.cc</link>
-            <sparkle:version>24</sparkle:version>
-            <sparkle:shortVersionString>0.14.1</sparkle:shortVersionString>
+            <sparkle:version>27</sparkle:version>
+            <sparkle:shortVersionString>0.15.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"><![CDATA[# TokenMini 0.14.1 Public Beta
+            <description sparkle:format="markdown"><![CDATA[# TokenMini 0.15.2
 
-- 修复菜单栏短数值（如“1亿”）仍占用长数值宽度的问题，图标与数值按实际内容紧凑排列。
-- 补齐全主题紧凑更新提示：面板内显示“新版本可用”，展开后可滚动查看说明，“跳过此版本”和“下载更新”并排显示。
-- 保留多选筛选按钮整块可点击、统一 Prism 外观、完整中控台、多工具多模型筛选和签名模型目录更新。
-- 更新官网下载入口与签名更新清单；更新清单要求缓存重新验证。
-- 可选匿名产品统计仍默认关闭，未配置正式接收服务，不上传产品统计。
+- 新增 Antigravity（含 `agy` CLI）本地自动用量统计，每 60 秒自动更新并自动归属所属项目，不上传任何对话内容。
+- 升级 Gemini CLI 本地扫描：新增支持新版 `session-*.jsonl` 流式会话（自动合并 `message_update` 增量更新并计入 `thought` / `tool` Token），同时保持兼容旧版 `session-*.json`。
+- 补充 Google Gemini 4（Neon / Hydrogen / Carbon / Argon）与上一代 Gemini 3.5 / 3.1 / 2.5 官方 API 标准定价及思考档位别名；同时包含 GPT-6.1 Sol / Terra、Claude Sonnet / Haiku 5.5、Kimi K3.1 Pro 和 DeepSeek Flash 核价。
+- 修复菜单栏弹窗「本月按模型」在待定价模型费用同为 0 时按随机顺序截断高用量模型的问题，并将 Kimi 大会话解析升级为流式读取以加快扫描。
+- 同步包含自 0.14.1 以来的全部公开更新：Codex 压缩会话历史恢复与本地持久账本（与原文件自动去重）、DeepSeek 官方余额与本机 API 调用日志接入、30 天趋势图按日查看 Token 与费用、过去 24 小时滚动视图，以及简体中文、繁体中文、英语、日语、韩语和阿拉伯语 6 种界面语言。
 
-Apple Silicon · macOS 14+ · Build 24。费用是 API 等价估算，不是订阅实际扣款。
+历史会话较多时，从 0.14.1 升级后的首次补读需要一些时间。
 
-Fixes excessive menu-bar spacing for short token values. Includes the existing in-panel update notice, release notes, download action and skip-version control. Preserves previous UI fixes and local-first features.
+Apple Silicon · macOS 14+ · Build 27
+
+## English
+
+- Add automatic local usage tracking for Antigravity (including the `agy` CLI) with workspace project attribution, refreshed every 60 seconds without uploading any conversation content.
+- Upgrade Gemini CLI scanning to support modern streaming `session-*.jsonl` logs (merging `message_update` snapshots and counting `thought` and `tool` tokens) while retaining full compatibility with legacy `session-*.json` files.
+- Add official API pricing and explicit effort/tier aliases for Gemini 4 (Neon, Hydrogen, Carbon, Argon) and Gemini 3.5 / 3.1 / 2.5 models, alongside GPT-6.1 Sol / Terra, Claude Sonnet / Haiku 5.5, Kimi K3.1 Pro, and DeepSeek Flash pricing.
+- Fix menu-bar popover Top-5 model sorting when multiple unpriced models tie at zero cost, and switch Kimi `wire.jsonl` scanning to streaming reads for faster cold scans.
+- Includes all updates since the public 0.14.1 release: compressed and archived Codex session recovery with a durable local metering ledger, opt-in DeepSeek balance monitoring and local API usage log ingestion, per-day token and cost details in the 30-day trend chart, the rolling 24-hour view, and six interface languages (Simplified Chinese, Traditional Chinese, English, Japanese, Korean, and Arabic).
 ]]></description>
-            <enclosure url="https://github.com/ai798-Lab/TokenMini/releases/download/v0.14.1/TokenMini-0.14.1.dmg" length="6189270" type="application/octet-stream" sparkle:edSignature="afF/Ki96QjN9SMJUQ71EpDjENoebnWmS6+lacp8w5GnT+2cmW5U/vFEK0CiuTqnowDwuTGXROMn3n9Pf6BlbBA=="></enclosure>
+            <enclosure url="https://github.com/ai798-Lab/TokenMini/releases/download/v0.15.2/TokenMini-0.15.2.dmg" length="6471174" type="application/octet-stream" sparkle:edSignature="BwCirKMp23kVk+JHHflnQ+6OP+XbRVumMPUv5eqjzDhhqDLcQamUvszBvosvMnyxFsLoN5onE+Qv/alVHyjTCQ=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: 3/2nJQWsfHrzuOJdG2D6oe32XJi19myTcLvbhifG8iW+OAkLb3ZQ0ssI1i0qPz7UGDXymghd3Uqb4C/c04VLCg==
-length: 2222
+edSignature: mdea0kzpmXgDZF2JcGkyHYkq41BBVDuN/JkmEDbMBDXaqfNugx92IeZYl9aKPzIuqIrxr2vWyq9+UFmPpqeNDA==
+length: 3819
 -->
