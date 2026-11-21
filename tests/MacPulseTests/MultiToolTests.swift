@@ -1,4 +1,5 @@
 import XCTest
+import SQLite3
 @testable import MacPulse
 
 final class MultiToolTests: XCTestCase {
@@ -141,5 +142,156 @@ extension MultiToolTests {
         XCTAssertEqual(rows.count, 2)
         XCTAssertEqual(rows.first?.inputTokens, 60)
         XCTAssertEqual(rows.first?.outputTokens, 30)
+    }
+
+    func testGeminiJSONLMessageUpdatesAndToolTokens() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let dir = home.appendingPathComponent(".gemini/tmp/project/chats")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let now = ISO8601DateFormatter().string(from: Date())
+        let jsonl = """
+        {"type":"session_metadata","sessionId":"gem-jsonl-1"}
+        {"type":"user","id":"u1","timestamp":"\(now)","content":"hi"}
+        {"type":"gemini","id":"m1","timestamp":"\(now)","model":"gemini-3-pro-preview","content":"thinking"}
+        {"type":"message_update","id":"m1","tokens":{"input":100,"cached":30,"output":10,"thought":5,"tool":2}}
+        {"type":"message_update","id":"m1","tokens":{"input":100,"cached":30,"output":25,"thought":15,"tool":8}}
+        {"type":"gemini","id":"m2","timestamp":"\(now)","model":"gemini-3-flash","tokens":{"input":50,"cacheRead":20,"output":10,"reasoningTokens":4}}
+        """
+        try jsonl.write(to: dir.appendingPathComponent("session-2026-11-20.jsonl"), atomically: true, encoding: .utf8)
+        // Duplicate legacy JSON with same sessionId + m2 id must not double count.
+        let dupJSON = "{\"sessionId\":\"gem-jsonl-1\",\"messages\":[{\"type\":\"gemini\",\"id\":\"m2\",\"timestamp\":\"\(now)\",\"model\":\"gemini-3-flash\",\"tokens\":{\"input\":50,\"cached\":20,\"output\":10,\"thoughts\":4}}]}"
+        try dupJSON.write(to: dir.appendingPathComponent("session-2026-11-20.json"), atomically: true, encoding: .utf8)
+
+        let rows = AdditionalUsageScanner(home: home).scanAll().events.filter { $0.sourceApp == "gemini" }
+        XCTAssertEqual(rows.count, 2)
+        let m1 = try XCTUnwrap(rows.first { $0.model == "gemini-3-pro-preview" })
+        // uncached input = (100 - 30) + tool(8) = 78; output = 25 + thought(15) = 40; cacheRead = 30
+        XCTAssertEqual(m1.inputTokens, 78)
+        XCTAssertEqual(m1.outputTokens, 40)
+        XCTAssertEqual(m1.cacheReadTokens, 30)
+        let m2 = try XCTUnwrap(rows.first { $0.model == "gemini-3-flash" })
+        XCTAssertEqual(m2.inputTokens, 30)
+        XCTAssertEqual(m2.outputTokens, 14)
+        XCTAssertEqual(m2.cacheReadTokens, 20)
+    }
+
+    func testAntigravityTranscriptProjectCheckpointAndRefresh() throws {
+        XCTAssertTrue(ToolKind.antigravity.localScanner)
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let agRoot = home.appendingPathComponent(".gemini/antigravity")
+        let conv1Log = agRoot.appendingPathComponent("brain/conv-1/.system_generated/logs/transcript.jsonl")
+        let conv2Log = agRoot.appendingPathComponent("brain/conv-2/.system_generated/logs/transcript.jsonl")
+        try FileManager.default.createDirectory(at: conv1Log.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: conv2Log.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+        // Create conversation_summaries.db with a percent-encoded UTF-8 workspace URI for conv-1.
+        let dbPath = agRoot.appendingPathComponent("conversation_summaries.db").path
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(dbPath, &db), SQLITE_OK)
+        defer { sqlite3_close(db) }
+        let createSQL = "CREATE TABLE conversation_summaries (conversation_id TEXT PRIMARY KEY, workspace_uris TEXT NOT NULL);"
+        XCTAssertEqual(sqlite3_exec(db, createSQL, nil, nil, nil), SQLITE_OK)
+        let insertSQL = "INSERT INTO conversation_summaries (conversation_id, workspace_uris) VALUES ('conv-1', '[\"file:///Users/test/%E7%9C%9F%E7%88%B1BB%E6%9C%BA\"]');"
+        XCTAssertEqual(sqlite3_exec(db, insertSQL, nil, nil, nil), SQLITE_OK)
+
+        let now = ISO8601DateFormatter().string(from: Date())
+        let log1 = """
+        {"step_index":0,"type":"USER_INPUT","created_at":"\(now)","content":"hello"}
+        {"step_index":1,"type":"PLANNER_RESPONSE","status":"RUNNING","created_at":"\(now)","model":"gemini-4-neon-high","input_tokens":1000,"cache_read_tokens":500,"output_tokens":50}
+        {"step_index":1,"type":"PLANNER_RESPONSE","status":"DONE","created_at":"\(now)","model":"gemini-4-neon-high","input_tokens":1000,"cache_read_tokens":500,"output_tokens":200}
+        {"step_index":2,"type":"CHECKPOINT","status":"DONE","created_at":"\(now)","input_tokens":50000,"cache_read_tokens":0,"output_tokens":800}
+        """ + "\n"
+        try log1.write(to: conv1Log, atomically: true, encoding: .utf8)
+
+        let log2 = """
+        {"step_index":1,"type":"PLANNER_RESPONSE","status":"DONE","created_at":"\(now)","model":"gemini-4-hydrogen-tiered-high","input_tokens":2000,"cache_read_tokens":4000,"output_tokens":300}
+        """ + "\n"
+        try log2.write(to: conv2Log, atomically: true, encoding: .utf8)
+
+        let scanner = AdditionalUsageScanner(home: home)
+        let first = scanner.scanAll()
+        let agEvents = first.events.filter { $0.sourceApp == "antigravity" }
+        XCTAssertEqual(agEvents.count, 3)
+        let agStatus = try XCTUnwrap(first.statuses.first { $0.tool == .antigravity })
+        XCTAssertEqual(agStatus.count, 3)
+
+        let conv1Events = agEvents.filter { $0.sessionID == "antigravity:conv-1" }
+        XCTAssertEqual(conv1Events.count, 2)
+        XCTAssertTrue(conv1Events.allSatisfy { $0.project == "真爱BB机" })
+        // step_index 1 updated in place (200 output, not 50 + 200)
+        XCTAssertEqual(conv1Events.first?.inputTokens, 1000)
+        XCTAssertEqual(conv1Events.first?.cacheReadTokens, 500)
+        XCTAssertEqual(conv1Events.first?.outputTokens, 200)
+        // CHECKPOINT without a model field keeps "unknown" so tokens are counted without guessing a paid tier.
+        XCTAssertEqual(conv1Events.last?.model, "unknown")
+        XCTAssertEqual(conv1Events.last?.inputTokens, 50000)
+        XCTAssertEqual(conv1Events.last?.outputTokens, 800)
+
+        let conv2Event = try XCTUnwrap(agEvents.first { $0.sessionID == "antigravity:conv-2" })
+        XCTAssertEqual(conv2Event.project, "Antigravity")
+        XCTAssertEqual(conv2Event.cacheReadTokens, 4000)
+
+        // Append another step and confirm incremental cache invalidates cleanly.
+        let extra = "{\"step_index\":3,\"type\":\"PLANNER_RESPONSE\",\"status\":\"DONE\",\"created_at\":\"\(now)\",\"model\":\"gemini-4-neon-high\",\"input_tokens\":300,\"cache_read_tokens\":100,\"output_tokens\":40}\n"
+        try (log1 + extra).write(to: conv1Log, atomically: true, encoding: .utf8)
+        XCTAssertEqual(scanner.scanAll().events.filter { $0.sourceApp == "antigravity" }.count, 4)
+    }
+
+    func testUnpricedUsageSlicesSortDeterministicallyByTokens() {
+        let now = Date()
+        let ts = now.addingTimeInterval(-10)
+        let small = PricedEvent.from(UsageEvent(
+            timestamp: ts, model: "unpriced-small-model",
+            inputTokens: 100, outputTokens: 10, cacheCreationTokens: 0, cacheCreation1hTokens: 0,
+            cacheReadTokens: 0, speed: nil, costUSD: nil, sourceApp: "antigravity",
+            project: "SmallProj", sessionID: "antigravity:s1"))
+        let big = PricedEvent.from(UsageEvent(
+            timestamp: ts, model: "unpriced-big-model",
+            inputTokens: 100_000, outputTokens: 1_000, cacheCreationTokens: 0, cacheCreation1hTokens: 0,
+            cacheReadTokens: 200_000, speed: nil, costUSD: nil, sourceApp: "antigravity",
+            project: "BigProj", sessionID: "antigravity:s2"))
+        let dash = UsageAggregator.run([small, big], filter: UsageFilter(time: .today), now: now, calendar: .current)
+        XCTAssertEqual(dash.byModel.first?.key, "unpriced-big-model")
+        XCTAssertEqual(dash.byProject.first?.key, "BigProj")
+        XCTAssertEqual(dash.topSessions.first?.session, "antigravity:s2")
+
+        // Popover summary `topModels` must also break $0 ties by totalTokens so high-volume unpriced models are not truncated.
+        var summary = UsagePeriodSummary()
+        summary.byModel["paid"] = ModelUsage(costUSD: 1.0, inputTokens: 100)
+        summary.byModel["unpriced-small"] = ModelUsage(costUSD: 0, inputTokens: 10_000_000)
+        summary.byModel["unpriced-medium"] = ModelUsage(costUSD: 0, inputTokens: 200_000_000)
+        summary.byModel["codex-auto-review"] = ModelUsage(costUSD: 0, inputTokens: 230_000_000)
+        XCTAssertEqual(summary.topModels.map(\.key), [
+            "paid", "codex-auto-review", "unpriced-medium", "unpriced-small"
+        ])
+    }
+
+    func testGemini4AndLegacyGooglePricingAndStrictAliases() throws {
+        for (id, input, output, read) in [
+            ("gemini-4-neon", 3.0, 15.0, 0.15),
+            ("gemini-4-neon-high", 3.0, 15.0, 0.15),
+            ("gemini-4-hydrogen", 1.5, 7.5, 0.075),
+            ("gemini-4-hydrogen-tiered-high", 1.5, 7.5, 0.075),
+            ("gemini-4-carbon-high", 4.0, 20.0, 0.2),
+            ("gemini-4-argon-medium", 4.0, 20.0, 0.2),
+            ("gemini-3.8-flash-high", 0.75, 3.75, 0.075),
+            ("gemini-3.5-flash", 1.5, 9.0, 0.15),
+            ("gemini-3.5-flash-lite", 0.3, 2.5, 0.03),
+            ("gemini-3.1-pro-preview", 2.0, 12.0, 0.2),
+            ("gemini-3.1-pro-high", 2.0, 12.0, 0.2),
+            ("gemini-3.1-flash-lite", 0.25, 1.5, 0.025),
+            ("gemini-2.5-flash-lite", 0.1, 0.4, 0.01)
+        ] {
+            let p = try XCTUnwrap(PricingTable.pricing(for: id), id)
+            XCTAssertEqual(p.inputPerMTok, input, id)
+            XCTAssertEqual(p.outputPerMTok, output, id)
+            XCTAssertEqual(p.cacheReadPerMTok, read, id)
+            XCTAssertEqual(p.cacheWritePerMTok, 0, id)
+        }
+        // Strict alias policy: unknown suffixes must never fall back to base prices.
+        XCTAssertNil(PricingTable.pricing(for: "gemini-4-neon-invented"))
+        XCTAssertNil(PricingTable.pricing(for: "gemini-4-hydrogen-unknown"))
     }
 }

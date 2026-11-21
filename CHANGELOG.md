@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.2 (27)
+
+- Add local automatic usage scanning for Antigravity (including `agy` CLI) with SQLite workspace project attribution and deduplicated streaming reads.
+- Upgrade Gemini CLI scanning to support streaming `session-*.jsonl` (`message_update` merging, `thought` and `tool` tokens) alongside legacy `session-*.json`.
+- Add official Google API pricing and explicit aliases for Gemini 4 (Neon, Hydrogen, Carbon, Argon) and Gemini 3.5 / 3.1 / 2.5 models.
+- Break `$0` ties by total tokens in popover Top-5 model lists and dashboard slices, and switch Kimi `wire.jsonl` parsing to streaming reads.
+
 ## 0.15.1 (26)
 
 - Recover Codex usage from compressed and archived sessions. Persist verified metering across source rotation and application restarts, and deduplicate overlapping copies.

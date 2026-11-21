@@ -15,8 +15,15 @@ struct ToolSourceStatus: Identifiable, Sendable {
 final class AdditionalUsageScanner: @unchecked Sendable {
     struct Result { var events: [UsageEvent]; var statuses: [ToolSourceStatus] }
     private struct Cached {
-        var size: Int, modified: Date, records: [UsageRecord]
+        var size: Int, modified: Date, project: String? = nil, records: [UsageRecord]
     }
+    private static let agInputMarker = Data("input_tokens".utf8)
+    private static let agOutputMarker = Data("output_tokens".utf8)
+    private static let agCacheReadMarker = Data("cache_read_tokens".utf8)
+    private static let agCacheCreateMarker = Data("cache_creation_tokens".utf8)
+    private static let kimiUsageMarker = Data("usage.record".utf8)
+    private static let kimiStatusMarker = Data("StatusUpdate".utf8)
+    private static let hexTable: [UInt8] = Array("0123456789abcdef".utf8)
     private let home: URL
     private let apiScanner = APIUsageScanner()
     private var cache: [String: Cached] = [:]
@@ -42,8 +49,9 @@ final class AdditionalUsageScanner: @unchecked Sendable {
                 errors[tool, default: 0] += 1; continue
             }
             for case let file as URL in en {
+                let ext = file.pathExtension.lowercased()
                 guard (tool == .kimi && file.lastPathComponent == fileName)
-                    || (tool == .gemini && file.lastPathComponent.hasPrefix(fileName) && file.pathExtension == "json") else { continue }
+                    || (tool == .gemini && file.lastPathComponent.hasPrefix(fileName) && (ext == "json" || ext == "jsonl")) else { continue }
                 visited.insert(file.path)
                 do {
                     let rv = try file.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .isRegularFileKey])
@@ -54,19 +62,29 @@ final class AdditionalUsageScanner: @unchecked Sendable {
                     let rows: [UsageRecord]
                     if let hit = cache[file.path], hit.size == size, hit.modified == modified { rows = hit.records }
                     else {
-                        let data = try Data(contentsOf: file, options: .alwaysMapped)
-                        rows = tool == .kimi ? parseKimi(data, file: file, cutoff: cutoff) : parseGemini(data, file: file, cutoff: cutoff)
+                        if tool == .kimi {
+                            rows = try parseKimi(file: file, cutoff: cutoff)
+                        } else if tool == .gemini && ext == "jsonl" {
+                            rows = try parseGeminiJSONL(file: file, cutoff: cutoff)
+                        } else {
+                            let data = try Data(contentsOf: file, options: .alwaysMapped)
+                            rows = parseGemini(data, file: file, cutoff: cutoff)
+                        }
                         cache[file.path] = Cached(size: size, modified: modified, records: rows)
                     }
                     for row in rows where row.timestamp >= cutoff && seen.insert(row.id).inserted { records.append(row) }
                 } catch { errors[tool, default: 0] += 1 }
             }
         }
+        for row in scanAntigravity(cutoff: cutoff, visited: &visited, errors: &errors)
+            where row.timestamp >= cutoff && seen.insert(row.id).inserted {
+            records.append(row)
+        }
         cache = cache.filter { visited.contains($0.key) }
         do { records += try scanOpenCode(cutoff: cutoff) } catch { errors[.opencode, default: 0] += 1 }
         do { records += try TraeUsageClient.cached(home: home).filter { $0.timestamp >= cutoff } }
         catch { errors[.traeWork, default: 0] += 1 }
-        var statuses: [ToolSourceStatus] = [ToolKind.kimi, .gemini, .opencode].map { tool in
+        var statuses: [ToolSourceStatus] = [ToolKind.kimi, .gemini, .opencode, .antigravity].map { tool in
             let count = records.filter { $0.tool == tool }.count
             let detail = errors[tool, default: 0] > 0 ? L10n.text("部分记录读取失败（\(errors[tool]!) 处）") : count > 0 ? L10n.text("本地记录 · 自动更新") : L10n.text("近 90 天未发现可读取用量")
             return ToolSourceStatus(tool: tool, count: count, detail: detail)
@@ -91,16 +109,17 @@ final class AdditionalUsageScanner: @unchecked Sendable {
         return Result(events: records.map(\.event), statuses: statuses)
     }
 
-    private func parseKimi(_ data: Data, file: URL, cutoff: Date) -> [UsageRecord] {
+    private func parseKimi(file: URL, cutoff: Date) throws -> [UsageRecord] {
         var rows: [UsageRecord] = []
         let parts = file.pathComponents
         let session: String = parts.firstIndex(of: "agents").map { parts[$0 - 1] }
             ?? file.deletingLastPathComponent().lastPathComponent
         // Only parse metering records, never context.append_loop_event / turn.prompt bodies.
-        for line in data.split(separator: 10) where line.count <= 1_048_576 {
-            guard line.range(of: Data("usage.record".utf8)) != nil || line.range(of: Data("StatusUpdate".utf8)) != nil else { continue }
+        try UsageLogReader.forEachLine(at: file) { line in
+            guard line.count <= 1_048_576,
+                  line.range(of: Self.kimiUsageMarker) != nil || line.range(of: Self.kimiStatusMarker) != nil else { return }
             autoreleasepool {
-                guard let d = (try? JSONSerialization.jsonObject(with: Data(line))) as? [String: Any] else { return }
+                guard let d = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any] else { return }
                 let message = d["message"] as? [String: Any] ?? d
                 let modern = message["type"] as? String == "usage.record"
                 if modern && message["usageScope"] as? String != "turn" { return }
@@ -125,6 +144,15 @@ final class AdditionalUsageScanner: @unchecked Sendable {
         return rows
     }
 
+    private func geminiTokenCounts(_ t: [String: Any]) -> (input: Int, output: Int, cacheRead: Int) {
+        let rawInput = Self.token(t, "input")
+        let cached = min(rawInput, max(Self.token(t, "cached"), Self.token(t, "cacheRead")))
+        // In Gemini CLI, total = input + output + thoughts + tool, while cached is a subset of input.
+        let toolTokens = Self.token(t, "tool")
+        let thoughts = max(Self.token(t, "thoughts"), max(Self.token(t, "thought"), Self.token(t, "reasoningTokens")))
+        return (input: (rawInput - cached) + toolTokens, output: Self.token(t, "output") + thoughts, cacheRead: cached)
+    }
+
     private func parseGemini(_ data: Data, file: URL, cutoff: Date) -> [UsageRecord] {
         guard data.count <= 32 * 1_048_576,
               let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
@@ -133,12 +161,212 @@ final class AdditionalUsageScanner: @unchecked Sendable {
         return messages.compactMap { m in
             guard m["type"] as? String == "gemini", let t = m["tokens"] as? [String: Any],
                   let date = UsageRecord.date(m["timestamp"]), date >= cutoff else { return nil }
-            let input = Self.token(t, "input"), cached = min(input, Self.token(t, "cached"))
-            // Gemini thoughts are separate from output in the CLI token record.
-            let output = Self.token(t, "output") + Self.token(t, "thoughts")
-            return UsageRecord(id: "gemini:" + session + ":" + (m["id"] as? String ?? Self.digest(Data("\(date.timeIntervalSince1970)|\(input)|\(output)|\(cached)".utf8))),
-                timestamp: date, tool: .gemini, model: m["model"] as? String ?? "unknown", input: input - cached,
-                output: output, cacheRead: cached, project: "Gemini CLI", session: "gemini:" + session)
+            let counts = geminiTokenCounts(t)
+            guard counts.input + counts.output + counts.cacheRead > 0 else { return nil }
+            let msgID = (m["id"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let suffix = (msgID?.isEmpty == false ? msgID! : Self.digest(Data("\(date.timeIntervalSince1970)|\(counts.input)|\(counts.output)|\(counts.cacheRead)".utf8)))
+            return UsageRecord(id: "gemini:" + session + ":" + suffix,
+                timestamp: date, tool: .gemini, model: m["model"] as? String ?? "unknown", input: counts.input,
+                output: counts.output, cacheRead: counts.cacheRead, project: "Gemini CLI", session: "gemini:" + session)
+        }
+    }
+
+    private func parseGeminiJSONL(file: URL, cutoff: Date) throws -> [UsageRecord] {
+        struct GeminiEntry {
+            var explicitID: String?
+            var timestamp: Date?
+            var model: String?
+            var tokens: (input: Int, output: Int, cacheRead: Int)?
+            var isGemini: Bool = false
+        }
+        var session = file.deletingPathExtension().lastPathComponent
+        var order: [String] = []
+        var entries: [String: GeminiEntry] = [:]
+        var anonIndex = 0
+        try UsageLogReader.forEachLine(at: file) { line in
+            autoreleasepool {
+                guard let d = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any] else { return }
+                if let sid = (d["sessionId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !sid.isEmpty {
+                    session = sid
+                }
+                let type = d["type"] as? String ?? ""
+                if type == "session_metadata" { return }
+                guard type == "gemini" || type == "message_update" else { return }
+                let nested = (d["update"] as? [String: Any])
+                    ?? (d["message"] as? [String: Any])
+                    ?? (d["data"] as? [String: Any])
+                let rawID = (d["id"] as? String) ?? (d["messageId"] as? String) ?? (nested?["id"] as? String)
+                let cleanID = rawID?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let key: String
+                if let cleanID, !cleanID.isEmpty {
+                    key = "id:" + cleanID
+                } else {
+                    guard type == "gemini" else { return }
+                    anonIndex += 1
+                    key = "anon:\(anonIndex)"
+                }
+                if entries[key] == nil {
+                    order.append(key)
+                    entries[key] = GeminiEntry(explicitID: (cleanID?.isEmpty == false) ? cleanID : nil)
+                }
+                var entry = entries[key]!
+                if type == "gemini" { entry.isGemini = true }
+                if let date = UsageRecord.date(d["timestamp"] ?? nested?["timestamp"]) {
+                    if entry.timestamp == nil || type == "gemini" { entry.timestamp = date }
+                }
+                if let model = ((d["model"] as? String) ?? (nested?["model"] as? String))?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !model.isEmpty {
+                    entry.model = model
+                }
+                if let t = (d["tokens"] as? [String: Any]) ?? (nested?["tokens"] as? [String: Any]) {
+                    entry.tokens = geminiTokenCounts(t)
+                    entry.isGemini = true
+                }
+                entries[key] = entry
+            }
+        }
+        return order.compactMap { key in
+            guard let entry = entries[key], entry.isGemini, let counts = entry.tokens,
+                  counts.input + counts.output + counts.cacheRead > 0,
+                  let date = entry.timestamp, date >= cutoff else { return nil }
+            let suffix = entry.explicitID ?? Self.digest(Data("\(date.timeIntervalSince1970)|\(counts.input)|\(counts.output)|\(counts.cacheRead)|\(key)".utf8))
+            return UsageRecord(id: "gemini:" + session + ":" + suffix,
+                timestamp: date, tool: .gemini, model: entry.model ?? "unknown", input: counts.input,
+                output: counts.output, cacheRead: counts.cacheRead, project: "Gemini CLI", session: "gemini:" + session)
+        }
+    }
+
+    private func scanAntigravity(cutoff: Date, visited: inout Set<String>, errors: inout [ToolKind: Int]) -> [UsageRecord] {
+        let brainRoot = home.appendingPathComponent(".gemini/antigravity/brain")
+        guard FileManager.default.fileExists(atPath: brainRoot.path) else { return [] }
+        guard let conversations = try? FileManager.default.contentsOfDirectory(
+            at: brainRoot, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+        ) else {
+            errors[.antigravity, default: 0] += 1
+            return []
+        }
+        let projects = loadAntigravityProjects()
+        var records: [UsageRecord] = []
+        for convDir in conversations {
+            let convID = convDir.lastPathComponent
+            let file = convDir.appendingPathComponent(".system_generated/logs/transcript.jsonl")
+            guard FileManager.default.fileExists(atPath: file.path) else { continue }
+            visited.insert(file.path)
+            do {
+                let rv = try file.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .isRegularFileKey])
+                guard rv.isRegularFile == true else { continue }
+                let size = rv.fileSize ?? 0, modified = rv.contentModificationDate ?? .distantPast
+                guard modified >= cutoff else { continue }
+                let project = projects[convID] ?? "Antigravity"
+                let rows: [UsageRecord]
+                if let hit = cache[file.path], hit.size == size, hit.modified == modified, hit.project == project {
+                    rows = hit.records
+                } else {
+                    rows = try parseAntigravity(file: file, conversationID: convID, project: project, cutoff: cutoff)
+                    cache[file.path] = Cached(size: size, modified: modified, project: project, records: rows)
+                }
+                records.append(contentsOf: rows)
+            } catch {
+                errors[.antigravity, default: 0] += 1
+            }
+        }
+        return records
+    }
+
+    private func loadAntigravityProjects() -> [String: String] {
+        let path = home.appendingPathComponent(".gemini/antigravity/conversation_summaries.db").path
+        guard FileManager.default.fileExists(atPath: path) else { return [:] }
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            if db != nil { sqlite3_close(db) }
+            return [:]
+        }
+        defer { sqlite3_close(db) }
+        sqlite3_busy_timeout(db, 500)
+        var statement: OpaquePointer?
+        let sql = "SELECT conversation_id, workspace_uris FROM conversation_summaries"
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { return [:] }
+        defer { sqlite3_finalize(statement) }
+        var projects: [String: String] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let rawID = sqlite3_column_text(statement, 0),
+                  let rawURIs = sqlite3_column_text(statement, 1) else { continue }
+            let id = String(cString: rawID)
+            let urisText = String(cString: rawURIs)
+            guard let uris = (try? JSONSerialization.jsonObject(with: Data(urisText.utf8))) as? [String],
+                  let first = uris.first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else { continue }
+            let name: String
+            if let url = URL(string: first), url.isFileURL {
+                name = url.lastPathComponent
+            } else {
+                name = URL(fileURLWithPath: first).lastPathComponent
+            }
+            if !name.isEmpty, name != "/" {
+                projects[id] = name
+            }
+        }
+        return projects
+    }
+
+    private func parseAntigravity(file: URL, conversationID: String, project: String, cutoff: Date) throws -> [UsageRecord] {
+        struct StepEntry {
+            var id: String
+            var timestamp: Date
+            var model: String
+            var input: Int
+            var output: Int
+            var cacheWrite: Int
+            var cacheRead: Int
+        }
+        var order: [String] = []
+        var entries: [String: StepEntry] = [:]
+        try UsageLogReader.forEachLine(at: file) { line in
+            // Only parse metering lines; skip USER_INPUT / GENERIC tool outputs without touching prompts.
+            guard line.range(of: Self.agInputMarker) != nil
+                || line.range(of: Self.agOutputMarker) != nil
+                || line.range(of: Self.agCacheReadMarker) != nil
+                || line.range(of: Self.agCacheCreateMarker) != nil else { return }
+            autoreleasepool {
+                guard let d = (try? JSONSerialization.jsonObject(with: line)) as? [String: Any],
+                      let timestamp = UsageRecord.date(d["created_at"]) else { return }
+                let input = Self.token(d, "input_tokens")
+                let output = Self.token(d, "output_tokens")
+                let cacheRead = Self.token(d, "cache_read_tokens")
+                let cacheWrite = Self.token(d, "cache_creation_tokens")
+                guard input + output + cacheRead + cacheWrite > 0 else { return }
+                let rawModel = (d["model"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                // Missing model (e.g. internal CHECKPOINT compaction) retains "unknown" instead of guessing a paid tier.
+                let model = (rawModel?.isEmpty == false) ? rawModel! : "unknown"
+                let stepKey: String
+                let recordID: String
+                if let stepNum = d["step_index"] as? NSNumber, CFGetTypeID(stepNum) != CFBooleanGetTypeID() {
+                    let idx = stepNum.intValue
+                    stepKey = "step:\(idx)"
+                    recordID = "antigravity:\(conversationID):\(idx)"
+                } else {
+                    let digest = Self.digest(Data("\(timestamp.timeIntervalSince1970)|\(model)|\(input)|\(output)|\(cacheWrite)|\(cacheRead)".utf8))
+                    stepKey = "hash:\(digest)"
+                    recordID = "antigravity:\(conversationID):\(digest)"
+                }
+                if entries[stepKey] == nil { order.append(stepKey) }
+                entries[stepKey] = StepEntry(
+                    id: recordID, timestamp: timestamp, model: model,
+                    input: input, output: output, cacheWrite: cacheWrite, cacheRead: cacheRead)
+            }
+        }
+        return order.compactMap { key in
+            guard let entry = entries[key], entry.timestamp >= cutoff else { return nil }
+            return UsageRecord(
+                id: entry.id,
+                timestamp: entry.timestamp,
+                tool: .antigravity,
+                model: entry.model,
+                input: entry.input,
+                output: entry.output,
+                cacheWrite: entry.cacheWrite,
+                cacheRead: entry.cacheRead,
+                project: project,
+                session: "antigravity:" + conversationID)
         }
     }
 
@@ -177,5 +405,13 @@ final class AdditionalUsageScanner: @unchecked Sendable {
     }
 
     static func token(_ obj: [String: Any], _ key: String) -> Int { UsageValueSanitizer.tokens(obj[key] as? NSNumber) }
-    static func digest(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+    static func digest(_ data: Data) -> String {
+        var bytes: [UInt8] = []
+        bytes.reserveCapacity(64)
+        for b in SHA256.hash(data: data) {
+            bytes.append(hexTable[Int(b >> 4)])
+            bytes.append(hexTable[Int(b & 0x0f)])
+        }
+        return String(decoding: bytes, as: UTF8.self)
+    }
 }
