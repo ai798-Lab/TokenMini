@@ -1,7 +1,7 @@
 {
-  "version": "0.14.1",
-  "build": 24,
+  "version": "0.15.2",
+  "build": 27,
   "channel": "beta",
-  "download": "https://github.com/ai798-Lab/TokenMini/releases/download/v0.14.1/TokenMini-0.14.1.dmg",
-  "sha256": "f601040472efd4e297f95e70c3e2e136b0935f6e34b2eee8dfc1d2066dd707a8"
+  "download": "https://github.com/ai798-Lab/TokenMini/releases/download/v0.15.2/TokenMini-0.15.2.dmg",
+  "sha256": "27fc33527202af41cb9ad94224996cd74b57c755e984efec057ef4ed772512a0"
 }

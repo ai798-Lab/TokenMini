@@ -30,7 +30,7 @@
 ![TokenMini 品牌主视觉](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.15.1** 可恢复压缩 Codex 会话中的用量，支持按需开启 DeepSeek 官方余额和模型查询。应用界面支持简体中文、繁体中文、英语、日语、韩语和阿拉伯语。目前公开下载的安装包为 0.14.1，0.15.1 正在等待 Apple 公证。
+> **TokenMini 0.15.2（Build 27）** 新增 Antigravity 与 `agy` 用量统计、Gemini CLI JSONL 支持和 Gemini 模型价格，同时包含 Codex 压缩会话用量恢复和按需开启的 DeepSeek 官方余额查询。[下载已公证安装包](https://github.com/ai798-Lab/TokenMini/releases/tag/v0.15.2)。
 
 ## 为什么是 TokenMini
 

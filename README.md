@@ -30,7 +30,7 @@
 ![TokenMini brand](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.15.1** restores metering from compressed Codex sessions and adds opt-in DeepSeek balance monitoring. The app supports English, Simplified Chinese, Traditional Chinese, Japanese, Korean and Arabic. The public installer is currently 0.14.1. The 0.15.1 installer is awaiting Apple notarization.
+> **TokenMini 0.15.2 (Build 27)** adds Antigravity and `agy` metering, Gemini CLI JSONL support, and updated Gemini pricing. It includes compressed Codex session recovery and opt-in DeepSeek balance monitoring. [Download the notarized installer](https://github.com/ai798-Lab/TokenMini/releases/tag/v0.15.2).
 
 ## Why TokenMini
 
