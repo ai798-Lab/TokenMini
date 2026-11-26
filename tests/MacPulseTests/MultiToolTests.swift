@@ -294,4 +294,76 @@ extension MultiToolTests {
         XCTAssertNil(PricingTable.pricing(for: "gemini-4-neon-invented"))
         XCTAssertNil(PricingTable.pricing(for: "gemini-4-hydrogen-unknown"))
     }
+
+    func testGPT62AndClaudeFable52PricingAndThreadSettingsFallback() throws {
+        let sol = try XCTUnwrap(PricingTable.pricing(for: "gpt-6.2-sol"))
+        XCTAssertEqual(sol.inputPerMTok, 2)
+        XCTAssertEqual(sol.outputPerMTok, 10)
+        XCTAssertEqual(sol.cacheWritePerMTok, 2.5)
+        XCTAssertEqual(sol.cacheReadPerMTok, 0.1)
+        XCTAssertEqual(sol.fullRequestThreshold, 272_000)
+        XCTAssertEqual(PricingTable.fastMultiplier(for: "gpt-6.2-sol"), 2)
+
+        let astra = try XCTUnwrap(PricingTable.pricing(for: "gpt-6.2-astra"))
+        XCTAssertEqual(astra.inputPerMTok, 8)
+        XCTAssertEqual(astra.outputPerMTok, 40)
+        XCTAssertEqual(astra.cacheWritePerMTok, 10)
+        XCTAssertEqual(astra.cacheReadPerMTok, 0.4)
+        XCTAssertEqual(astra.fullRequestThreshold, 272_000)
+        XCTAssertEqual(PricingTable.fastMultiplier(for: "gpt-6.2-astra"), 2)
+
+        // >272K long-context full-request scaling for GPT-6.2 Sol (2x input/cache, 1.5x output)
+        let over = sol.breakdown(input: 2_001, output: 1_000, cacheWrite: 0, cacheWrite1h: 0, cacheRead: 270_000)
+        XCTAssertEqual(over.output, 10 * 0.0015, accuracy: 0.000001)
+        XCTAssertEqual(over.cacheRead, 0.1 * 0.54, accuracy: 0.000001)
+
+        let fable = try XCTUnwrap(PricingTable.pricing(for: "claude-fable-5.2"))
+        XCTAssertEqual(fable.inputPerMTok, 8)
+        XCTAssertEqual(fable.outputPerMTok, 40)
+        XCTAssertEqual(fable.cacheWritePerMTok, 10)
+        XCTAssertEqual(fable.cacheWrite1hPerMTok, 16)
+        XCTAssertEqual(fable.cacheReadPerMTok, 0.2)
+        XCTAssertEqual(PricingTable.fastMultiplier(for: "claude-fable-5-2"), 2)
+        XCTAssertNil(PricingTable.pricing(for: "gpt-6.2-invented"))
+
+        // CodexScanner falls back to thread_settings_applied when no turn_context precedes token_count.
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let date = ISO8601DateFormatter().string(from: Date())
+        let settings = "{\"timestamp\":\"\(date)\",\"type\":\"event_msg\",\"payload\":{\"type\":\"thread_settings_applied\",\"thread_settings\":{\"model\":\"gpt-6.2-sol\",\"cwd\":\"/tmp/demo-proj\"}}}\n"
+        let usage = "{\"timestamp\":\"\(date)\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":1000,\"cached_input_tokens\":400,\"cache_write_input_tokens\":0,\"output_tokens\":100},\"last_token_usage\":{\"input_tokens\":1000,\"cached_input_tokens\":400,\"cache_write_input_tokens\":0,\"output_tokens\":100}}}}\n"
+        try (settings + usage).write(to: root.appendingPathComponent("rollout-62-test.jsonl"), atomically: true, encoding: .utf8)
+        let events = CodexScanner(baseDirectories: [root]).scanAll()
+        XCTAssertEqual(events.count, 1)
+        XCTAssertEqual(events.first?.model, "gpt-6.2-sol")
+        XCTAssertEqual(events.first?.project, "demo-proj")
+        XCTAssertEqual(events.first?.inputTokens, 600)
+        XCTAssertEqual(events.first?.cacheReadTokens, 400)
+        XCTAssertEqual(events.first?.outputTokens, 100)
+        XCTAssertTrue(PricedEvent.from(events[0]).isPriced)
+    }
+
+    func testLiveTodayCodex62WhenRequested() throws {
+        guard ProcessInfo.processInfo.environment["MACPULSE_LIVE_TEST"] == "1" else {
+            throw XCTSkip("Explicit local acceptance only")
+        }
+        let cal = Calendar.current
+        let now = Date()
+        let comps = cal.dateComponents([.year, .month, .day], from: now)
+        let dir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(String(format: ".codex/sessions/%04d/%02d/%02d", comps.year!, comps.month!, comps.day!))
+        guard FileManager.default.fileExists(atPath: dir.path) else { throw XCTSkip("No today Codex dir") }
+        let events = CodexScanner(baseDirectories: [dir]).scanAll(now: now)
+        let agg = UsageStore.aggregate(events: events, now: now)
+        print("LIVE_TODAY_CODEX events=\(agg.today.eventCount) tokens=\(agg.today.totalTokens) costUSD=\(String(format: "%.2f", agg.today.totalCostUSD))")
+        for (model, m) in agg.today.topModels {
+            let priced = PricingTable.pricing(for: model) != nil
+            print("  MODEL \(model): events=\(m.eventCount) tokens=\(m.totalTokens) in=\(m.inputTokens) cr=\(m.cacheReadTokens) cw=\(m.cacheCreationTokens) out=\(m.outputTokens) costUSD=\(String(format: "%.2f", m.costUSD)) priced=\(priced)")
+        }
+        if let sol = agg.today.byModel["gpt-6.2-sol"] {
+            XCTAssertGreaterThan(sol.totalTokens, 0)
+            XCTAssertGreaterThan(sol.costUSD, 0)
+        }
+    }
 }
