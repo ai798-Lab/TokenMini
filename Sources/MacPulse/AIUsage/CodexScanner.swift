@@ -38,11 +38,18 @@ final class CodexScanner: @unchecked Sendable {
         let type: String?
         let payload: Payload?
 
+        struct ThreadSettings: Decodable {
+            let model: String?
+            let cwd: String?
+            let service_tier: String?
+        }
+
         struct Payload: Decodable {
             let type: String?
             let cwd: String?
             let model: String?
             let service_tier: String?
+            let thread_settings: ThreadSettings?
             let info: Info?
         }
 
@@ -176,7 +183,7 @@ final class CodexScanner: @unchecked Sendable {
     }
 
     // 只对可能含目标事件的行做 JSON 解析:含这些标记之一才解析,跳过巨大的 message 行
-    private static let markers: [Data] = ["token_count", "turn_context", "session_meta"].map { Data($0.utf8) }
+    private static let markers: [Data] = ["token_count", "turn_context", "session_meta", "thread_settings_applied"].map { Data($0.utf8) }
     private static let maxJSONLineBytes = 32 * 1024 * 1024
 
     private func parseFile(at url: URL, cutoff: Date) throws -> FileCache {
@@ -205,6 +212,14 @@ final class CodexScanner: @unchecked Sendable {
                 speed = ["fast", "priority"].contains(payload.service_tier ?? "") ? "fast" : nil
                 if let cwd = payload.cwd, project == "unknown" { project = Self.projectName(cwd) }
             case "event_msg":
+                if payload.type == "thread_settings_applied", let ts = payload.thread_settings {
+                    if let m = ts.model, !m.isEmpty { model = m }
+                    if let tier = ts.service_tier {
+                        speed = ["fast", "priority"].contains(tier) ? "fast" : nil
+                    }
+                    if let cwd = ts.cwd, project == "unknown" { project = Self.projectName(cwd) }
+                    return
+                }
                 guard payload.type == "token_count",
                       let last = payload.info?.lastTokenUsage,
                       let ts = obj.timestamp,
