@@ -4,6 +4,7 @@
 
 - Add official API pricing and 2x Fast multipliers for OpenAI GPT-6.2 (`gpt-6.2-sol`, `gpt-6.2-astra`, including >272K long-context scaling) and Anthropic Claude Fable 5.2 (`claude-fable-5-2` / `claude-fable-5.2`).
 - Support Codex `thread_settings_applied` metadata fallback (`model`, `cwd`, `service_tier`) in `CodexScanner`.
+- Migrate existing Codex usage records on upgrade so corrected model assignments do not double-count tokens. Preserve history from deleted logs.
 
 ## 0.15.2 (27)
 
