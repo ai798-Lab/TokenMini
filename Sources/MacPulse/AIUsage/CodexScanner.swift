@@ -22,12 +22,18 @@ final class CodexScanner: @unchecked Sendable {
         let cacheWriteTokens: Int
         let speed: String?
         let identity: String
+        // Only populated when the same source record had a different key under the old parser.
+        let previousIdentity: String?
     }
 
     private struct FileCache: Codable {
+        let parserVersion: Int?
         let size: Int64
         let mtime: Date
         let events: [ParsedLine]
+        let legacyEvents: [ParsedLine]?
+        var currentEvents: [ParsedLine] { parserVersion == nil ? [] : events }
+        var historicalEvents: [ParsedLine] { parserVersion == nil ? events : legacyEvents ?? [] }
         let project: String
         let session: String          // 会话标识 = rollout 文件名(不含扩展名)
     }
@@ -78,6 +84,7 @@ final class CodexScanner: @unchecked Sendable {
         }
     }
 
+    private static let parserVersion = 2
     private var cache: [String: FileCache] = [:]
     private let decoder = JSONDecoder()
 
@@ -125,18 +132,25 @@ final class CodexScanner: @unchecked Sendable {
                   rv.isRegularFile == true else { continue }
             let size = Int64(rv.fileSize ?? 0)
             let mtime = rv.contentModificationDate ?? .distantPast
-            if let hit = cache[path], hit.size == size, hit.mtime == mtime {
+            if let hit = cache[path], hit.parserVersion == Self.parserVersion, hit.size == size, hit.mtime == mtime {
                 newCache[path] = hit; continue
             }
             do {
                 let parsed = try parseFile(at: url, cutoff: cutoff)
-                var merged = parsed.events
                 if let previous = cache[path] {
-                    let ids = Set(merged.map(\.identity))
-                    merged.append(contentsOf: previous.events.filter { !ids.contains($0.identity) })
+                    let ids = Set(parsed.events.map(\.identity))
+                    let retained = previous.currentEvents.filter { !ids.contains($0.identity) }
+                    let previousIDs = Set(parsed.events.compactMap(\.previousIdentity))
+                    let unmatched = previous.historicalEvents.filter {
+                        !ids.contains($0.identity) && !previousIDs.contains($0.identity)
+                    }
+                    newCache[path] = FileCache(parserVersion: Self.parserVersion, size: parsed.size,
+                        mtime: parsed.mtime, events: parsed.events + retained,
+                        legacyEvents: unmatched.isEmpty ? nil : unmatched,
+                        project: parsed.project, session: parsed.session)
+                } else {
+                    newCache[path] = parsed
                 }
-                newCache[path] = FileCache(size: parsed.size, mtime: parsed.mtime, events: merged,
-                    project: parsed.project, session: parsed.session)
                 changed = true
             }
             catch {
@@ -161,22 +175,35 @@ final class CodexScanner: @unchecked Sendable {
 
         var events: [UsageEvent] = []
         var seen = Set<String>()
-        for (_, file) in cache.sorted(by: { $0.key < $1.key }) {
-            for e in file.events where e.timestamp >= cutoff {
-                guard seen.insert(file.session + "|" + e.identity).inserted else { continue }
-                events.append(UsageEvent(
-                    timestamp: e.timestamp,
-                    model: e.model,
-                    inputTokens: e.inputTokens,
-                    outputTokens: e.outputTokens,
-                    cacheCreationTokens: e.cacheWriteTokens,
-                    cacheCreation1hTokens: 0,
-                    cacheReadTokens: e.cacheReadTokens,
-                    speed: e.speed,
-                    costUSD: nil,
-                    sourceApp: "codex",
-                    project: file.project,
-                    sessionID: file.session))
+        var replacedLegacyKeys = Set<String>()
+        let files = cache.sorted { $0.key < $1.key }.map(\.value)
+        func append(_ e: ParsedLine, in file: FileCache) {
+            guard seen.insert(file.session + "|" + e.identity).inserted else { return }
+            events.append(UsageEvent(
+                timestamp: e.timestamp,
+                model: e.model,
+                inputTokens: e.inputTokens,
+                outputTokens: e.outputTokens,
+                cacheCreationTokens: e.cacheWriteTokens,
+                cacheCreation1hTokens: 0,
+                cacheReadTokens: e.cacheReadTokens,
+                speed: e.speed,
+                costUSD: nil,
+                sourceApp: "codex",
+                project: file.project,
+                sessionID: file.session))
+        }
+        // A moved or compressed source may now be stored under another path. Prefer the
+        // current parser's observations for the session, then replay unmatched legacy history.
+        for file in files {
+            for e in file.currentEvents where e.timestamp >= cutoff {
+                if let old = e.previousIdentity { replacedLegacyKeys.insert(file.session + "|" + old) }
+                append(e, in: file)
+            }
+        }
+        for file in files {
+            for e in file.historicalEvents where e.timestamp >= cutoff {
+                if !replacedLegacyKeys.contains(file.session + "|" + e.identity) { append(e, in: file) }
             }
         }
         return events
@@ -194,6 +221,9 @@ final class CodexScanner: @unchecked Sendable {
 
         var events: [ParsedLine] = []
         var model = "unknown"                 // 默认;首个 turn_context 会覆盖
+        // Track the previous parser's model for this exact record; matching only on token
+        // counts and time can merge distinct requests when a session changes models.
+        var turnContextModel = "unknown"
         var project = "unknown"
         var speed: String?
         var previousTotal: CodexRecord.TokenUsage?
@@ -208,7 +238,7 @@ final class CodexScanner: @unchecked Sendable {
             case "session_meta":
                 if let cwd = payload.cwd { project = Self.projectName(cwd) }
             case "turn_context":
-                if let m = payload.model, !m.isEmpty { model = m }
+                if let m = payload.model, !m.isEmpty { model = m; turnContextModel = m }
                 speed = ["fast", "priority"].contains(payload.service_tier ?? "") ? "fast" : nil
                 if let cwd = payload.cwd, project == "unknown" { project = Self.projectName(cwd) }
             case "event_msg":
@@ -234,10 +264,14 @@ final class CodexScanner: @unchecked Sendable {
                 let write = min(UsageValueSanitizer.tokens(last.cacheWriteTokens), input - cached)
                 let nonCached = max(0, input - cached - write)
                 guard nonCached + cached + write + output > 0, when >= cutoff else { return }
+                func identity(for modelID: String) -> String {
+                    "\(ts)|\(modelID)|\(input)|\(cached)|\(write)|\(output)"
+                }
                 events.append(ParsedLine(timestamp: when, model: model,
                                          inputTokens: nonCached, cacheReadTokens: cached,
                                          outputTokens: output, cacheWriteTokens: write, speed: speed,
-                                         identity: "\(ts)|\(model)|\(input)|\(cached)|\(write)|\(output)"))
+                                         identity: identity(for: model),
+                                         previousIdentity: model == turnContextModel ? nil : identity(for: turnContextModel)))
             default: break
             }
         }
@@ -246,7 +280,8 @@ final class CodexScanner: @unchecked Sendable {
             autoreleasepool { handleLine(data) }
         }
 
-        return FileCache(size: size, mtime: mtime, events: events, project: project, session: session)
+        return FileCache(parserVersion: Self.parserVersion, size: size, mtime: mtime, events: events,
+                         legacyEvents: nil, project: project, session: session)
     }
 
     static func isRollout(_ url: URL) -> Bool {

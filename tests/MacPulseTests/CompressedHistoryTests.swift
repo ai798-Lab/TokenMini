@@ -76,4 +76,61 @@ final class CompressedHistoryTests: XCTestCase {
         XCTAssertFalse(text.contains("session_meta"), "Ledger stores metering, never the conversation")
     }
 
+
+    func testUpgradeReparsesUnchangedRolloutsAndKeepsHistoryAcrossCopiesAndModelSwitches() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let active = root.appendingPathComponent("rollout-upgrade.jsonl")
+        let oldLocation = root.appendingPathComponent("gone/rollout-upgrade.jsonl")
+        let removed = root.appendingPathComponent("rollout-removed.jsonl")
+        let ledger = root.appendingPathComponent("usage.plist")
+        let time = "2026-10-28T04:00:00Z"
+        let when = try XCTUnwrap(ISO8601DateFormatter().date(from: time))
+        let settings = #"{"type":"event_msg","payload":{"type":"thread_settings_applied","thread_settings":{"model":"gpt-6.2-sol","cwd":"/tmp/upgrade","service_tier":"priority"}}}"#
+        let turn = #"{"type":"turn_context","payload":{"model":"gpt-6.1-sol"}}"#
+        let change = #"{"type":"event_msg","payload":{"type":"thread_settings_applied","thread_settings":{"model":"gpt-6.2-astra"}}}"#
+        func usage(total: Int) -> String {
+            #"{"timestamp":"\#(time)","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":100,"output_tokens":10},"total_token_usage":{"input_tokens":\#(total),"output_tokens":10}}}}"#
+        }
+        // Deliberately share a timestamp and delta across real model switches.
+        let lines = [settings, usage(total: 100), turn, usage(total: 200), change, usage(total: 300)]
+        try Data((lines.joined(separator: "\n") + "\n").utf8).write(to: active)
+        let metadata = try active.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+        func oldEvent(model: String) -> [String: Any] {
+            ["timestamp": when, "model": model, "inputTokens": 100, "cacheReadTokens": 0,
+             "outputTokens": 10, "cacheWriteTokens": 0, "identity": "\(time)|\(model)|100|0|0|10"]
+        }
+        func oldFile(session: String, models: [String]) throws -> [String: Any] {
+            ["size": try XCTUnwrap(metadata.fileSize), "mtime": try XCTUnwrap(metadata.contentModificationDate),
+             "project": "unknown", "session": session, "events": models.map(oldEvent)]
+        }
+        let previous = try oldFile(session: "rollout-upgrade", models: ["unknown", "gpt-6.1-sol", "gpt-6.1-sol"])
+        let deleted = try oldFile(session: "rollout-removed", models: ["unknown"])
+        let bytes = try PropertyListSerialization.data(fromPropertyList: [
+            active.path: previous, oldLocation.path: previous, removed.path: deleted
+        ], format: .binary, options: 0)
+        try bytes.write(to: ledger)
+        func scan() -> [UsageEvent] {
+            CodexScanner(baseDirectories: [root], ledgerURL: ledger).scanAll(now: auditDate)
+        }
+        let after = scan()
+        let migrated = after.filter { $0.sessionID == "rollout-upgrade" }
+        XCTAssertEqual(migrated.count, 3)
+        XCTAssertEqual(Set(migrated.map(\.model)), ["gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.2-astra"])
+        XCTAssertEqual(migrated.first { $0.model == "gpt-6.2-sol" }?.speed, "fast")
+        XCTAssertTrue(migrated.allSatisfy { $0.project == "upgrade" })
+        XCTAssertEqual(after.filter { $0.sessionID == "rollout-removed" }.map(\.model), ["unknown"])
+
+        let next = #"{"timestamp":"2026-10-28T04:00:01Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":5,"output_tokens":1}}}}"#
+        let handle = try FileHandle(forWritingTo: active)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data((next + "\n").utf8))
+        try handle.close()
+        let appended = scan()
+        XCTAssertEqual(appended.count, 5)
+        try FileManager.default.removeItem(at: active)
+        XCTAssertEqual(scan().count, 5, "Restarting after source removal must retain migrated and ledger-only usage")
+    }
+
 }
