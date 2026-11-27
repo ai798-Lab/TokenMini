@@ -30,7 +30,7 @@
 ![TokenMini 品牌主视觉](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.15.2（Build 27）** 新增 Antigravity 与 `agy` 用量统计、Gemini CLI JSONL 支持和 Gemini 模型价格，同时包含 Codex 压缩会话用量恢复和按需开启的 DeepSeek 官方余额查询。[下载已公证安装包](https://github.com/ai798-Lab/TokenMini/releases/tag/v0.15.2)。
+> **TokenMini 0.15.3（Build 28）** 新增 GPT-6.2 和 Claude Fable 5.2 的费用估算。Codex 在首轮对话前记录的用量，现在也能根据会话设置归入对应模型。从 0.15.2 升级后，继续原有 Codex 会话的用量也能正确累计，避免重复计算。[下载已公证安装包](https://github.com/ai798-Lab/TokenMini/releases/tag/v0.15.3)。
 
 ## 为什么是 TokenMini
 

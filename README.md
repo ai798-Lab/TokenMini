@@ -30,7 +30,7 @@
 ![TokenMini brand](website/public/brand/hero.png)
 
 > [!IMPORTANT]
-> **TokenMini 0.15.2 (Build 27)** adds Antigravity and `agy` metering, Gemini CLI JSONL support, and updated Gemini pricing. It includes compressed Codex session recovery and opt-in DeepSeek balance monitoring. [Download the notarized installer](https://github.com/ai798-Lab/TokenMini/releases/tag/v0.15.2).
+> **TokenMini 0.15.3 (Build 28)** adds cost estimates for GPT-6.2 and Claude Fable 5.2. It also uses session settings to identify the model when Codex records usage before the first turn. Continuing an existing Codex session after upgrading from 0.15.2 now counts each usage record once. [Download the notarized installer](https://github.com/ai798-Lab/TokenMini/releases/tag/v0.15.3).
 
 ## Why TokenMini
 
